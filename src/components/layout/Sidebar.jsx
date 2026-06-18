@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { MENU_ITEMS } from '../../config/menu.js';
 import { canAccess } from '../../config/permissions.js';
+import { BRAND } from '../../config/brand.js';
 import { useAuthStore } from '../../store/authStore.js';
 
 export default function Sidebar() {
@@ -11,8 +12,14 @@ export default function Sidebar() {
 
   return (
     <aside className="glass-card rounded-3xl p-3 lg:sticky lg:top-5 lg:h-[calc(100vh-112px)] lg:overflow-auto">
-      <div className="px-2 pb-3 pt-1">
-        <p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200/70">Menu operacional</p>
+      <div className="grid justify-items-center gap-2 px-2 pb-4 pt-2 text-center">
+        <div className="login-logo-frame w-32 max-w-full">
+          <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
+        </div>
+        <div>
+          <strong className="block text-sm font-black leading-tight text-white">{BRAND.systemName}</strong>
+          <span className="block text-xs font-extrabold text-[#17B33A]">{BRAND.consortiumName}</span>
+        </div>
       </div>
       <nav className="grid gap-1 sm:grid-cols-2 lg:grid-cols-1">
         {items.map((item) => {

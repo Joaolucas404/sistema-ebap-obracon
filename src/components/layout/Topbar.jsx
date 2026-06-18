@@ -36,13 +36,12 @@ export default function Topbar() {
   return (
     <header className="glass-card mx-auto mb-4 grid max-w-[1400px] gap-3 rounded-3xl px-4 py-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="relative h-9 w-12 shrink-0">
-          <span className="absolute left-0 top-2 h-5 w-8 rotate-45 rounded-full border-[6px] border-cyan-300" />
-          <span className="absolute right-0 top-2 h-5 w-8 -rotate-45 rounded-full border-[6px] border-blue-500" />
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-green-300/30 bg-[#17B33A]/15 text-sm font-black text-green-100 shadow-lg shadow-black/20">
+          EB
         </div>
         <div className="min-w-0">
-          <strong className="block truncate text-sm font-black uppercase tracking-wide">EBAPS Vila Velha</strong>
-          <span className="block truncate text-xs text-cyan-100/70">Sistema operacional integrado</span>
+          <strong className="block truncate text-sm font-black uppercase tracking-wide">Sistema Operacional EBAPs</strong>
+          <span className="block truncate text-xs text-green-100/80">Consórcio União Obracon</span>
         </div>
       </div>
 

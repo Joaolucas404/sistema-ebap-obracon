@@ -5,15 +5,15 @@ export default {
     extend: {
       colors: {
         navy: {
-          950: '#020b1b',
-          900: '#03162d',
-          800: '#062246',
-          700: '#0a2a54'
+          950: '#061B42',
+          900: '#0B2D6B',
+          800: '#123D8A',
+          700: '#164AA8'
         },
         ebap: {
-          cyan: '#22d3ee',
-          blue: '#2563eb',
-          green: '#22c55e',
+          cyan: '#FFFFFF',
+          blue: '#0B2D6B',
+          green: '#17B33A',
           red: '#ef4444',
           orange: '#f97316',
           yellow: '#eab308'

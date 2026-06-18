@@ -3,6 +3,7 @@ import { Lock, LogIn, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loginWithUsuarioSenha } from '../services/authService.js';
 import { START_ROUTE_BY_ROLE } from '../config/permissions.js';
+import { BRAND } from '../config/brand.js';
 import { useAuthStore } from '../store/authStore.js';
 
 export default function Login() {
@@ -35,23 +36,22 @@ export default function Login() {
       <div className="content-layer grid place-items-center">
         <section className="grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_.95fr]">
           <div className="hidden text-center lg:block">
-            <div className="mx-auto mb-5 h-24 w-44">
-              <div className="relative h-full">
-                <span className="absolute left-4 top-7 h-12 w-24 rotate-45 rounded-full border-[17px] border-cyan-300 shadow-lg shadow-cyan-500/20" />
-                <span className="absolute right-4 top-7 h-12 w-24 -rotate-45 rounded-full border-[17px] border-blue-600 shadow-lg shadow-blue-500/20" />
-                <span className="absolute left-1/2 top-10 h-9 w-9 -translate-x-1/2 rotate-45 rounded-lg bg-gradient-to-br from-white to-slate-500 shadow-xl" />
-              </div>
+            <div className="login-logo-frame mx-auto mb-6 w-72">
+              <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
             </div>
-            <p className="text-xs font-black uppercase tracking-[.44em] text-cyan-200">EBAPS</p>
-            <h1 className="mt-2 text-4xl font-black tracking-wide text-white">Sistema Integrado Vila Velha</h1>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-200">
-              Fundação React da operação, mantendo a identidade visual escura, azul e ciano do protótipo original.
-            </p>
+            <p className="text-xs font-black uppercase tracking-[.32em] text-[#17B33A]">EBAPs Vila Velha</p>
+            <h1 className="mt-2 text-4xl font-black tracking-wide text-white">{BRAND.systemName}</h1>
+            <p className="mx-auto mt-5 max-w-2xl text-lg font-bold leading-8 text-slate-200">{BRAND.consortiumName}</p>
           </div>
 
           <form className="glass-card mx-auto w-full max-w-xl rounded-[26px] p-6 md:p-10" onSubmit={handleSubmit}>
             <div className="text-center">
-              <h2 className="text-3xl font-black text-white md:text-4xl">Entrar</h2>
+              <div className="login-logo-frame mx-auto mb-5 w-[190px] max-w-full">
+                <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
+              </div>
+              <p className="text-xl font-black text-white">{BRAND.systemName}</p>
+              <p className="mt-1 text-sm font-extrabold text-[#17B33A]">{BRAND.consortiumName}</p>
+              <h2 className="mt-6 text-3xl font-black text-white md:text-4xl">Entrar</h2>
               <p className="mt-2 text-sm text-slate-300">Acesso interno por usuário e senha.</p>
             </div>
 

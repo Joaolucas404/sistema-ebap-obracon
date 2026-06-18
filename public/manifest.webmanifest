@@ -1,0 +1,27 @@
+{
+  "name": "Sistema Operacional EBAPs",
+  "short_name": "EBAPs",
+  "description": "Sistema Operacional EBAPs - Consórcio União Obracon",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B2D6B",
+  "theme_color": "#0B2D6B",
+  "icons": [
+    {
+      "src": "/brand/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
