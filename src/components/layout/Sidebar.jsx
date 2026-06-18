@@ -4,7 +4,7 @@ import { canAccess } from '../../config/permissions.js';
 import { BRAND } from '../../config/brand.js';
 import { useAuthStore } from '../../store/authStore.js';
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }) {
   const user = useAuthStore((state) => state.user);
   const perfil = user?.perfil;
 
@@ -28,6 +28,7 @@ export default function Sidebar() {
             <NavLink
               key={item.key}
               to={item.path}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 [
                   'grid min-h-14 grid-cols-[38px_minmax(0,1fr)] items-center gap-3 rounded-2xl border px-3 py-2 transition',

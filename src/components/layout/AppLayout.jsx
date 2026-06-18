@@ -1,14 +1,31 @@
+import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
 
 export default function AppLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="app-bg">
       <div className="content-layer">
         <Topbar />
+        <div className="mx-auto mb-4 max-w-[1400px] lg:hidden">
+          <button className="secondary-button w-full justify-between" type="button" onClick={() => setMobileMenuOpen((open) => !open)}>
+            <span className="inline-flex items-center gap-2">
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              Menu operacional
+            </span>
+            <span className="text-xs font-black uppercase tracking-wide text-green-100">
+              {mobileMenuOpen ? 'Ocultar' : 'Abrir'}
+            </span>
+          </button>
+        </div>
         <div className="mx-auto grid max-w-[1400px] gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <Sidebar />
+          <div className={`${mobileMenuOpen ? 'block' : 'hidden'} lg:block`}>
+            <Sidebar onNavigate={() => setMobileMenuOpen(false)} />
+          </div>
           <main className="min-w-0">
             <Outlet />
           </main>
