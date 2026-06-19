@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Eye, RefreshCcw, Save } from 'lucide-react';
+import { CheckCircle2, Download, Eye, RefreshCcw, Save } from 'lucide-react';
+import PdfTemplate from '../components/pdf/PdfTemplate.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Toast from '../components/ui/Toast.jsx';
@@ -26,11 +27,14 @@ import {
   listarEquipamentosRelatorio,
   listarFotosRelatorio,
   listarRelatoriosAnteriores,
+  listarValidacoesRelatorio,
+  obterUrlFotoRelatorio,
   prepararPayloadEquipamentos,
   RELATORIO_STEPS,
   salvarRascunhoRelatorio,
   uploadFotoRelatorio
 } from '../services/relatorioService.js';
+import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
 function formatDate(value) {
   if (!value) return '-';
@@ -58,6 +62,8 @@ export default function RelatorioDiario() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const autosaveTimer = useRef(null);
+  const pdfRef = useRef(null);
+  const [pdfData, setPdfData] = useState(null);
 
   const completedSteps = useMemo(() => {
     const done = [];
@@ -188,6 +194,49 @@ export default function RelatorioDiario() {
     }
   }
 
+  async function handleGerarPdf() {
+    if (!relatorio?.id) return;
+    setSaving(true);
+    setError('');
+    try {
+      const documentNumber = gerarNumeroDocumento('PDF-RO');
+      const emittedAt = new Date().toISOString();
+      const [signedFotos, validacoes] = await Promise.all([
+        Promise.all(fotos.map(async (foto) => ({ ...foto, url: await obterUrlFotoRelatorio(foto) }))),
+        listarValidacoesRelatorio(relatorio.id)
+      ]);
+      const qrCode = await gerarQrCodeDocumento({ documentNumber, entityType: 'relatorio_diario', entityId: relatorio.id });
+      setPdfData({
+        type: 'ro',
+        documentNumber,
+        emittedAt,
+        qrCode,
+        data: {
+          relatorio: { ...relatorio, payload },
+          fotos: signedFotos,
+          validacoes
+        }
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const blob = await gerarPdfDeElemento(pdfRef.current, { title: `RO ${relatorio.codigo}` });
+      await salvarPdfArquivo({
+        blob,
+        documentNumber,
+        entityType: 'relatorio_diario',
+        entityId: relatorio.id,
+        title: `Relatório Diário ${relatorio.codigo}`,
+        userId: user?.id
+      });
+      await baixarBlobComoArquivo(blob, `${documentNumber}.pdf`);
+      setToast({ message: 'PDF do RO gerado e arquivado.', tone: 'green' });
+    } catch (err) {
+      setError(err.message || 'Falha ao gerar PDF do relatório.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function renderStep() {
     if (currentStep === 'dados') return <RelatorioOperacao data={payload.dados} onChange={(data) => updateSection('dados', data)} />;
     if (currentStep === 'operacao') return <RelatorioChecklistSection title="Operação" description="Visão geral de todos os equipamentos da EBAP." data={payload.operacao} onChange={(data) => updateSection('operacao', data)} />;
@@ -217,6 +266,12 @@ export default function RelatorioDiario() {
               <RefreshCcw size={17} />
               Atualizar
             </button>
+            {relatorio?.id && (
+              <button className="secondary-button" type="button" onClick={handleGerarPdf} disabled={saving}>
+                <Download size={17} />
+                PDF
+              </button>
+            )}
             {canEdit && isEditableReport(relatorio?.status) && (
               <button className="secondary-button" type="button" onClick={() => saveDraft(true)} disabled={saving || !relatorio?.id}>
                 <Save size={17} />
@@ -300,6 +355,9 @@ export default function RelatorioDiario() {
       </section>
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />
+      <div className="pointer-events-none fixed left-[-10000px] top-0">
+        <div ref={pdfRef}>{pdfData && <PdfTemplate {...pdfData} />}</div>
+      </div>
     </div>
   );
 }

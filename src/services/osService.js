@@ -1,21 +1,38 @@
 import { supabase } from '../lib/supabase.js';
 
 export const OS_STATUS = [
-  { value: 'aberta', label: 'Aberta', tone: 'cyan' },
-  { value: 'em_analise', label: 'Em análise', tone: 'orange' },
-  { value: 'programada', label: 'Programada', tone: 'blue' },
-  { value: 'em_execucao', label: 'Em execução', tone: 'orange' },
-  { value: 'aguardando_material', label: 'Aguardando material', tone: 'orange' },
-  { value: 'concluida', label: 'Concluída', tone: 'green' },
-  { value: 'rejeitada', label: 'Rejeitada', tone: 'red' },
-  { value: 'cancelada', label: 'Cancelada', tone: 'slate' }
+  { value: 'solicitada_prefeitura', label: 'Solicitada pela Prefeitura', tone: 'blue', perfil: 'Prefeitura' },
+  { value: 'aguardando_supervisor', label: 'Aguardando Supervisor', tone: 'green', perfil: 'Supervisor' },
+  { value: 'analise_supervisor', label: 'Em Análise do Supervisor', tone: 'green', perfil: 'Supervisor' },
+  { value: 'programada', label: 'Programada', tone: 'green', perfil: 'Supervisor' },
+  { value: 'encaminhada_tecnicos', label: 'Encaminhada para Técnicos', tone: 'green', perfil: 'Supervisor' },
+  { value: 'em_execucao', label: 'Em Execução', tone: 'cyan', perfil: 'Técnicos' },
+  { value: 'concluida_tecnicos', label: 'Concluída pelos Técnicos', tone: 'cyan', perfil: 'Técnicos' },
+  { value: 'validacao_supervisor', label: 'Em Validação do Supervisor', tone: 'green', perfil: 'Supervisor' },
+  { value: 'enviada_prefeitura', label: 'Enviada para Prefeitura', tone: 'green', perfil: 'Supervisor' },
+  { value: 'aguardando_validacao_prefeitura', label: 'Aguardando Validação da Prefeitura', tone: 'blue', perfil: 'Prefeitura' },
+  { value: 'nao_conforme', label: 'Não Conforme - Retorno da Prefeitura', tone: 'red', perfil: 'Prefeitura' },
+  { value: 'concluida_arquivada', label: 'Concluída / Arquivada', tone: 'green', perfil: 'Sistema' }
 ];
+
+export const OS_WORKFLOW = OS_STATUS.map((item, index) => ({ ...item, ordem: index + 1 }));
+export const OS_FINAL_STATUSES = ['concluida_arquivada', 'concluida', 'cancelada', 'rejeitada', 'arquivada', 'finalizada'];
 
 export const OS_PRIORIDADES = [
   { value: 'baixa', label: 'Baixa', tone: 'green' },
   { value: 'media', label: 'Média', tone: 'cyan' },
   { value: 'alta', label: 'Alta', tone: 'orange' },
   { value: 'critica', label: 'Crítica', tone: 'red' }
+];
+
+export const OS_AREAS = [
+  { value: 'mecanica', label: 'Mecânica' },
+  { value: 'eletrica', label: 'Elétrica' },
+  { value: 'automacao', label: 'Automação' },
+  { value: 'civil', label: 'Civil / Estrutural' },
+  { value: 'hidraulica', label: 'Hidráulica' },
+  { value: 'operacional', label: 'Operacional' },
+  { value: 'outros', label: 'Outros' }
 ];
 
 const OS_SELECT = `
@@ -42,32 +59,69 @@ export function prioridadeTone(prioridade) {
   return OS_PRIORIDADES.find((item) => item.value === prioridade)?.tone || 'cyan';
 }
 
+export function areaLabel(area) {
+  return OS_AREAS.find((item) => item.value === area)?.label || area || '-';
+}
+
 export function podeCriarOS(perfil) {
-  return ['prefeitura', 'supervisor', 'gerencia', 'diretoria'].includes(perfil);
+  return ['prefeitura', 'supervisor', 'diretoria'].includes(perfil);
 }
 
 export function podeEditarOS(perfil, os) {
-  if (!os || ['concluida', 'cancelada', 'rejeitada', 'arquivada', 'finalizada'].includes(os.status)) return false;
-  return ['supervisor', 'gerencia', 'diretoria', 'prefeitura'].includes(perfil);
+  if (!os || OS_FINAL_STATUSES.includes(os.status)) return false;
+  return ['supervisor', 'prefeitura'].includes(perfil);
 }
 
 export function podeAtribuirOS(perfil) {
-  return ['supervisor', 'gerencia', 'diretoria'].includes(perfil);
+  return ['supervisor'].includes(perfil);
 }
 
 export function podeExecutarOS(perfil, os, userId) {
-  if (!os || ['concluida', 'cancelada', 'rejeitada'].includes(os.status)) return false;
-  return ['tecnico', 'supervisor', 'gerencia', 'diretoria'].includes(perfil) && (!userId || !os.responsavel_id || os.responsavel_id === userId || perfil !== 'tecnico');
+  if (!os || OS_FINAL_STATUSES.includes(os.status)) return false;
+  return ['tecnico', 'supervisor'].includes(perfil) && (!userId || !os.responsavel_id || os.responsavel_id === userId || perfil !== 'tecnico');
 }
 
 export function podeEncerrarOS(perfil) {
-  return ['supervisor', 'gerencia', 'diretoria'].includes(perfil);
+  return false;
+}
+
+export function podeExcluirOS(perfil) {
+  return perfil === 'diretoria';
+}
+
+export function getWorkflowActions(perfil, os) {
+  if (!perfil || !os || OS_FINAL_STATUSES.includes(os.status)) return [];
+
+  const actions = {
+    prefeitura: [
+      action(['aguardando_validacao_prefeitura', 'enviada_prefeitura'], 'concluida_arquivada', 'Aprovar e arquivar', 'Prefeitura aprovou a OS. Processo concluído e arquivado.', 'approve'),
+      action(['aguardando_validacao_prefeitura', 'enviada_prefeitura'], 'nao_conforme', 'Reprovar OS', 'Prefeitura reprovou a OS e registrou não conformidade.', 'reject', true)
+    ],
+    supervisor: [
+      action(['solicitada_prefeitura', 'aguardando_supervisor'], 'analise_supervisor', 'Iniciar análise', 'Supervisor abriu a OS e iniciou a análise.', 'review'),
+      action(['programada'], 'encaminhada_tecnicos', 'Encaminhar técnicos', 'OS encaminhada para execução técnica.', 'assign'),
+      action(['concluida_tecnicos'], 'validacao_supervisor', 'Validar execução', 'Supervisor iniciou a validação da execução técnica.', 'validate'),
+      action(['validacao_supervisor'], 'aguardando_validacao_prefeitura', 'Enviar Prefeitura', 'Supervisor aprovou a execução e enviou para validação da Prefeitura.', 'send'),
+      action(['validacao_supervisor', 'concluida_tecnicos'], 'encaminhada_tecnicos', 'Devolver técnicos', 'Supervisor devolveu a OS para ajuste técnico.', 'return', true),
+      action(['nao_conforme'], 'analise_supervisor', 'Reanalisar NC', 'Supervisor reabriu a OS para tratar a não conformidade.', 'review')
+    ],
+    tecnico: [
+      action(['encaminhada_tecnicos'], 'em_execucao', 'Iniciar execução', 'Técnico iniciou o atendimento da OS.', 'start'),
+      action(['em_execucao'], 'concluida_tecnicos', 'Finalizar execução', 'Técnico finalizou a execução e devolveu para validação do Supervisor.', 'finish')
+    ]
+  };
+
+  return (actions[perfil] || []).filter((item) => item.from.includes(os.status));
+}
+
+function action(from, to, label, descricao, acao, requiresMotivo = false) {
+  return { from, to, label, descricao, acao, requiresMotivo };
 }
 
 function applyRoleScope(query, perfil, userId) {
   if (['gerencia', 'diretoria', 'supervisor'].includes(perfil)) return query;
   if (perfil === 'prefeitura') return query.eq('solicitante_id', userId);
-  if (perfil === 'tecnico') return query.eq('responsavel_id', userId);
+  if (perfil === 'tecnico') return query.or(`responsavel_id.eq.${userId},status.eq.encaminhada_tecnicos`);
   return query.or(`solicitante_id.eq.${userId},responsavel_id.eq.${userId}`);
 }
 
@@ -93,9 +147,7 @@ export async function listarOS({ page = 1, pageSize = 10, search = '', status = 
   if (responsavelId) query = query.eq('responsavel_id', responsavelId);
 
   const { data, error, count } = await query.range(from, to);
-
   if (error) throw new Error(error.message);
-
   return { data: data || [], count: count || 0, page, pageSize };
 }
 
@@ -136,37 +188,57 @@ export async function listarResponsaveis() {
 }
 
 export async function criarOS(payload, user) {
+  const equipamentoFalha = String(payload.equipamento_falha || '').trim();
+  if (equipamentoFalha.length < 3 || equipamentoFalha.length > 150) {
+    throw new Error('Informe o equipamento com falha com 3 a 150 caracteres.');
+  }
+
+  if (!OS_AREAS.some((area) => area.value === payload.area)) {
+    throw new Error('Selecione a área de atuação da OS.');
+  }
+
   const numero = payload.numero || gerarNumeroOS();
   const insertPayload = {
     numero,
     origem: payload.origem || (user?.perfil === 'prefeitura' ? 'prefeitura' : 'operacao'),
     ebap_id: payload.ebap_id || null,
-    equipamento_id: payload.equipamento_id || null,
+    equipamento_id: null,
     solicitante_id: payload.solicitante_id || user?.id || null,
     responsavel_id: payload.responsavel_id || null,
     titulo: payload.titulo,
     descricao: payload.descricao,
-    area: payload.area || null,
+    area: payload.area,
     prioridade: payload.prioridade || 'media',
-    status: payload.status || 'aberta',
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
     created_by: user?.id || null,
-    payload: payload.payload || {}
+    payload: {
+      ...(payload.payload || {}),
+      equipamento_falha: equipamentoFalha,
+      roteamento_base: 'area'
+    }
   };
 
-  const { data, error } = await supabase.from('ordens_servico').insert(insertPayload).select(OS_SELECT).single();
-  if (error) throw new Error(error.message);
+  const { data, error } = await supabase.from('ordens_servico').insert(insertPayload).select('*').single();
+  if (error) throwSupabaseError(error);
 
   await registrarHistoricoOS(data.id, {
     usuario_id: user?.id,
     acao: 'criada',
     status_novo: data.status,
-    descricao: 'OS criada no sistema.'
+    descricao: 'Prefeitura registrou a solicitação da OS no sistema.',
+    metadata: { etapa: data.status }
   });
 
-  return data;
+  await criarNotificacaoOS(data, {
+    titulo: 'Nova OS da Prefeitura',
+    mensagem: `${data.numero} foi aberta e aguarda análise do Supervisor.`,
+    perfil_destino: 'supervisor',
+    tipo: 'alerta'
+  });
+
+  return buscarOS(data.id);
 }
 
 export async function atualizarOS(id, payload, user) {
@@ -222,7 +294,14 @@ export async function atribuirProgramarOS(id, payload, user) {
     status_anterior: atual.status,
     status_novo: 'programada',
     descricao: 'OS atribuída e programada para execução.',
-    metadata: updatePayload
+    metadata: { ...updatePayload, etapa: 'programada' }
+  });
+
+  await criarNotificacaoOS(data, {
+    titulo: 'OS programada',
+    mensagem: `${data.numero} foi programada e está pronta para encaminhamento aos técnicos.`,
+    perfil_destino: 'supervisor',
+    tipo: 'info'
   });
 
   return data;
@@ -230,7 +309,7 @@ export async function atribuirProgramarOS(id, payload, user) {
 
 export async function registrarExecucaoOS(id, payload, user) {
   const atual = await buscarOS(id);
-  const status = payload.concluir ? 'em_analise' : 'em_execucao';
+  const status = payload.concluir ? 'concluida_tecnicos' : 'em_execucao';
   const updatePayload = {
     status,
     inicio_execucao: payload.inicio_execucao || atual.inicio_execucao || new Date().toISOString(),
@@ -248,16 +327,25 @@ export async function registrarExecucaoOS(id, payload, user) {
     acao: payload.concluir ? 'execucao_concluida' : 'execucao_registrada',
     status_anterior: atual.status,
     status_novo: status,
-    descricao: payload.concluir ? 'Técnico concluiu a execução e enviou para análise do Supervisor.' : 'Execução técnica registrada.',
-    metadata: updatePayload
+    descricao: payload.concluir ? 'Técnico concluiu a execução e enviou para validação do Supervisor.' : 'Execução técnica registrada.',
+    metadata: { ...updatePayload, etapa: status }
   });
+
+  if (payload.concluir) {
+    await criarNotificacaoOS(data, {
+      titulo: 'Execução técnica concluída',
+      mensagem: `${data.numero} foi finalizada pelos técnicos e aguarda validação.`,
+      perfil_destino: 'supervisor',
+      tipo: 'alerta'
+    });
+  }
 
   return data;
 }
 
 export async function encerrarOS(id, payload, user) {
   const atual = await buscarOS(id);
-  const status = payload.status || 'concluida';
+  const status = payload.status === 'concluida' ? 'concluida_arquivada' : payload.status || 'concluida_arquivada';
   const updatePayload = {
     status,
     fim_execucao: payload.fim_execucao || atual.fim_execucao || new Date().toISOString(),
@@ -270,20 +358,90 @@ export async function encerrarOS(id, payload, user) {
 
   await registrarHistoricoOS(id, {
     usuario_id: user?.id,
-    acao: status === 'concluida' ? 'encerrada' : status,
+    acao: status === 'concluida_arquivada' ? 'encerrada' : status,
     status_anterior: atual.status,
     status_novo: status,
     descricao: payload.descricao || 'Encerramento da OS aprovado.',
-    metadata: updatePayload
+    metadata: { ...updatePayload, etapa: status }
   });
 
+  return data;
+}
+
+export async function excluirOS(id, user) {
+  if (!podeExcluirOS(user?.perfil)) {
+    throw new Error('Apenas Diretoria pode excluir OS.');
+  }
+
+  const { error } = await supabase.rpc('soft_delete_os_diretoria', {
+    p_os_id: id,
+    p_usuario_id: user?.id || null
+  });
+  if (error) throwSupabaseError(error);
+}
+
+export async function movimentarOS(id, payload, user) {
+  const atual = await buscarOS(id);
+  const available = getWorkflowActions(user?.perfil, atual);
+  const selected = available.find((item) => item.to === payload.status);
+
+  if (!selected) {
+    throw new Error('Movimentação não permitida para o perfil ou status atual da OS.');
+  }
+
+  if (selected.requiresMotivo && !String(payload.motivo || '').trim()) {
+    throw new Error('Informe o motivo para a devolução ou não conformidade.');
+  }
+
+  const now = new Date().toISOString();
+  const updatePayload = {
+    status: selected.to,
+    payload: {
+      ...(atual.payload || {}),
+      workflow: {
+        ...((atual.payload || {}).workflow || {}),
+        ultima_acao: selected.acao,
+        ultima_etapa: selected.to,
+        ultimo_usuario_id: user?.id || null,
+        movimentado_em: now,
+        motivo: payload.motivo || null
+      }
+    }
+  };
+
+  if (selected.to === 'em_execucao') updatePayload.inicio_execucao = atual.inicio_execucao || now;
+  if (selected.to === 'em_execucao' && user?.perfil === 'tecnico' && !atual.responsavel_id) updatePayload.responsavel_id = user.id;
+  if (selected.to === 'concluida_tecnicos' || selected.to === 'concluida_arquivada') updatePayload.fim_execucao = atual.fim_execucao || now;
+  if (selected.to === 'nao_conforme') updatePayload.motivo_cancelamento = payload.motivo;
+
+  const { data, error } = await supabase.from('ordens_servico').update(updatePayload).eq('id', id).select(OS_SELECT).single();
+  if (error) throw new Error(error.message);
+
+  await registrarHistoricoOS(id, {
+    usuario_id: user?.id,
+    acao: selected.acao,
+    status_anterior: atual.status,
+    status_novo: selected.to,
+    descricao: payload.comentario || selected.descricao,
+    metadata: {
+      etapa: selected.to,
+      motivo: payload.motivo || null,
+      comentario: payload.comentario || null
+    }
+  });
+
+  if (payload.comentario) {
+    await criarComentarioOS(id, `[${statusLabel(selected.to)}] ${payload.comentario}`, user, false, selected.to);
+  }
+
+  await notificarMovimentacaoOS(data, selected, user, payload.motivo);
   return data;
 }
 
 export async function listarHistoricoOS(osId) {
   const { data, error } = await supabase
     .from('os_historico')
-    .select('*, usuario:usuarios(id,nome,usuario,perfil)')
+    .select('*, usuario:usuarios!os_historico_usuario_id_fkey(id,nome,usuario,perfil)')
     .eq('os_id', osId)
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
@@ -306,7 +464,7 @@ export async function registrarHistoricoOS(osId, payload) {
 export async function listarComentariosOS(osId) {
   const { data, error } = await supabase
     .from('comentarios')
-    .select('*, usuario:usuarios(id,nome,usuario,perfil)')
+    .select('*, usuario:usuarios!comentarios_usuario_id_fkey(id,nome,usuario,perfil)')
     .eq('entidade_tipo', 'ordem_servico')
     .eq('entidade_id', osId)
     .is('deleted_at', null)
@@ -315,7 +473,7 @@ export async function listarComentariosOS(osId) {
   return data || [];
 }
 
-export async function criarComentarioOS(osId, comentario, user, interno = false) {
+export async function criarComentarioOS(osId, comentario, user, interno = false, etapa = null) {
   const { data, error } = await supabase
     .from('comentarios')
     .insert({
@@ -325,7 +483,7 @@ export async function criarComentarioOS(osId, comentario, user, interno = false)
       comentario,
       interno
     })
-    .select('*, usuario:usuarios(id,nome,usuario,perfil)')
+    .select('*, usuario:usuarios!comentarios_usuario_id_fkey(id,nome,usuario,perfil)')
     .single();
 
   if (error) throw new Error(error.message);
@@ -333,7 +491,9 @@ export async function criarComentarioOS(osId, comentario, user, interno = false)
   await registrarHistoricoOS(osId, {
     usuario_id: user?.id,
     acao: 'comentario',
-    descricao: 'Comentário adicionado à OS.'
+    status_novo: etapa,
+    descricao: etapa ? `Comentário adicionado na etapa ${statusLabel(etapa)}.` : 'Comentário adicionado à OS.',
+    metadata: etapa ? { etapa } : {}
   });
 
   return data;
@@ -412,17 +572,60 @@ export async function obterDashboardOS({ perfil, userId } = {}) {
   const rows = data || [];
   const byStatus = countBy(rows, 'status');
   const byPrioridade = countBy(rows, 'prioridade');
-  const abertas = rows.filter((os) => !['concluida', 'cancelada', 'rejeitada', 'arquivada', 'finalizada'].includes(os.status)).length;
-  const atrasadas = rows.filter((os) => os.data_programada && new Date(os.data_programada) < startOfToday() && !['concluida', 'cancelada', 'rejeitada'].includes(os.status)).length;
+  const abertas = rows.filter((os) => !OS_FINAL_STATUSES.includes(os.status)).length;
+  const atrasadas = rows.filter((os) => os.data_programada && new Date(os.data_programada) < startOfToday() && !OS_FINAL_STATUSES.includes(os.status)).length;
 
   return {
     total: rows.length,
     abertas,
-    concluidas: byStatus.concluida || 0,
+    concluidas: byStatus.concluida_arquivada || byStatus.concluida || 0,
     atrasadas,
     byStatus,
     byPrioridade
   };
+}
+
+async function notificarMovimentacaoOS(os, actionConfig, user, motivo = '') {
+  const map = {
+    analise_supervisor: { perfil_destino: 'supervisor', titulo: 'OS em análise' },
+    programada: { perfil_destino: 'supervisor', titulo: 'OS programada' },
+    encaminhada_tecnicos: { usuario_id: os.responsavel_id || null, perfil_destino: os.responsavel_id ? null : 'tecnico', titulo: 'OS encaminhada para execução' },
+    em_execucao: { perfil_destino: 'supervisor', titulo: 'Execução iniciada' },
+    concluida_tecnicos: { perfil_destino: 'supervisor', titulo: 'Execução técnica concluída' },
+    validacao_supervisor: { perfil_destino: 'supervisor', titulo: 'OS em validação' },
+    aguardando_validacao_prefeitura: { usuario_id: os.solicitante_id || null, perfil_destino: os.solicitante_id ? null : 'prefeitura', titulo: 'OS enviada para validação' },
+    nao_conforme: { perfil_destino: 'supervisor', titulo: 'OS não conforme' },
+    concluida_arquivada: { perfil_destino: 'supervisor', titulo: 'OS concluída e arquivada' }
+  };
+
+  const target = map[actionConfig.to];
+  if (!target) return;
+
+  await criarNotificacaoOS(os, {
+    ...target,
+    mensagem: `${os.numero} - ${statusLabel(actionConfig.to)}.${motivo ? ` Motivo: ${motivo}` : ''}`,
+    tipo: actionConfig.requiresMotivo || actionConfig.to === 'nao_conforme' ? 'alerta' : 'info',
+    created_by: user?.id || null
+  });
+}
+
+async function criarNotificacaoOS(os, payload) {
+  const { error } = await supabase.from('notificacoes').insert({
+    usuario_id: payload.usuario_id || null,
+    perfil_destino: payload.perfil_destino || null,
+    titulo: payload.titulo,
+    mensagem: payload.mensagem,
+    tipo: payload.tipo || 'info',
+    entidade_tipo: 'ordem_servico',
+    entidade_id: os.id
+  });
+
+  if (error) throwSupabaseError(error);
+}
+
+function throwSupabaseError(error) {
+  const parts = [error.message, error.details, error.hint].filter(Boolean);
+  throw new Error(parts.join(' '));
 }
 
 function gerarNumeroOS() {

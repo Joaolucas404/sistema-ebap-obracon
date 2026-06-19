@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCcw, RotateCcw, Save, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Plus, RefreshCcw, RotateCcw, Save, ShieldOff, ShieldCheck, Trash2 } from 'lucide-react';
 import Modal from '../components/ui/Modal.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
@@ -9,6 +9,7 @@ import {
   atualizarUsuario,
   criarUsuario,
   desativarUsuario,
+  excluirUsuario,
   listarUsuarios,
   reativarUsuario,
   resetarSenha
@@ -40,6 +41,7 @@ export default function Usuarios() {
   const [novaSenha, setNovaSenha] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [error, setError] = useState('');
+  const canDeleteUsers = currentUser?.perfil === 'diretoria';
 
   const ativos = useMemo(() => usuarios.filter((usuario) => usuario.ativo).length, [usuarios]);
 
@@ -134,6 +136,33 @@ export default function Usuarios() {
       await carregarUsuarios();
     } catch (err) {
       setError(err.message || 'Não foi possível alterar o status.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openDelete(user) {
+    setModal({ type: 'delete', user });
+    setError('');
+  }
+
+  async function handleDeleteUser() {
+    if (!modal.user) return;
+    if (modal.user.id === currentUser?.id) {
+      setError('Você não pode excluir o próprio usuário logado.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    try {
+      await excluirUsuario(modal.user.id, currentUser?.id);
+      setToast({ message: 'Usuário excluído.', tone: 'orange' });
+      await carregarUsuarios();
+      closeModal();
+    } catch (err) {
+      setError(err.message || 'Não foi possível excluir o usuário.');
     } finally {
       setSaving(false);
     }
@@ -245,6 +274,17 @@ export default function Usuarios() {
                           {usuario.ativo ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
                           {usuario.ativo ? 'Desativar' : 'Reativar'}
                         </button>
+                        {canDeleteUsers && (
+                          <button
+                            className="danger-button min-h-10 px-3"
+                            type="button"
+                            onClick={() => openDelete(usuario)}
+                            disabled={saving || usuario.id === currentUser?.id}
+                          >
+                            <Trash2 size={15} />
+                            Excluir
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -333,6 +373,24 @@ export default function Usuarios() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={modal.type === 'delete'} title={`Excluir usuário - ${modal.user?.nome || ''}`} onClose={closeModal}>
+        <div className="grid gap-4">
+          <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">
+            Esta ação remove o usuário das listas e impede novo login, mantendo o histórico já registrado no sistema.
+          </div>
+          {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
+          <div className="flex justify-end gap-2">
+            <button className="secondary-button" type="button" onClick={closeModal}>
+              Cancelar
+            </button>
+            <button className="danger-button" type="button" onClick={handleDeleteUser} disabled={saving}>
+              <Trash2 size={17} />
+              Excluir usuário
+            </button>
+          </div>
+        </div>
       </Modal>
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />

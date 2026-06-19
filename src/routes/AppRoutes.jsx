@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout.jsx';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import { useAuthStore } from '../store/authStore.js';
+import ArquivoRelatorios from '../pages/ArquivoRelatorios.jsx';
 import CcoRelatoriosDiarios from '../pages/CcoRelatoriosDiarios.jsx';
 import Config from '../pages/Config.jsx';
 import Dashboard from '../pages/Dashboard.jsx';
@@ -149,7 +150,13 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {placeholders.filter((page) => page.path !== '/cco-relatorios-diarios').map((page) => (
+      <Route element={<ProtectedRoute permission="arquivoRelatorios" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/arquivo-relatorios" element={<ArquivoRelatorios />} />
+        </Route>
+      </Route>
+
+      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/arquivo-relatorios'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />

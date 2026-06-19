@@ -14,6 +14,7 @@ alter table public.os_historico enable row level security;
 alter table public.comentarios enable row level security;
 alter table public.anexos enable row level security;
 alter table public.arquivo_pdf enable row level security;
+alter table public.archive_documents enable row level security;
 alter table public.almoxarifado_locais enable row level security;
 alter table public.almoxarifado_itens enable row level security;
 alter table public.movimentacoes_estoque enable row level security;
@@ -112,6 +113,8 @@ create policy "comentarios_rw_profiles" on public.comentarios for all using (del
 create policy "anexos_rw_profiles" on public.anexos for all using (deleted_at is null and public.can_read_operational()) with check (public.can_read_operational());
 create policy "arquivo_pdf_read_profiles" on public.arquivo_pdf for select using (deleted_at is null and public.can_read_operational());
 create policy "arquivo_pdf_write_profiles" on public.arquivo_pdf for all using (public.current_app_role() in ('cco','supervisor','gerencia','diretoria','financeiro','administrativo','service_role')) with check (true);
+create policy "archive_documents_read_profiles" on public.archive_documents for select using (deleted_at is null and public.can_read_operational());
+create policy "archive_documents_write_profiles" on public.archive_documents for all using (public.can_read_operational()) with check (public.can_read_operational());
 
 create policy "almox_read_profiles" on public.almoxarifado_itens for select using (deleted_at is null and public.current_app_role() in ('almoxarifado','supervisor','gerencia','diretoria','administrativo','sst','financeiro','service_role'));
 create policy "almox_write_profiles" on public.almoxarifado_itens for all using (public.current_app_role() in ('almoxarifado','gerencia','diretoria','service_role')) with check (true);
@@ -147,3 +150,114 @@ create policy "notificacoes_insert_system" on public.notificacoes for insert wit
 create policy "notificacoes_update_owner" on public.notificacoes for update using (usuario_id = public.current_app_user_id() or public.is_admin_role()) with check (true);
 create policy "auditoria_admin_read" on public.auditoria for select using (public.is_admin_role());
 create policy "auditoria_insert_system" on public.auditoria for insert with check (true);
+
+create or replace function public.soft_delete_usuario_diretoria(
+  p_usuario_alvo_id uuid,
+  p_usuario_executor_id uuid
+)
+returns table (
+  id uuid,
+  usuario text,
+  nome text,
+  perfil text,
+  setor text,
+  ativo boolean,
+  ultimo_login timestamptz,
+  criado_por uuid,
+  criado_em timestamptz,
+  atualizado_em timestamptz,
+  deleted_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  executor_perfil text;
+begin
+  select u.perfil
+    into executor_perfil
+  from public.usuarios u
+  where u.id = p_usuario_executor_id
+    and u.deleted_at is null
+    and u.ativo = true;
+
+  if executor_perfil <> 'diretoria' then
+    raise exception 'Apenas Diretoria pode excluir usuários.';
+  end if;
+
+  if p_usuario_alvo_id = p_usuario_executor_id then
+    raise exception 'Você não pode excluir o próprio usuário logado.';
+  end if;
+
+  return query
+  update public.usuarios u
+     set ativo = false,
+         deleted_at = now(),
+         deleted_by = p_usuario_executor_id,
+         atualizado_em = now()
+   where u.id = p_usuario_alvo_id
+     and u.deleted_at is null
+  returning u.id, u.usuario, u.nome, u.perfil, u.setor, u.ativo, u.ultimo_login, u.criado_por, u.criado_em, u.atualizado_em, u.deleted_at;
+end;
+$$;
+
+create or replace function public.soft_delete_os_diretoria(
+  p_os_id uuid,
+  p_usuario_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  executor_perfil text;
+  status_atual text;
+begin
+  select u.perfil
+    into executor_perfil
+  from public.usuarios u
+  where u.id = p_usuario_id
+    and u.deleted_at is null
+    and u.ativo = true;
+
+  if executor_perfil <> 'diretoria' then
+    raise exception 'Apenas Diretoria pode excluir OS.';
+  end if;
+
+  select os.status
+    into status_atual
+  from public.ordens_servico os
+  where os.id = p_os_id
+    and os.deleted_at is null;
+
+  if status_atual is null then
+    raise exception 'OS não encontrada ou já excluída.';
+  end if;
+
+  update public.ordens_servico
+     set deleted_at = now(),
+         deleted_by = p_usuario_id
+   where id = p_os_id;
+
+  insert into public.os_historico (
+    os_id,
+    usuario_id,
+    acao,
+    status_anterior,
+    status_novo,
+    descricao,
+    metadata
+  )
+  values (
+    p_os_id,
+    p_usuario_id,
+    'excluida',
+    status_atual,
+    status_atual,
+    'OS excluída logicamente pela Diretoria.',
+    jsonb_build_object('deleted_at', now())
+  );
+end;
+$$;

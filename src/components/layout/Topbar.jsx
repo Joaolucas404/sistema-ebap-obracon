@@ -1,4 +1,5 @@
-import { LogOut, Shield } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Clock3, LogOut, Shield } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MENU_ITEMS } from '../../config/menu.js';
 import { useAuthStore } from '../../store/authStore.js';
@@ -27,6 +28,28 @@ export default function Topbar() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const current = MENU_ITEMS.find((item) => item.path === location.pathname);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const clock = useMemo(() => {
+    const date = new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(now);
+    const time = new Intl.DateTimeFormat('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).format(now);
+
+    return { date, time };
+  }, [now]);
 
   function handleLogout() {
     logout();
@@ -51,6 +74,11 @@ export default function Topbar() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-navy-950/35 px-3 py-2 text-xs font-black text-cyan-100">
+          <Clock3 size={15} />
+          <span className="hidden sm:inline">{clock.date}</span>
+          {clock.time}
+        </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-xs font-black text-cyan-100">
           <Shield size={15} />
           {user?.nome} • {prettyRole(user?.perfil)}

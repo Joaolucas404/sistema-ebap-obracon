@@ -198,7 +198,7 @@ create table public.ordens_servico (
   descricao text not null,
   area text,
   prioridade text not null default 'media' check (prioridade in ('baixa','media','alta','urgente','critica')),
-  status text not null default 'aberta' check (status in ('aberta','em_analise','enviada_cco','validada_cco','devolvida_cco','programada','em_execucao','aguardando_material','execucao_concluida','aguardando_supervisor','nao_conforme','aguardando_prefeitura','concluida','finalizada','arquivada','rejeitada','cancelada')),
+  status text not null default 'solicitada_prefeitura' check (status in ('solicitada_prefeitura','aguardando_supervisor','analise_supervisor','programada','encaminhada_tecnicos','em_execucao','concluida_tecnicos','validacao_supervisor','enviada_prefeitura','aguardando_validacao_prefeitura','nao_conforme','concluida_arquivada','aberta','em_analise','enviada_cco','validada_cco','devolvida_cco','aguardando_material','execucao_concluida','aguardando_prefeitura','concluida','finalizada','arquivada','rejeitada','cancelada')),
   equipe_responsavel text,
   data_programada date,
   hora_programada time,
@@ -278,6 +278,23 @@ create table public.arquivo_pdf (
   mes integer check (mes is null or mes between 1 and 12),
   ano integer check (ano is null or ano between 2000 and 2100),
   gerado_por uuid references public.usuarios(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
+  deleted_by uuid references public.usuarios(id) on delete set null,
+  unique (bucket, path)
+);
+
+create table public.archive_documents (
+  id uuid primary key default gen_random_uuid(),
+  entity_type text not null check (entity_type in ('relatorio_diario','ordem_servico','medicao','sst','compra','contrato')),
+  entity_id uuid not null,
+  document_number text not null unique,
+  title text not null,
+  bucket text not null default 'pdf-archive',
+  path text not null,
+  generated_by uuid references public.usuarios(id) on delete set null,
+  payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,

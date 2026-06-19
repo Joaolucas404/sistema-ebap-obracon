@@ -6,21 +6,23 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import Toast from '../components/ui/Toast.jsx';
 import OSCard from '../components/os/OSCard.jsx';
 import OSFilters from '../components/os/OSFilters.jsx';
-import OSEquipmentSelector from '../components/os/OSEquipmentSelector.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import {
   criarOS,
+  excluirOS,
   listarEbaps,
   listarOS,
   listarResponsaveis,
   obterDashboardOS,
+  OS_AREAS,
   OS_PRIORIDADES,
-  podeCriarOS
+  podeCriarOS,
+  podeExcluirOS
 } from '../services/osService.js';
 
 const emptyForm = {
   ebap_id: '',
-  equipamento_id: '',
+  equipamento_falha: '',
   titulo: '',
   descricao: '',
   prioridade: 'media',
@@ -48,6 +50,7 @@ export default function OrdensServico() {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / filters.pageSize)), [count, filters.pageSize]);
   const canCreate = podeCriarOS(user?.perfil);
+  const canDelete = podeExcluirOS(user?.perfil);
 
   async function loadBase() {
     const [ebapRows, responsavelRows] = await Promise.all([listarEbaps(), listarResponsaveis()]);
@@ -93,16 +96,38 @@ export default function OrdensServico() {
 
   async function handleCreate(event) {
     event.preventDefault();
+    const equipamentoFalha = form.equipamento_falha.trim();
+    if (equipamentoFalha.length < 3 || equipamentoFalha.length > 150) {
+      setError('Informe o equipamento com falha com 3 a 150 caracteres.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
-      await criarOS(form, user);
+      await criarOS({ ...form, equipamento_falha: equipamentoFalha }, user);
       setToast({ message: 'OS criada com sucesso.', tone: 'green' });
       setModalOpen(false);
       setForm(emptyForm);
       await loadOS();
     } catch (err) {
       setError(err.message || 'Não foi possível criar a OS.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteOS(os) {
+    const confirmed = window.confirm(`Excluir a OS ${os.numero}? Ela sairá da lista, mas o histórico será mantido.`);
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError('');
+    try {
+      await excluirOS(os.id, user);
+      setToast({ message: 'OS excluída.', tone: 'orange' });
+      await loadOS();
+    } catch (err) {
+      setError(err.message || 'Não foi possível excluir a OS.');
     } finally {
       setSaving(false);
     }
@@ -148,7 +173,7 @@ export default function OrdensServico() {
         {loading ? (
           <div className="glass-card rounded-3xl p-8 text-center text-slate-300">Carregando ordens de serviço...</div>
         ) : items.length ? (
-          items.map((os) => <OSCard key={os.id} os={os} />)
+          items.map((os) => <OSCard key={os.id} os={os} canDelete={canDelete} onDelete={handleDeleteOS} />)
         ) : (
           <div className="glass-card rounded-3xl p-8 text-center">
             <Search className="mx-auto text-cyan-200" size={34} />
@@ -175,11 +200,29 @@ export default function OrdensServico() {
       <Modal open={modalOpen} title="Nova Ordem de Serviço" onClose={() => setModalOpen(false)}>
         <form className="grid gap-4" onSubmit={handleCreate}>
           <div className="grid gap-4 md:grid-cols-2">
-            <OSEquipmentSelector
-              ebapId={form.ebap_id}
-              equipamentoId={form.equipamento_id}
-              onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
-            />
+            <label className="field-label">
+              EBAP
+              <select className="form-control" value={form.ebap_id} onChange={(event) => updateForm('ebap_id', event.target.value)} required>
+                <option value="">Selecione...</option>
+                {ebaps.map((ebap) => (
+                  <option key={ebap.id} value={ebap.id}>
+                    {ebap.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field-label">
+              Equipamento com falha
+              <input
+                className="form-control"
+                value={form.equipamento_falha}
+                onChange={(event) => updateForm('equipamento_falha', event.target.value)}
+                minLength={3}
+                maxLength={150}
+                placeholder="Ex.: Bomba 02, painel elétrico, comporta norte..."
+                required
+              />
+            </label>
             <label className="field-label">
               Prioridade
               <select className="form-control" value={form.prioridade} onChange={(event) => updateForm('prioridade', event.target.value)}>
@@ -191,8 +234,15 @@ export default function OrdensServico() {
               </select>
             </label>
             <label className="field-label">
-              Área
-              <input className="form-control" value={form.area} onChange={(event) => updateForm('area', event.target.value)} placeholder="Elétrica, mecânica, automação..." />
+              Área de atuação
+              <select className="form-control" value={form.area} onChange={(event) => updateForm('area', event.target.value)} required>
+                <option value="">Selecione...</option>
+                {OS_AREAS.map((area) => (
+                  <option key={area.value} value={area.value}>
+                    {area.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="field-label md:col-span-2">
               Título

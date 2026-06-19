@@ -81,6 +81,7 @@ export async function buscarRascunhoOperador(userId) {
 export async function criarRascunhoRelatorio({ ebapId, user }) {
   const now = new Date();
   const codigo = gerarCodigoRelatorio(now);
+  const initialPayload = blankPayload();
   const { data, error } = await supabase
     .from('relatorios_diarios')
     .insert({
@@ -91,13 +92,13 @@ export async function criarRascunhoRelatorio({ ebapId, user }) {
       inicio_em: now.toISOString(),
       status: 'rascunho',
       created_by: user?.id || null,
-      payload: blankPayload()
+      payload: initialPayload
     })
     .select(RELATORIO_SELECT)
     .single();
 
   if (error) throw new Error(error.message);
-  await salvarSecoes(data.id, blankPayload());
+  await salvarSecoes(data.id, initialPayload);
   return data;
 }
 
@@ -196,6 +197,16 @@ export async function listarFotosRelatorio(relatorioId) {
   return data || [];
 }
 
+export async function listarValidacoesRelatorio(relatorioId) {
+  const { data, error } = await supabase
+    .from('validacoes_cco')
+    .select('*, operador_cco:usuarios!validacoes_cco_operador_cco_id_fkey(id,nome,usuario,perfil)')
+    .eq('relatorio_id', relatorioId)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 export async function obterUrlFotoRelatorio(foto) {
   const { data, error } = await supabase.storage.from(foto.bucket).createSignedUrl(foto.path, 3600);
   if (error) throw new Error(error.message);
@@ -245,26 +256,27 @@ async function salvarItensRelatorio(relatorioId, payload) {
 
 export function blankPayload() {
   return {
-    dados: { turno: '', clima: '', nivel_geral: '', observacao: '' },
+    dados: { turno: getTurnoAtual(), clima: '', nivel_geral: '', observacao: '' },
     operacao: { items: [], observacao: '' },
-    bombas: { items: [], observacao: '' },
-    rastelos: { items: [], observacao: '' },
-    comportas: { items: [], observacao: '' },
+    bombas: { quantidade: 0, items: [], observacao: '' },
+    rastelos: { quantidade: 0, items: [], observacao: '' },
+    comportas: { quantidade: 0, items: [], observacao: '' },
     eletrocentro: { items: [], observacao: '' },
-    geradores: { items: [], observacao: '' },
+    geradores: { quantidade: 0, items: [], observacao: '' },
     cco: { comunicacao: '', supervisao: '', alarmes: '', observacao: '' },
     ocorrencias: { houve: 'nao', prioridade: 'baixa', descricao: '', conclusao: '' },
     fotos: { observacao: '' }
   };
 }
 
+export function getTurnoAtual(date = new Date()) {
+  const hour = date.getHours();
+  return hour >= 6 && hour < 18 ? '06-18' : '18-06';
+}
+
 export function prepararPayloadEquipamentos(payload, equipamentos) {
   const byType = {
-    bombas: ['bomba'],
-    rastelos: ['rastelo'],
-    comportas: ['comporta'],
     eletrocentro: ['eletrocentro', 'sensor', 'cco'],
-    geradores: ['gerador'],
     operacao: []
   };
 

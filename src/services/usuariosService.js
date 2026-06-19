@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { supabase } from '../lib/supabase.js';
 import { normalizePerfil } from '../config/permissions.js';
 
-const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, ativo, ultimo_login, criado_por, criado_em, atualizado_em';
+const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
 
 function normalizePayload(payload) {
   return {
@@ -15,7 +15,7 @@ function normalizePayload(payload) {
 }
 
 export async function listarUsuarios() {
-  const { data, error } = await supabase.from('usuarios').select(SELECT_FIELDS).order('nome', { ascending: true });
+  const { data, error } = await supabase.from('usuarios').select(SELECT_FIELDS).is('deleted_at', null).order('nome', { ascending: true });
 
   if (error) {
     throw new Error(error.message);
@@ -77,6 +77,18 @@ export async function desativarUsuario(id) {
 
 export async function reativarUsuario(id) {
   return atualizarStatusUsuario(id, true);
+}
+
+export async function excluirUsuario(id, deletedBy) {
+  const { data, error } = await supabase.rpc('soft_delete_usuario_diretoria', {
+    p_usuario_alvo_id: id,
+    p_usuario_executor_id: deletedBy || null
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data?.[0] || null;
 }
 
 async function atualizarStatusUsuario(id, ativo) {

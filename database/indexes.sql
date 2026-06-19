@@ -20,6 +20,7 @@ create index if not exists idx_comentarios_entidade on public.comentarios(entida
 create index if not exists idx_anexos_entidade on public.anexos(entidade_tipo, entidade_id) where deleted_at is null;
 create index if not exists idx_arquivo_pdf_entidade on public.arquivo_pdf(entidade_tipo, entidade_id) where deleted_at is null;
 create index if not exists idx_arquivo_pdf_periodo on public.arquivo_pdf(ano, mes, data_documento desc) where deleted_at is null;
+create index if not exists idx_archive_documents_entity on public.archive_documents(entity_type, entity_id) where deleted_at is null;
 create index if not exists idx_almox_itens_categoria on public.almoxarifado_itens(categoria) where deleted_at is null;
 create index if not exists idx_movimentacoes_item_data on public.movimentacoes_estoque(item_id, created_at desc);
 create index if not exists idx_compras_status on public.compras(status) where deleted_at is null;
