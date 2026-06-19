@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { obterDadosGerenciaisEbap } from '../data/relatorioGerencialEbaps.js';
 
 const FINAL_OS_STATUSES = ['concluida_arquivada', 'concluida', 'finalizada', 'arquivada', 'cancelada', 'rejeitada'];
 const ACTIVE_OS_STATUSES = [
@@ -97,10 +98,14 @@ function countBy(rows, key) {
 }
 
 function getEbapCriticidade(ebap, ordens) {
+  const gerencial = obterDadosGerenciaisEbap(ebap);
   const os = ordens.filter((ordem) => ordem.ebap_id === ebap.id);
   const criticas = os.filter((ordem) => ordem.prioridade === 'critica').length;
   const emExecucao = os.filter((ordem) => ordem.status === 'em_execucao').length;
 
+  if (gerencial?.statusDashboard === 'critico') return { nivel: 'critico', score: 95, label: 'Critica' };
+  if (gerencial?.statusDashboard === 'atencao') return { nivel: 'atencao', score: 62, label: 'Atencao' };
+  if (gerencial?.statusDashboard === 'normal') return { nivel: 'normal', score: 18, label: 'Normal' };
   if (ebap.status === 'critico' || criticas > 0) return { nivel: 'critico', score: 95, label: 'Critica' };
   if (ebap.status === 'atencao' || os.length >= 3 || emExecucao > 0) return { nivel: 'atencao', score: 62, label: 'Atencao' };
   return { nivel: 'normal', score: 18, label: 'Normal' };
@@ -199,6 +204,7 @@ export async function obterDashboardExecutivo() {
     },
     ebaps: ebaps.map((ebap) => ({
       ...ebap,
+      gerencial: obterDadosGerenciaisEbap(ebap),
       ordensAbertas: activeOsRows.filter((ordem) => ordem.ebap_id === ebap.id).length,
       criticidade: getEbapCriticidade(ebap, activeOsRows)
     })),

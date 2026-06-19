@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, ClipboardList, Clock3, Factory, RefreshCcw, ShieldAlert } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, ClipboardList, Clock3, Factory, FileText, RefreshCcw, ShieldAlert, X } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import KpiCard from '../components/ui/KpiCard.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -79,10 +79,121 @@ function EmptyPanel({ text = 'Sem dados para exibir.' }) {
   return <div className="grid h-full place-items-center rounded-2xl border border-cyan-300/15 bg-navy-950/45 text-sm font-bold text-slate-300">{text}</div>;
 }
 
+function EquipmentRatio({ label, value }) {
+  const [available, total] = String(value || '-').split('/');
+  const percentage = value && value !== '-' && total ? Math.round((Number(available) / Number(total)) * 100) : null;
+
+  return (
+    <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+      <span className="text-xs font-black uppercase text-slate-400">{label}</span>
+      <strong className="mt-1 block text-2xl text-white">{value || '-'}</strong>
+      {percentage !== null && (
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-navy-950">
+          <div className="h-full rounded-full bg-cyan-300" style={{ width: `${percentage}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function calcularDisponibilidadeGerencial(gerencial) {
+  const ratios = Object.values(gerencial?.grupos || {});
+  return ratios.reduce(
+    (acc, value) => {
+      if (!value || value === '-') return acc;
+      const [available, total] = String(value).split('/').map(Number);
+      if (!Number.isFinite(available) || !Number.isFinite(total)) return acc;
+      return {
+        disponiveis: acc.disponiveis + available,
+        existentes: acc.existentes + total
+      };
+    },
+    { disponiveis: 0, existentes: 0 }
+  );
+}
+
+function EbapDetailPanel({ ebap, onClose }) {
+  if (!ebap) return null;
+  const gerencial = ebap.gerencial;
+  const calculo = calcularDisponibilidadeGerencial(gerencial);
+  const disponibilidadeCalculada = calculo.existentes ? ((calculo.disponiveis / calculo.existentes) * 100).toFixed(1) : '-';
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-3 backdrop-blur-sm" onClick={onClose}>
+      <section className="max-h-[88vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-cyan-300/25 bg-[#08245a] p-5 shadow-2xl shadow-black/40" onClick={(event) => event.stopPropagation()}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-cyan-400/10 text-cyan-100">
+            <FileText size={24} />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-white">{ebap.nome_curto || ebap.nome}</h3>
+            <p className="text-sm text-slate-300">Disponibilidade calculada e classificacao operacional do Relatorio Gerencial de 08/05/2026.</p>
+          </div>
+        </div>
+        <button type="button" className="secondary-button" onClick={onClose}>
+          <X size={17} />
+          Fechar
+        </button>
+      </div>
+
+      {gerencial ? (
+        <>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+              <span className="text-xs font-black uppercase text-slate-400">Disponibilidade calculada</span>
+              <strong className="mt-1 block text-3xl text-white">{gerencial.disponibilidade.toFixed(1)}%</strong>
+              <small className="text-slate-300">
+                {calculo.disponiveis}/{calculo.existentes} equipamentos = {disponibilidadeCalculada}%
+              </small>
+            </div>
+            <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+              <span className="text-xs font-black uppercase text-slate-400">Classificacao operacional</span>
+              <strong className="mt-1 block text-3xl text-white">{gerencial.statusRelatorio}</strong>
+              <small className="text-slate-300">Pode ser critica mesmo com percentual alto</small>
+            </div>
+            <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+              <span className="text-xs font-black uppercase text-slate-400">Alerta visual no dashboard</span>
+              <strong className="mt-1 block text-3xl text-white">{ebap.criticidade?.score || 0}%</strong>
+              <small className="text-slate-300">Escala visual: vermelho, amarelo ou verde</small>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <EquipmentRatio label="Bombas" value={gerencial.grupos.bombas} />
+            <EquipmentRatio label="Comportas" value={gerencial.grupos.comportas} />
+            <EquipmentRatio label="Rastelos" value={gerencial.grupos.rastelos} />
+            <EquipmentRatio label="Comp. Rastelo" value={gerencial.grupos.comportaRastelo} />
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+            <span className="text-xs font-black uppercase text-slate-400">Por que essa classificacao?</span>
+            <p className="mt-2 text-sm leading-6 text-slate-200">{gerencial.motivo}</p>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-cyan-300/15 bg-cyan-400/10 p-4">
+            <span className="text-xs font-black uppercase text-cyan-100">Como ler esses numeros</span>
+            <p className="mt-2 text-sm leading-6 text-slate-200">
+              A disponibilidade e a conta matematica do relatorio: equipamentos disponiveis divididos por equipamentos existentes.
+              O alerta visual nao e essa disponibilidade; ele traduz a classificacao operacional do relatorio: Critica = 95%, Atencao = 62% e Adequada = 18%.
+            </p>
+          </div>
+        </>
+      ) : (
+        <div className="mt-5 rounded-2xl border border-orange-300/25 bg-orange-400/10 p-4 text-sm font-bold text-orange-100">
+          Esta EBAP ainda nao possui correspondencia no Relatorio_Gerencial.docx.
+        </div>
+      )}
+      </section>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedEbap, setSelectedEbap] = useState(null);
 
   async function loadDashboard() {
     setLoading(true);
@@ -137,7 +248,7 @@ export default function Dashboard() {
         <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <h3 className="text-xl font-black text-white">Situacao das EBAPs</h3>
-            <p className="text-sm text-slate-300">Status operacional, OS abertas e criticidade por unidade.</p>
+            <p className="text-sm text-slate-300">Clique em uma unidade para ver disponibilidade calculada, classificacao operacional e justificativa do relatorio.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge tone="green">{criticidade.normais} normais</StatusBadge>
@@ -151,13 +262,20 @@ export default function Dashboard() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {(data?.ebaps || []).map((ebap) => (
-              <article key={ebap.id} className={`rounded-2xl border bg-gradient-to-br p-4 ${ebapColor(ebap.status)}`}>
+              <button
+                key={ebap.id}
+                type="button"
+                className={`rounded-2xl border bg-gradient-to-br p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-200/70 focus:outline-none focus:ring-2 focus:ring-cyan-300 ${ebapColor(ebap.gerencial?.statusDashboard || ebap.status)}`}
+                onClick={() => setSelectedEbap(ebap)}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <strong className="block text-lg text-white">{ebap.nome_curto || ebap.nome}</strong>
                     <span className="text-xs font-bold uppercase text-slate-300">{ebap.bairro || ebap.codigo || 'EBAP'}</span>
                   </div>
-                  <StatusBadge tone={ebapTone(ebap.status)}>{ebap.status === 'atencao' ? 'Amarelo' : ebap.status === 'critico' ? 'Vermelho' : 'Verde'}</StatusBadge>
+                  <StatusBadge tone={ebapTone(ebap.gerencial?.statusDashboard || ebap.status)}>
+                    {(ebap.gerencial?.statusDashboard || ebap.status) === 'atencao' ? 'Amarelo' : (ebap.gerencial?.statusDashboard || ebap.status) === 'critico' ? 'Vermelho' : 'Verde'}
+                  </StatusBadge>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-navy-950/55 p-3">
@@ -165,21 +283,28 @@ export default function Dashboard() {
                     <strong className="mt-1 block text-2xl text-white">{ebap.ordensAbertas}</strong>
                   </div>
                   <div className="rounded-2xl bg-navy-950/55 p-3">
-                    <span className="text-xs font-black uppercase text-slate-400">Criticidade</span>
+                    <span className="text-xs font-black uppercase text-slate-400">Alerta operacional</span>
                     <strong className="mt-1 block text-2xl text-white">{ebap.criticidade?.score || 0}%</strong>
                   </div>
                 </div>
+                {ebap.gerencial && (
+                  <div className="mt-3 rounded-2xl bg-navy-950/35 px-3 py-2 text-xs font-bold text-slate-200">
+                    Disponibilidade calculada: {ebap.gerencial.disponibilidade.toFixed(1)}%
+                  </div>
+                )}
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-navy-950/80">
                   <div
                     className={`h-full rounded-full ${ebap.criticidade?.nivel === 'critico' ? 'bg-red-400' : ebap.criticidade?.nivel === 'atencao' ? 'bg-yellow-300' : 'bg-green-400'}`}
                     style={{ width: `${ebap.criticidade?.score || 0}%` }}
                   />
                 </div>
-              </article>
+              </button>
             ))}
           </div>
         )}
       </section>
+
+      <EbapDetailPanel ebap={selectedEbap} onClose={() => setSelectedEbap(null)} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartCard title="OS por Status" subtitle="Distribuicao das ordens por etapa do fluxo.">
