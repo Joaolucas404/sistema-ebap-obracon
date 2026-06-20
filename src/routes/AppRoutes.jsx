@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout.jsx';
+import Almoxarifado from '../pages/Almoxarifado.jsx';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import ArquivoRelatorios from '../pages/ArquivoRelatorios.jsx';
@@ -11,6 +12,7 @@ import Login from '../pages/Login.jsx';
 import OrdensServico from '../pages/OrdensServico.jsx';
 import PlaceholderPage from '../pages/PlaceholderPage.jsx';
 import RelatorioDiario from '../pages/RelatorioDiario.jsx';
+import SST from '../pages/SST.jsx';
 import Unauthorized from '../pages/Unauthorized.jsx';
 import Usuarios from '../pages/Usuarios.jsx';
 
@@ -156,7 +158,19 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/arquivo-relatorios'].includes(page.path)).map((page) => (
+      <Route element={<ProtectedRoute permission="almoxarifado" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/almoxarifado" element={<Almoxarifado />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="sst" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/sst" element={<SST />} />
+        </Route>
+      </Route>
+
+      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/arquivo-relatorios', '/almoxarifado', '/sst'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />
