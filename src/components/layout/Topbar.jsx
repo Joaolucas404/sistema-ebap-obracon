@@ -87,32 +87,33 @@ export default function Topbar() {
   }
 
   return (
-    <header className="glass-card mx-auto mb-4 grid max-w-[1400px] gap-3 rounded-3xl px-4 py-3 xl:grid-cols-[260px_minmax(260px,1fr)_auto] xl:items-center">
+    <header className="topbar-shell">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-green-300/30 bg-[#17B33A]/15 text-sm font-black text-green-100 shadow-lg shadow-black/20">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-green-300/30 bg-[#17B33A]/15 text-xs font-black text-green-100 shadow-lg shadow-black/20 ring-1 ring-white/10">
           EB
         </div>
         <div className="min-w-0">
-          <strong className="block truncate text-sm font-black uppercase tracking-wide">Sistema Operacional EBAPs</strong>
-          <span className="block truncate text-xs text-green-100/80">Consorcio Uniao Obracon</span>
+          <strong className="block truncate text-xs font-black uppercase tracking-[0.08em] 2xl:text-sm">Sistema Operacional EBAPs</strong>
+          <span className="mt-0.5 block truncate text-xs font-semibold text-green-100/80">Consorcio Uniao Obracon</span>
         </div>
       </div>
 
       <div className="grid gap-2 md:grid-cols-[auto_minmax(240px,1fr)] md:items-center">
         <div className="min-w-0 md:text-center">
-        <h1 className="text-xl font-black tracking-wide text-white md:text-2xl">{current?.label || 'EBAPS'}</h1>
-        <p className="text-sm text-slate-300">{current?.description || 'Controle operacional integrado'}</p>
+        <h1 className="text-lg font-black tracking-wide text-white md:text-xl">{current?.label || 'EBAPS'}</h1>
+        <p className="hidden text-xs font-medium text-slate-300 2xl:block">{current?.description || 'Controle operacional integrado'}</p>
         </div>
         <GlobalSearch />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
-        <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-navy-950/35 px-3 py-2 text-xs font-black text-cyan-100">
+        <span className="status-chip">
           <Clock3 size={15} />
           <span className="hidden sm:inline">{clock.date}</span>
           {clock.time}
         </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-xs font-black text-cyan-100">
+        <span className="status-chip bg-cyan-400/10">
+          <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_rgba(74,222,128,.75)]" />
           <Shield size={15} />
           {user?.nome} - {prettyRole(user?.perfil)}
         </span>

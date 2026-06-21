@@ -65,7 +65,7 @@ function LocateButton({ onLocation }) {
   );
 }
 
-export default function EbapsMap({ ebaps, onSelect }) {
+export default function EbapsMap({ ebaps, onSelect, compact = false }) {
   const [layer, setLayer] = useState('mapa');
   const [myLocation, setMyLocation] = useState(null);
   const mapRef = useRef(null);
@@ -73,7 +73,7 @@ export default function EbapsMap({ ebaps, onSelect }) {
   const validEbaps = useMemo(() => ebaps.filter((ebap) => ebap.latitude && ebap.longitude), [ebaps]);
 
   return (
-    <section className="glass-card relative min-h-[520px] overflow-hidden rounded-3xl p-3">
+    <section className={`glass-card relative overflow-hidden rounded-3xl p-2 ${compact ? 'min-h-[260px]' : 'min-h-[520px]'}`}>
       <div className="absolute right-4 top-4 z-[1000] flex gap-2">
         <button className={layer === 'mapa' ? 'primary-button min-h-10' : 'secondary-button min-h-10 bg-[#0B2D6B]/90'} type="button" onClick={() => setLayer('mapa')}>
           <Layers size={16} />
@@ -88,7 +88,7 @@ export default function EbapsMap({ ebaps, onSelect }) {
       <MapContainer
         center={VILA_VELHA_CENTER}
         zoom={12}
-        className="h-[640px] min-h-[520px] w-full rounded-2xl"
+        className={`${compact ? 'h-[260px] min-h-[260px]' : 'h-[640px] min-h-[520px]'} w-full rounded-2xl`}
         ref={mapRef}
         scrollWheelZoom
       >

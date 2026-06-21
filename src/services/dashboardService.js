@@ -183,7 +183,7 @@ export async function obterDashboardExecutivo() {
         .eq('ativa', true)
         .is('deleted_at', null)
     ),
-    supabase.from('ebaps').select('id,codigo,nome,nome_curto,status,status_operacional,ativa,bairro,created_at,updated_at').is('deleted_at', null).order('nome'),
+    supabase.from('ebaps').select('id,codigo,nome,nome_curto,status,status_operacional,ativa,bairro,latitude,longitude,link_maps,created_at,updated_at').is('deleted_at', null).order('nome'),
     fetchAllPages(
       supabase
         .from('ordens_servico')

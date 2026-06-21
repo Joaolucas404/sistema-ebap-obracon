@@ -11,7 +11,7 @@ export default function AppLayout() {
     <div className="app-bg">
       <div className="content-layer">
         <Topbar />
-        <div className="mx-auto mb-4 max-w-[1400px] lg:hidden">
+        <div className="mx-auto mb-3 max-w-[1680px] lg:hidden">
           <button className="secondary-button w-full justify-between" type="button" onClick={() => setMobileMenuOpen((open) => !open)}>
             <span className="inline-flex items-center gap-2">
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -22,7 +22,7 @@ export default function AppLayout() {
             </span>
           </button>
         </div>
-        <div className="mx-auto grid max-w-[1400px] gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="mx-auto grid max-w-[1680px] gap-3 lg:grid-cols-[250px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)]">
           <div className={`${mobileMenuOpen ? 'block' : 'hidden'} lg:block`}>
             <Sidebar onNavigate={() => setMobileMenuOpen(false)} />
           </div>
