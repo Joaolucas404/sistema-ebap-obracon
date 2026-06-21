@@ -106,8 +106,8 @@ values
   ('09','EBAP Sitio Batalha','Sitio Batalha','normal'),
   ('10','EBAP Canal do Costa','Canal do Costa','atencao'),
   ('11','EBAP Foz do Costa','Foz do Costa','critico')
-on conflict (nome) do update set
-  codigo = excluded.codigo,
+on conflict (codigo) do update set
+  nome = excluded.nome,
   nome_curto = excluded.nome_curto,
   status = excluded.status,
   updated_at = now();

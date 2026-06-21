@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { canAccess, normalizePerfil } from '../config/permissions.js';
+
+const AUTH_STORAGE_KEY = 'ebaps-auth-session';
 
 export const useAuthStore = create(
   persist(
@@ -12,14 +14,22 @@ export const useAuthStore = create(
           user: user ? { ...user, perfil: normalizePerfil(user.perfil) } : null,
           isAuthenticated: Boolean(user)
         }),
-      logout: () => set({ user: null, isAuthenticated: false }),
+      logout: () => {
+        window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+        window.localStorage.removeItem(AUTH_STORAGE_KEY);
+        set({ user: null, isAuthenticated: false });
+      },
       hasPermission: (permissionKey) => {
         const user = get().user;
         return Boolean(user && canAccess(user.perfil, permissionKey));
       }
     }),
     {
-      name: 'ebaps-auth-session',
+      name: AUTH_STORAGE_KEY,
+      storage: createJSONStorage(() => window.sessionStorage),
+      onRehydrateStorage: () => () => {
+        window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      },
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated
