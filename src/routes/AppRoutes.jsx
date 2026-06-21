@@ -20,6 +20,7 @@ const Login = lazy(() => import('../pages/Login.jsx'));
 const Manutencao = lazy(() => import('../pages/Manutencao.jsx'));
 const Notificacoes = lazy(() => import('../pages/Notificacoes.jsx'));
 const OrdensServico = lazy(() => import('../pages/OrdensServico.jsx'));
+const Orientacoes = lazy(() => import('../pages/Orientacoes.jsx'));
 const OsDiaria = lazy(() => import('../pages/OsDiaria.jsx'));
 const RelatorioDiario = lazy(() => import('../pages/RelatorioDiario.jsx'));
 const SST = lazy(() => import('../pages/SST.jsx'));
@@ -238,7 +239,13 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {placeholders.filter((page) => !['/localizacao-ebaps', '/cco-relatorios-diarios', '/cco-analise-os', '/sala-situacao-ebaps', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras', '/financeiro-contrato', '/administrativo', '/os-diaria'].includes(page.path)).map((page) => (
+      <Route element={<ProtectedRoute permission="orientacoes" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/orientacoes" element={<Orientacoes />} />
+        </Route>
+      </Route>
+
+      {placeholders.filter((page) => !['/localizacao-ebaps', '/cco-relatorios-diarios', '/cco-analise-os', '/sala-situacao-ebaps', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras', '/financeiro-contrato', '/administrativo', '/os-diaria', '/orientacoes'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />

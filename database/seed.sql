@@ -41,6 +41,9 @@ values
   ('sst.manage','SST','sst','/sst','write'),
   ('administrativo.manage','Administrativo','administrativo','/administrativo','write'),
   ('orientacoes.read','Orientações','orientacoes','/orientacoes','read'),
+  ('orientacoes.create','Criar Orientações','orientacoes','/orientacoes','create'),
+  ('orientacoes.edit','Editar Orientações','orientacoes','/orientacoes','write'),
+  ('orientacoes.delete','Excluir Orientações','orientacoes','/orientacoes','delete'),
   ('config.manage','Configurações','config','/config','write'),
   ('usuarios.manage','Usuários','usuarios','/usuarios','write')
 on conflict (codigo) do update set
@@ -55,16 +58,16 @@ select p.id, pe.id
 from public.perfis p
 join public.permissoes pe on (
   p.codigo = 'diretoria'
-  or (p.codigo = 'gerencia' and pe.codigo <> 'usuarios.manage')
-  or (p.codigo = 'operador' and pe.codigo in ('dashboard.read','relatorio.read','relatorio.write','cco_ro.read','acervo.read'))
-  or (p.codigo = 'tecnico' and pe.codigo in ('dashboard.read','os.read','os.write','os_diaria.execute','arquivo.read'))
-  or (p.codigo = 'cco' and pe.codigo in ('dashboard.read','cco_ro.read','cco_ro.validate','cco_os.validate'))
-  or (p.codigo = 'supervisor' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','relatorio.read','cco_ro.read','manutencao.manage','sala_situacao.manage','os_diaria.execute','arquivo.read'))
-  or (p.codigo = 'prefeitura' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','localizacao_ebaps.read','relatorios.read','financeiro.manage'))
-  or (p.codigo = 'sst' and pe.codigo in ('dashboard.read','sst.manage'))
-  or (p.codigo = 'administrativo' and pe.codigo in ('dashboard.read','administrativo.manage'))
-  or (p.codigo = 'almoxarifado' and pe.codigo in ('dashboard.read','almoxarifado.manage','compras.manage'))
-  or (p.codigo = 'financeiro' and pe.codigo in ('dashboard.read','financeiro.manage','compras.manage'))
+  or (p.codigo = 'gerencia' and pe.codigo <> 'usuarios.manage' and pe.codigo <> 'orientacoes.delete')
+  or (p.codigo = 'operador' and pe.codigo in ('dashboard.read','relatorio.read','relatorio.write','cco_ro.read','acervo.read','orientacoes.read'))
+  or (p.codigo = 'tecnico' and pe.codigo in ('dashboard.read','os.read','os.write','os_diaria.execute','arquivo.read','orientacoes.read'))
+  or (p.codigo = 'cco' and pe.codigo in ('dashboard.read','cco_ro.read','cco_ro.validate','cco_os.validate','orientacoes.read'))
+  or (p.codigo = 'supervisor' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','relatorio.read','cco_ro.read','manutencao.manage','sala_situacao.manage','os_diaria.execute','arquivo.read','orientacoes.read','orientacoes.create'))
+  or (p.codigo = 'prefeitura' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','localizacao_ebaps.read','relatorios.read','financeiro.manage','orientacoes.read'))
+  or (p.codigo = 'sst' and pe.codigo in ('dashboard.read','sst.manage','orientacoes.read'))
+  or (p.codigo = 'administrativo' and pe.codigo in ('dashboard.read','administrativo.manage','orientacoes.read'))
+  or (p.codigo = 'almoxarifado' and pe.codigo in ('dashboard.read','almoxarifado.manage','compras.manage','orientacoes.read'))
+  or (p.codigo = 'financeiro' and pe.codigo in ('dashboard.read','financeiro.manage','compras.manage','orientacoes.read'))
 )
 on conflict do nothing;
 

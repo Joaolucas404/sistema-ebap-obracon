@@ -38,7 +38,7 @@ export const MENU_ITEMS = [
   { key: 'almoxarifado', group: 'Infraestrutura', label: 'Almoxarifado', path: '/almoxarifado', icon: Boxes, description: 'Estoque e rastreabilidade' },
   { key: 'compras', group: 'Infraestrutura', label: 'Compras', path: '/compras', icon: ShoppingCart, description: 'Solicitacoes e aprovacoes' },
   { key: 'sst', group: 'Seguranca', label: 'SST', path: '/sst', icon: HardHat, description: 'Seguranca do trabalho' },
-  { key: 'orientacoes', group: 'Seguranca', label: 'Orientacoes', path: '/orientacoes', icon: HelpCircle, description: 'Procedimentos operacionais' },
+  { key: 'orientacoes', group: 'Seguranca', label: 'Orientações', path: '/orientacoes', icon: HelpCircle, description: 'Procedimentos operacionais' },
   { key: 'administrativo', group: 'Administrativo', label: 'Administrativo', path: '/administrativo', icon: Building2, description: 'Contratos, DP/RH e documentos' },
   { key: 'financeiroContrato', group: 'Administrativo', label: 'Financeiro/Contrato', path: '/financeiro-contrato', icon: WalletCards, description: 'Medicoes e custos' },
   { key: 'usuarios', group: 'Administrativo', label: 'Usuarios', path: '/usuarios', icon: Users, description: 'Administracao de acessos' },
