@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ClipboardPlus, GraduationCap, HardHat, Plus, RefreshCcw, ShieldCheck } from 'lucide-react';
+import { ClipboardPlus, GraduationCap, HardHat, ListChecks, Plus, RefreshCcw, ShieldCheck, Siren } from 'lucide-react';
 import Modal from '../components/ui/Modal.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import Toast from '../components/ui/Toast.jsx';
@@ -7,16 +7,24 @@ import SstDashboard from '../components/sst/SstDashboard.jsx';
 import {
   AprForm,
   blankApr,
+  blankApt,
   blankEntrega,
   blankEpi,
   blankFuncionarioTreinamento,
+  blankInspecao,
+  blankOcorrencia,
+  blankPlanoAcao,
   blankTreinamento,
   EntregaEpiForm,
   EpiForm,
   FuncionarioTreinamentoForm,
+  AptForm,
+  InspecaoForm,
+  OcorrenciaForm,
+  PlanoAcaoForm,
   TreinamentoForm
 } from '../components/sst/SstForms.jsx';
-import { AprTable, EntregasTable, EpiTable, FuncionarioTreinamentosTable, TreinamentosTable } from '../components/sst/SstTables.jsx';
+import { AprTable, AptTable, EntregasTable, EpiTable, FuncionarioTreinamentosTable, InspecoesTable, OcorrenciasTable, PlanosAcaoTable, TreinamentosTable } from '../components/sst/SstTables.jsx';
 import { podeCadastrarBaseSst, podeGerenciarSst } from '../services/sstService.js';
 import { useAuthStore } from '../store/authStore.js';
 import { useSstStore } from '../store/sstStore.js';
@@ -27,7 +35,11 @@ const tabs = [
   { key: 'entregas', label: 'Entregas' },
   { key: 'treinamentos', label: 'Treinamentos' },
   { key: 'vencimentos', label: 'Vencimentos' },
-  { key: 'apr', label: 'APR' }
+  { key: 'apr', label: 'APR' },
+  { key: 'apt', label: 'APT' },
+  { key: 'inspecoes', label: 'Inspecoes' },
+  { key: 'ocorrencias', label: 'Ocorrencias' },
+  { key: 'planos', label: 'Planos' }
 ];
 
 function mapEpi(epi) {
@@ -84,6 +96,83 @@ function mapApr(apr) {
   };
 }
 
+function mapApt(apt) {
+  return {
+    id: apt.id,
+    codigo: apt.codigo || '',
+    apr_id: apt.apr_id || '',
+    os_id: apt.os_id || '',
+    ebap_id: apt.ebap_id || '',
+    atividade: apt.atividade || '',
+    local_atividade: apt.local_atividade || '',
+    equipe: apt.equipe || '',
+    riscos: apt.riscos || '',
+    medidas_controle: apt.medidas_controle || '',
+    epis_obrigatorios: apt.epis_obrigatorios || '',
+    responsavel_id: apt.responsavel_id || '',
+    autorizador_id: apt.autorizador_id || '',
+    status: apt.status || 'rascunho',
+    inicio_previsto: toDatetimeLocal(apt.inicio_previsto),
+    fim_previsto: toDatetimeLocal(apt.fim_previsto),
+    observacoes: apt.observacoes || ''
+  };
+}
+
+function mapInspecao(inspecao) {
+  return {
+    id: inspecao.id,
+    codigo: inspecao.codigo || '',
+    tipo: inspecao.tipo || '',
+    os_id: inspecao.os_id || '',
+    ebap_id: inspecao.ebap_id || '',
+    apr_id: inspecao.apr_id || '',
+    apt_id: inspecao.apt_id || '',
+    responsavel_id: inspecao.responsavel_id || '',
+    data_inspecao: inspecao.data_inspecao || new Date().toISOString().slice(0, 10),
+    status: inspecao.status || 'aberta',
+    resultado: inspecao.resultado || '',
+    nao_conformidades: inspecao.nao_conformidades || '',
+    recomendacoes: inspecao.recomendacoes || '',
+    observacoes: inspecao.observacoes || ''
+  };
+}
+
+function mapOcorrencia(ocorrencia) {
+  return {
+    id: ocorrencia.id,
+    codigo: ocorrencia.codigo || '',
+    os_id: ocorrencia.os_id || '',
+    ebap_id: ocorrencia.ebap_id || '',
+    apr_id: ocorrencia.apr_id || '',
+    apt_id: ocorrencia.apt_id || '',
+    inspecao_id: ocorrencia.inspecao_id || '',
+    tipo: ocorrencia.tipo || 'observacao',
+    gravidade: ocorrencia.gravidade || 'baixa',
+    descricao: ocorrencia.descricao || '',
+    acao_imediata: ocorrencia.acao_imediata || '',
+    envolvido_id: ocorrencia.envolvido_id || '',
+    ocorrido_em: toDatetimeLocal(ocorrencia.ocorrido_em),
+    status: ocorrencia.status || 'aberta'
+  };
+}
+
+function mapPlano(plano) {
+  return {
+    id: plano.id,
+    codigo: plano.codigo || '',
+    origem_tipo: plano.origem_tipo || 'outro',
+    origem_id: plano.origem_id || '',
+    os_id: plano.os_id || '',
+    ebap_id: plano.ebap_id || '',
+    descricao: plano.descricao || '',
+    responsavel_id: plano.responsavel_id || '',
+    prioridade: plano.prioridade || 'media',
+    prazo: plano.prazo || '',
+    status: plano.status || 'aberto',
+    observacoes: plano.observacoes || ''
+  };
+}
+
 export default function SST() {
   const user = useAuthStore((state) => state.user);
   const {
@@ -93,8 +182,13 @@ export default function SST() {
     treinamentos,
     funcionarioTreinamentos,
     aprs,
+    apts,
+    inspecoes,
+    ocorrencias,
+    planosAcao,
     funcionarios,
     ebaps,
+    ordensServico,
     loading,
     saving,
     error,
@@ -103,7 +197,11 @@ export default function SST() {
     registrarEntregaEpi,
     salvarTreinamento,
     registrarFuncionarioTreinamento,
-    salvarApr
+    salvarApr,
+    salvarApt,
+    salvarInspecao,
+    salvarOcorrencia,
+    salvarPlanoAcao
   } = useSstStore();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -172,6 +270,22 @@ export default function SST() {
           <button className="primary-button" type="button" onClick={() => openModal('apr', blankApr)}>
             <ClipboardPlus size={18} />
             Nova APR
+          </button>
+          <button className="secondary-button" type="button" onClick={() => openModal('apt', blankApt)}>
+            <ClipboardPlus size={18} />
+            Nova APT
+          </button>
+          <button className="secondary-button" type="button" onClick={() => openModal('inspecao', blankInspecao)}>
+            <ListChecks size={18} />
+            Inspecao
+          </button>
+          <button className="secondary-button" type="button" onClick={() => openModal('ocorrencia', blankOcorrencia)}>
+            <Siren size={18} />
+            Ocorrencia
+          </button>
+          <button className="secondary-button" type="button" onClick={() => openModal('plano', blankPlanoAcao)}>
+            <ListChecks size={18} />
+            Plano
           </button>
         </>
       )}
@@ -259,6 +373,30 @@ export default function SST() {
               <AprTable aprs={aprs} canEdit={canManage} onEdit={(apr) => openModal('apr', mapApr(apr))} />
             </section>
           )}
+
+          {activeTab === 'apt' && (
+            <section className="glass-card rounded-3xl p-5">
+              <AptTable apts={apts} canEdit={canManage} onEdit={(apt) => openModal('apt', mapApt(apt))} />
+            </section>
+          )}
+
+          {activeTab === 'inspecoes' && (
+            <section className="glass-card rounded-3xl p-5">
+              <InspecoesTable inspecoes={inspecoes} canEdit={canManage} onEdit={(inspecao) => openModal('inspecao', mapInspecao(inspecao))} />
+            </section>
+          )}
+
+          {activeTab === 'ocorrencias' && (
+            <section className="glass-card rounded-3xl p-5">
+              <OcorrenciasTable ocorrencias={ocorrencias} canEdit={canManage} onEdit={(ocorrencia) => openModal('ocorrencia', mapOcorrencia(ocorrencia))} />
+            </section>
+          )}
+
+          {activeTab === 'planos' && (
+            <section className="glass-card rounded-3xl p-5">
+              <PlanosAcaoTable planos={planosAcao} canEdit={canManage} onEdit={(plano) => openModal('plano', mapPlano(plano))} />
+            </section>
+          )}
         </>
       )}
 
@@ -284,7 +422,27 @@ export default function SST() {
 
       <Modal open={modal === 'apr'} title={form.id ? 'Editar APR' : 'Nova APR'} onClose={closeModal}>
         {localError && <ErrorBox message={localError} />}
-        <AprForm form={form} funcionarios={funcionarios} ebaps={ebaps} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarApr, 'APR salva com sucesso.'); }} onCancel={closeModal} />
+        <AprForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarApr, 'APR salva com sucesso.'); }} onCancel={closeModal} />
+      </Modal>
+
+      <Modal open={modal === 'apt'} title={form.id ? 'Editar APT' : 'Nova APT'} onClose={closeModal}>
+        {localError && <ErrorBox message={localError} />}
+        <AptForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarApt, 'APT salva com sucesso.'); }} onCancel={closeModal} />
+      </Modal>
+
+      <Modal open={modal === 'inspecao'} title={form.id ? 'Editar inspecao' : 'Nova inspecao'} onClose={closeModal}>
+        {localError && <ErrorBox message={localError} />}
+        <InspecaoForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} apts={apts} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarInspecao, 'Inspecao salva com sucesso.'); }} onCancel={closeModal} />
+      </Modal>
+
+      <Modal open={modal === 'ocorrencia'} title={form.id ? 'Editar ocorrencia' : 'Nova ocorrencia'} onClose={closeModal}>
+        {localError && <ErrorBox message={localError} />}
+        <OcorrenciaForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} apts={apts} inspecoes={inspecoes} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarOcorrencia, 'Ocorrencia salva com sucesso.'); }} onCancel={closeModal} />
+      </Modal>
+
+      <Modal open={modal === 'plano'} title={form.id ? 'Editar plano de acao' : 'Novo plano de acao'} onClose={closeModal}>
+        {localError && <ErrorBox message={localError} />}
+        <PlanoAcaoForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarPlanoAcao, 'Plano de acao salvo com sucesso.'); }} onCancel={closeModal} />
       </Modal>
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />

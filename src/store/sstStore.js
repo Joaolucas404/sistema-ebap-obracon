@@ -1,17 +1,26 @@
 import { create } from 'zustand';
 import {
   listarAprs,
+  listarApts,
   listarEbapsSst,
   listarEntregasEpi,
   listarEpis,
   listarFuncionariosSst,
   listarFuncionarioTreinamentos,
+  listarInspecoes,
+  listarOcorrencias,
+  listarOrdensServicoSst,
+  listarPlanosAcao,
   listarTreinamentos,
   obterDashboardSst,
   registrarEntregaEpi,
   registrarFuncionarioTreinamento,
   salvarApr,
+  salvarApt,
   salvarEpi,
+  salvarInspecao,
+  salvarOcorrencia,
+  salvarPlanoAcao,
   salvarTreinamento
 } from '../services/sstService.js';
 
@@ -22,8 +31,13 @@ export const useSstStore = create((set, get) => ({
   treinamentos: [],
   funcionarioTreinamentos: [],
   aprs: [],
+  apts: [],
+  inspecoes: [],
+  ocorrencias: [],
+  planosAcao: [],
   funcionarios: [],
   ebaps: [],
+  ordensServico: [],
   loading: false,
   saving: false,
   error: '',
@@ -31,15 +45,20 @@ export const useSstStore = create((set, get) => ({
   carregarTudo: async () => {
     set({ loading: true, error: '' });
     try {
-      const [dashboard, epis, entregas, treinamentos, funcionarioTreinamentos, aprs, funcionarios, ebaps] = await Promise.all([
+      const [dashboard, epis, entregas, treinamentos, funcionarioTreinamentos, aprs, apts, inspecoes, ocorrencias, planosAcao, funcionarios, ebaps, ordensServico] = await Promise.all([
         obterDashboardSst(),
         listarEpis(),
         listarEntregasEpi(),
         listarTreinamentos(),
         listarFuncionarioTreinamentos(),
         listarAprs(),
+        listarApts(),
+        listarInspecoes(),
+        listarOcorrencias(),
+        listarPlanosAcao(),
         listarFuncionariosSst(),
-        listarEbapsSst()
+        listarEbapsSst(),
+        listarOrdensServicoSst()
       ]);
 
       set({
@@ -49,8 +68,13 @@ export const useSstStore = create((set, get) => ({
         treinamentos,
         funcionarioTreinamentos,
         aprs,
+        apts,
+        inspecoes,
+        ocorrencias,
+        planosAcao,
         funcionarios,
         ebaps,
+        ordensServico,
         loading: false
       });
     } catch (err) {
@@ -114,6 +138,55 @@ export const useSstStore = create((set, get) => ({
       set({ saving: false });
     } catch (err) {
       set({ error: err.message || 'Falha ao salvar APR.', saving: false });
+      throw err;
+    }
+  }
+  ,
+
+  salvarApt: async (payload, user) => {
+    set({ saving: true, error: '' });
+    try {
+      await salvarApt(payload, user);
+      await get().carregarTudo();
+      set({ saving: false });
+    } catch (err) {
+      set({ error: err.message || 'Falha ao salvar APT.', saving: false });
+      throw err;
+    }
+  },
+
+  salvarInspecao: async (payload, user) => {
+    set({ saving: true, error: '' });
+    try {
+      await salvarInspecao(payload, user);
+      await get().carregarTudo();
+      set({ saving: false });
+    } catch (err) {
+      set({ error: err.message || 'Falha ao salvar inspecao.', saving: false });
+      throw err;
+    }
+  },
+
+  salvarOcorrencia: async (payload, user) => {
+    set({ saving: true, error: '' });
+    try {
+      await salvarOcorrencia(payload, user);
+      await get().carregarTudo();
+      set({ saving: false });
+    } catch (err) {
+      set({ error: err.message || 'Falha ao salvar ocorrencia.', saving: false });
+      throw err;
+    }
+  },
+
+  salvarPlanoAcao: async (payload, user) => {
+    set({ saving: true, error: '' });
+    try {
+      await salvarPlanoAcao(payload, user);
+      await get().carregarTudo();
+      set({ saving: false });
+    } catch (err) {
+      set({ error: err.message || 'Falha ao salvar plano de acao.', saving: false });
       throw err;
     }
   }

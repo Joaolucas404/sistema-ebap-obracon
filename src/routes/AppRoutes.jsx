@@ -9,6 +9,7 @@ import Config from '../pages/Config.jsx';
 import Dashboard from '../pages/Dashboard.jsx';
 import DetalheOS from '../pages/DetalheOS.jsx';
 import Login from '../pages/Login.jsx';
+import Manutencao from '../pages/Manutencao.jsx';
 import OrdensServico from '../pages/OrdensServico.jsx';
 import PlaceholderPage from '../pages/PlaceholderPage.jsx';
 import RelatorioDiario from '../pages/RelatorioDiario.jsx';
@@ -170,7 +171,13 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/arquivo-relatorios', '/almoxarifado', '/sst'].includes(page.path)).map((page) => (
+      <Route element={<ProtectedRoute permission="manutencao" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/manutencao" element={<Manutencao />} />
+        </Route>
+      </Route>
+
+      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />

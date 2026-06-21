@@ -1,4 +1,4 @@
-import { APR_STATUS, TREINAMENTO_STATUS } from '../../services/sstService.js';
+import { APR_STATUS, APT_STATUS, GRAVIDADES, INSPECAO_STATUS, OCORRENCIA_TIPOS, PLANO_STATUS, TREINAMENTO_STATUS } from '../../services/sstService.js';
 
 export const blankEpi = {
   id: null,
@@ -58,6 +58,75 @@ export const blankApr = {
   status: 'rascunho',
   inicio_previsto: '',
   fim_previsto: '',
+  observacoes: ''
+};
+
+export const blankApt = {
+  id: null,
+  codigo: '',
+  apr_id: '',
+  os_id: '',
+  ebap_id: '',
+  atividade: '',
+  local_atividade: '',
+  equipe: '',
+  riscos: '',
+  medidas_controle: '',
+  epis_obrigatorios: '',
+  responsavel_id: '',
+  autorizador_id: '',
+  status: 'rascunho',
+  inicio_previsto: '',
+  fim_previsto: '',
+  observacoes: ''
+};
+
+export const blankInspecao = {
+  id: null,
+  codigo: '',
+  tipo: '',
+  os_id: '',
+  ebap_id: '',
+  apr_id: '',
+  apt_id: '',
+  responsavel_id: '',
+  data_inspecao: new Date().toISOString().slice(0, 10),
+  status: 'aberta',
+  resultado: '',
+  nao_conformidades: '',
+  recomendacoes: '',
+  observacoes: ''
+};
+
+export const blankOcorrencia = {
+  id: null,
+  codigo: '',
+  os_id: '',
+  ebap_id: '',
+  apr_id: '',
+  apt_id: '',
+  inspecao_id: '',
+  tipo: 'observacao',
+  gravidade: 'baixa',
+  descricao: '',
+  acao_imediata: '',
+  envolvido_id: '',
+  ocorrido_em: '',
+  status: 'aberta'
+};
+
+export const blankPlanoAcao = {
+  id: null,
+  codigo: '',
+  origem_tipo: 'outro',
+  origem_id: '',
+  os_id: '',
+  ebap_id: '',
+  descricao: '',
+  responsavel_id: '',
+  prioridade: 'media',
+  prazo: '',
+  status: 'aberto',
   observacoes: ''
 };
 
@@ -168,7 +237,7 @@ export function FuncionarioTreinamentoForm({ form, treinamentos, funcionarios, s
   );
 }
 
-export function AprForm({ form, funcionarios, ebaps, saving, onChange, onSubmit, onCancel }) {
+export function AprForm({ form, funcionarios, ebaps, ordensServico = [], saving, onChange, onSubmit, onCancel }) {
   return (
     <form className="grid gap-4" onSubmit={onSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
@@ -184,7 +253,7 @@ export function AprForm({ form, funcionarios, ebaps, saving, onChange, onSubmit,
           <option value="">Sem responsavel</option>
           {funcionarios.map((funcionario) => <option key={funcionario.id} value={funcionario.id}>{funcionario.nome} - {funcionario.perfil}</option>)}
         </Select>
-        <Input label="OS vinculada" value={form.os_id} onChange={(value) => onChange('os_id', value)} placeholder="UUID da OS, opcional" />
+        <OsSelect value={form.os_id} ordensServico={ordensServico} onChange={(value) => onChange('os_id', value)} />
         <Input label="Local da atividade" value={form.local_atividade} onChange={(value) => onChange('local_atividade', value)} />
         <Input label="Inicio previsto" type="datetime-local" value={form.inicio_previsto || ''} onChange={(value) => onChange('inicio_previsto', value)} />
         <Input label="Fim previsto" type="datetime-local" value={form.fim_previsto || ''} onChange={(value) => onChange('fim_previsto', value)} />
@@ -195,6 +264,162 @@ export function AprForm({ form, funcionarios, ebaps, saving, onChange, onSubmit,
       <Textarea label="EPIs obrigatorios" value={form.epis_obrigatorios} onChange={(value) => onChange('epis_obrigatorios', value)} />
       <Textarea label="Observacoes" value={form.observacoes} onChange={(value) => onChange('observacoes', value)} />
       <Actions saving={saving} onCancel={onCancel} label="Salvar APR" />
+    </form>
+  );
+}
+
+export function AptForm({ form, funcionarios, ebaps, ordensServico, aprs, saving, onChange, onSubmit, onCancel }) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Input label="Codigo" value={form.codigo} onChange={(value) => onChange('codigo', value)} required minLength={2} />
+        <Select label="Status" value={form.status} onChange={(value) => onChange('status', value)} required>
+          {APT_STATUS.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+        </Select>
+        <Select label="APR vinculada" value={form.apr_id} onChange={(value) => onChange('apr_id', value)}>
+          <option value="">Sem APR vinculada</option>
+          {aprs.map((apr) => <option key={apr.id} value={apr.id}>{apr.codigo} - {apr.atividade}</option>)}
+        </Select>
+        <OsSelect value={form.os_id} ordensServico={ordensServico} onChange={(value) => onChange('os_id', value)} />
+        <Select label="EBAP" value={form.ebap_id} onChange={(value) => onChange('ebap_id', value)}>
+          <option value="">Sem EBAP vinculada</option>
+          {ebaps.map((ebap) => <option key={ebap.id} value={ebap.id}>{ebap.nome}</option>)}
+        </Select>
+        <Select label="Responsavel" value={form.responsavel_id} onChange={(value) => onChange('responsavel_id', value)}>
+          <option value="">Sem responsavel</option>
+          {funcionarios.map((funcionario) => <option key={funcionario.id} value={funcionario.id}>{funcionario.nome} - {funcionario.perfil}</option>)}
+        </Select>
+        <Select label="Autorizador" value={form.autorizador_id} onChange={(value) => onChange('autorizador_id', value)}>
+          <option value="">Sem autorizador</option>
+          {funcionarios.map((funcionario) => <option key={funcionario.id} value={funcionario.id}>{funcionario.nome} - {funcionario.perfil}</option>)}
+        </Select>
+        <Input label="Equipe" value={form.equipe} onChange={(value) => onChange('equipe', value)} />
+        <Input label="Local da atividade" value={form.local_atividade} onChange={(value) => onChange('local_atividade', value)} />
+        <Input label="Inicio previsto" type="datetime-local" value={form.inicio_previsto || ''} onChange={(value) => onChange('inicio_previsto', value)} />
+        <Input label="Fim previsto" type="datetime-local" value={form.fim_previsto || ''} onChange={(value) => onChange('fim_previsto', value)} />
+      </div>
+      <Textarea label="Atividade" value={form.atividade} onChange={(value) => onChange('atividade', value)} required />
+      <Textarea label="Riscos identificados" value={form.riscos} onChange={(value) => onChange('riscos', value)} />
+      <Textarea label="Medidas de controle" value={form.medidas_controle} onChange={(value) => onChange('medidas_controle', value)} />
+      <Textarea label="EPIs obrigatorios" value={form.epis_obrigatorios} onChange={(value) => onChange('epis_obrigatorios', value)} />
+      <Textarea label="Observacoes" value={form.observacoes} onChange={(value) => onChange('observacoes', value)} />
+      <Actions saving={saving} onCancel={onCancel} label="Salvar APT" />
+    </form>
+  );
+}
+
+export function InspecaoForm({ form, funcionarios, ebaps, ordensServico, aprs, apts, saving, onChange, onSubmit, onCancel }) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Input label="Codigo" value={form.codigo} onChange={(value) => onChange('codigo', value)} required minLength={2} />
+        <Input label="Tipo" value={form.tipo} onChange={(value) => onChange('tipo', value)} required placeholder="Ex.: Campo, EPI, Comportamento" />
+        <Select label="Status" value={form.status} onChange={(value) => onChange('status', value)} required>
+          {INSPECAO_STATUS.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+        </Select>
+        <Input label="Data da inspecao" type="date" value={form.data_inspecao} onChange={(value) => onChange('data_inspecao', value)} required />
+        <OsSelect value={form.os_id} ordensServico={ordensServico} onChange={(value) => onChange('os_id', value)} />
+        <Select label="EBAP" value={form.ebap_id} onChange={(value) => onChange('ebap_id', value)}>
+          <option value="">Sem EBAP vinculada</option>
+          {ebaps.map((ebap) => <option key={ebap.id} value={ebap.id}>{ebap.nome}</option>)}
+        </Select>
+        <Select label="APR" value={form.apr_id} onChange={(value) => onChange('apr_id', value)}>
+          <option value="">Sem APR</option>
+          {aprs.map((apr) => <option key={apr.id} value={apr.id}>{apr.codigo}</option>)}
+        </Select>
+        <Select label="APT" value={form.apt_id} onChange={(value) => onChange('apt_id', value)}>
+          <option value="">Sem APT</option>
+          {apts.map((apt) => <option key={apt.id} value={apt.id}>{apt.codigo}</option>)}
+        </Select>
+        <Select label="Responsavel" value={form.responsavel_id} onChange={(value) => onChange('responsavel_id', value)}>
+          <option value="">Sem responsavel</option>
+          {funcionarios.map((funcionario) => <option key={funcionario.id} value={funcionario.id}>{funcionario.nome}</option>)}
+        </Select>
+      </div>
+      <Textarea label="Resultado" value={form.resultado} onChange={(value) => onChange('resultado', value)} />
+      <Textarea label="Nao conformidades" value={form.nao_conformidades} onChange={(value) => onChange('nao_conformidades', value)} />
+      <Textarea label="Recomendacoes" value={form.recomendacoes} onChange={(value) => onChange('recomendacoes', value)} />
+      <Textarea label="Observacoes" value={form.observacoes} onChange={(value) => onChange('observacoes', value)} />
+      <Actions saving={saving} onCancel={onCancel} label="Salvar inspecao" />
+    </form>
+  );
+}
+
+export function OcorrenciaForm({ form, funcionarios, ebaps, ordensServico, aprs, apts, inspecoes, saving, onChange, onSubmit, onCancel }) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Input label="Codigo" value={form.codigo} onChange={(value) => onChange('codigo', value)} required minLength={2} />
+        <Select label="Tipo" value={form.tipo} onChange={(value) => onChange('tipo', value)} required>
+          {OCORRENCIA_TIPOS.map((tipo) => <option key={tipo} value={tipo}>{tipo.replaceAll('_', ' ')}</option>)}
+        </Select>
+        <Select label="Gravidade" value={form.gravidade} onChange={(value) => onChange('gravidade', value)} required>
+          {GRAVIDADES.map((gravidade) => <option key={gravidade} value={gravidade}>{gravidade}</option>)}
+        </Select>
+        <Select label="Status" value={form.status} onChange={(value) => onChange('status', value)} required>
+          <option value="aberta">aberta</option>
+          <option value="em_tratamento">em tratamento</option>
+          <option value="concluida">concluida</option>
+          <option value="cancelada">cancelada</option>
+        </Select>
+        <OsSelect value={form.os_id} ordensServico={ordensServico} onChange={(value) => onChange('os_id', value)} />
+        <Select label="EBAP" value={form.ebap_id} onChange={(value) => onChange('ebap_id', value)}>
+          <option value="">Sem EBAP</option>
+          {ebaps.map((ebap) => <option key={ebap.id} value={ebap.id}>{ebap.nome}</option>)}
+        </Select>
+        <Select label="APR" value={form.apr_id} onChange={(value) => onChange('apr_id', value)}>
+          <option value="">Sem APR</option>
+          {aprs.map((apr) => <option key={apr.id} value={apr.id}>{apr.codigo}</option>)}
+        </Select>
+        <Select label="APT" value={form.apt_id} onChange={(value) => onChange('apt_id', value)}>
+          <option value="">Sem APT</option>
+          {apts.map((apt) => <option key={apt.id} value={apt.id}>{apt.codigo}</option>)}
+        </Select>
+        <Select label="Inspecao" value={form.inspecao_id} onChange={(value) => onChange('inspecao_id', value)}>
+          <option value="">Sem inspecao</option>
+          {inspecoes.map((inspecao) => <option key={inspecao.id} value={inspecao.id}>{inspecao.codigo}</option>)}
+        </Select>
+        <Select label="Envolvido" value={form.envolvido_id} onChange={(value) => onChange('envolvido_id', value)}>
+          <option value="">Sem envolvido</option>
+          {funcionarios.map((funcionario) => <option key={funcionario.id} value={funcionario.id}>{funcionario.nome}</option>)}
+        </Select>
+        <Input label="Ocorrido em" type="datetime-local" value={form.ocorrido_em || ''} onChange={(value) => onChange('ocorrido_em', value)} />
+      </div>
+      <Textarea label="Descricao" value={form.descricao} onChange={(value) => onChange('descricao', value)} required />
+      <Textarea label="Acao imediata" value={form.acao_imediata} onChange={(value) => onChange('acao_imediata', value)} />
+      <Actions saving={saving} onCancel={onCancel} label="Salvar ocorrencia" />
+    </form>
+  );
+}
+
+export function PlanoAcaoForm({ form, funcionarios, ebaps, ordensServico, saving, onChange, onSubmit, onCancel }) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Input label="Codigo" value={form.codigo} onChange={(value) => onChange('codigo', value)} required minLength={2} />
+        <Select label="Origem" value={form.origem_tipo} onChange={(value) => onChange('origem_tipo', value)}>
+          {['inspecao', 'ocorrencia', 'apr', 'apt', 'os', 'outro'].map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
+        </Select>
+        <OsSelect value={form.os_id} ordensServico={ordensServico} onChange={(value) => onChange('os_id', value)} />
+        <Select label="EBAP" value={form.ebap_id} onChange={(value) => onChange('ebap_id', value)}>
+          <option value="">Sem EBAP</option>
+          {ebaps.map((ebap) => <option key={ebap.id} value={ebap.id}>{ebap.nome}</option>)}
+        </Select>
+        <Select label="Responsavel" value={form.responsavel_id} onChange={(value) => onChange('responsavel_id', value)}>
+          <option value="">Sem responsavel</option>
+          {funcionarios.map((funcionario) => <option key={funcionario.id} value={funcionario.id}>{funcionario.nome}</option>)}
+        </Select>
+        <Select label="Prioridade" value={form.prioridade} onChange={(value) => onChange('prioridade', value)}>
+          {['baixa', 'media', 'alta', 'critica'].map((prioridade) => <option key={prioridade} value={prioridade}>{prioridade}</option>)}
+        </Select>
+        <Input label="Prazo" type="date" value={form.prazo || ''} onChange={(value) => onChange('prazo', value)} />
+        <Select label="Status" value={form.status} onChange={(value) => onChange('status', value)}>
+          {PLANO_STATUS.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}
+        </Select>
+      </div>
+      <Textarea label="Descricao" value={form.descricao} onChange={(value) => onChange('descricao', value)} required />
+      <Textarea label="Observacoes" value={form.observacoes} onChange={(value) => onChange('observacoes', value)} />
+      <Actions saving={saving} onCancel={onCancel} label="Salvar plano" />
     </form>
   );
 }
@@ -216,6 +441,15 @@ function Select({ label, value, onChange, children, ...props }) {
         {children}
       </select>
     </label>
+  );
+}
+
+function OsSelect({ value, ordensServico, onChange }) {
+  return (
+    <Select label="OS vinculada" value={value} onChange={onChange}>
+      <option value="">Sem OS vinculada</option>
+      {ordensServico.map((os) => <option key={os.id} value={os.id}>{os.numero} - {os.titulo}</option>)}
+    </Select>
   );
 }
 

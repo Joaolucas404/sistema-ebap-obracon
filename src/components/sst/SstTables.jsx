@@ -151,3 +151,113 @@ export function AprTable({ aprs, canEdit, onEdit }) {
     </div>
   );
 }
+
+export function AptTable({ apts, canEdit, onEdit }) {
+  if (!apts.length) return <Empty text="Nenhuma APT cadastrada." />;
+
+  return (
+    <div className="grid gap-3">
+      {apts.map((apt) => (
+        <article key={apt.id} className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <SstStatusBadge status={apt.status} />
+                <strong className="text-white">{apt.codigo}</strong>
+                {apt.os?.numero && <span className="rounded-full border border-cyan-300/25 px-3 py-1 text-xs font-black text-cyan-100">{apt.os.numero}</span>}
+              </div>
+              <p className="mt-2 text-sm text-slate-200">{apt.atividade}</p>
+              <p className="mt-1 text-sm text-slate-400">{apt.ebap?.nome || 'Sem EBAP'} | Responsavel: {apt.responsavel?.nome || '-'}</p>
+            </div>
+            <button className="secondary-button min-h-10 px-3" type="button" onClick={() => onEdit(apt)} disabled={!canEdit}>
+              <Edit3 size={16} />
+            </button>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export function InspecoesTable({ inspecoes, canEdit, onEdit }) {
+  if (!inspecoes.length) return <Empty text="Nenhuma inspecao cadastrada." />;
+
+  return (
+    <div className="grid gap-3">
+      {inspecoes.map((inspecao) => (
+        <article key={inspecao.id} className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <SstStatusBadge status={inspecao.status} />
+                <strong className="text-white">{inspecao.codigo}</strong>
+                <span className="text-sm font-bold text-cyan-100">{inspecao.tipo}</span>
+              </div>
+              <p className="mt-2 text-sm text-slate-300">{inspecao.ebap?.nome || 'Sem EBAP'} | OS: {inspecao.os?.numero || '-'}</p>
+              <p className="mt-1 text-sm text-slate-400">Data: {formatDate(inspecao.data_inspecao)} | Responsavel: {inspecao.responsavel?.nome || '-'}</p>
+            </div>
+            <button className="secondary-button min-h-10 px-3" type="button" onClick={() => onEdit(inspecao)} disabled={!canEdit}>
+              <Edit3 size={16} />
+            </button>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export function OcorrenciasTable({ ocorrencias, canEdit, onEdit }) {
+  if (!ocorrencias.length) return <Empty text="Nenhuma ocorrencia cadastrada." />;
+
+  return (
+    <div className="grid gap-3">
+      {ocorrencias.map((ocorrencia) => (
+        <article key={ocorrencia.id} className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <SstStatusBadge status={ocorrencia.status} />
+                <span className={`rounded-full border px-3 py-1 text-xs font-black ${ocorrencia.gravidade === 'critica' ? 'border-red-300/40 bg-red-500/20 text-red-100' : 'border-orange-300/30 bg-orange-500/15 text-orange-100'}`}>
+                  {ocorrencia.gravidade}
+                </span>
+                <strong className="text-white">{ocorrencia.codigo}</strong>
+              </div>
+              <p className="mt-2 text-sm text-slate-200">{ocorrencia.descricao}</p>
+              <p className="mt-1 text-sm text-slate-400">{ocorrencia.tipo?.replaceAll('_', ' ')} | OS: {ocorrencia.os?.numero || '-'} | EBAP: {ocorrencia.ebap?.nome || '-'}</p>
+            </div>
+            <button className="secondary-button min-h-10 px-3" type="button" onClick={() => onEdit(ocorrencia)} disabled={!canEdit}>
+              <Edit3 size={16} />
+            </button>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export function PlanosAcaoTable({ planos, canEdit, onEdit }) {
+  if (!planos.length) return <Empty text="Nenhum plano de acao cadastrado." />;
+
+  return (
+    <div className="grid gap-3">
+      {planos.map((plano) => (
+        <article key={plano.id} className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <SstStatusBadge status={plano.status} />
+                <strong className="text-white">{plano.codigo}</strong>
+                <span className="rounded-full border border-cyan-300/25 px-3 py-1 text-xs font-black text-cyan-100">{plano.prioridade}</span>
+              </div>
+              <p className="mt-2 text-sm text-slate-200">{plano.descricao}</p>
+              <p className="mt-1 text-sm text-slate-400">Prazo: {formatDate(plano.prazo)} | Responsavel: {plano.responsavel?.nome || '-'} | OS: {plano.os?.numero || '-'}</p>
+            </div>
+            <button className="secondary-button min-h-10 px-3" type="button" onClick={() => onEdit(plano)} disabled={!canEdit}>
+              <Edit3 size={16} />
+            </button>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}

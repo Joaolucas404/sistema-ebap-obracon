@@ -39,6 +39,7 @@ import {
   statusTone,
   uploadAnexoOS
 } from '../services/osService.js';
+import { listarSstVinculosOS } from '../services/sstService.js';
 import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
 function formatDate(value) {
@@ -63,6 +64,7 @@ export default function DetalheOS() {
   const [historico, setHistorico] = useState([]);
   const [comentarios, setComentarios] = useState([]);
   const [anexos, setAnexos] = useState([]);
+  const [sstVinculos, setSstVinculos] = useState({ aprs: [], apts: [], inspecoes: [], ocorrencias: [], planos: [] });
   const [responsaveis, setResponsaveis] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,18 +84,20 @@ export default function DetalheOS() {
     setLoading(true);
     setError('');
     try {
-      const [osData, historicoRows, comentariosRows, anexosRows, responsavelRows] = await Promise.all([
+      const [osData, historicoRows, comentariosRows, anexosRows, responsavelRows, sstRows] = await Promise.all([
         buscarOS(id),
         listarHistoricoOS(id),
         listarComentariosOS(id),
         listarAnexosOS(id),
-        listarResponsaveis()
+        listarResponsaveis(),
+        listarSstVinculosOS(id)
       ]);
       setOs(osData);
       setHistorico(historicoRows);
       setComentarios(comentariosRows);
       setAnexos(anexosRows);
       setResponsaveis(responsavelRows);
+      setSstVinculos(sstRows);
     } catch (err) {
       setError(err.message || 'Falha ao carregar OS.');
     } finally {
@@ -463,6 +467,11 @@ export default function DetalheOS() {
       </div>
 
       <section className="glass-card rounded-3xl p-5">
+        <h3 className="mb-4 text-xl font-black text-white">SST vinculado à OS</h3>
+        <SstLinkedCards vinculos={sstVinculos} />
+      </section>
+
+      <section className="glass-card rounded-3xl p-5">
         <h3 className="mb-4 text-xl font-black text-white">Timeline e histórico</h3>
         <OSTimeline historico={historico} statusAtual={os.status} />
       </section>
@@ -646,6 +655,42 @@ function Info({ label, value }) {
     <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
       <small className="block text-xs font-black uppercase tracking-wide text-slate-400">{label}</small>
       <div className="mt-2 font-bold text-white">{value}</div>
+    </div>
+  );
+}
+
+function SstLinkedCards({ vinculos }) {
+  const groups = [
+    { key: 'aprs', label: 'APR', rows: vinculos.aprs, getTitle: (row) => `${row.codigo} - ${row.atividade}` },
+    { key: 'apts', label: 'APT', rows: vinculos.apts, getTitle: (row) => `${row.codigo} - ${row.atividade}` },
+    { key: 'inspecoes', label: 'Inspeções', rows: vinculos.inspecoes, getTitle: (row) => `${row.codigo} - ${row.tipo}` },
+    { key: 'ocorrencias', label: 'Ocorrências', rows: vinculos.ocorrencias, getTitle: (row) => `${row.codigo} - ${row.tipo?.replaceAll('_', ' ')}` },
+    { key: 'planos', label: 'Planos de ação', rows: vinculos.planos, getTitle: (row) => `${row.codigo} - ${row.descricao}` }
+  ];
+  const total = groups.reduce((sum, group) => sum + group.rows.length, 0);
+
+  if (!total) {
+    return <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 text-sm text-slate-300">Nenhum documento SST vinculado a esta OS.</div>;
+  }
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {groups.map((group) => (
+        <div key={group.key} className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <strong className="text-white">{group.label}</strong>
+            <span className="rounded-full border border-cyan-300/25 px-3 py-1 text-xs font-black text-cyan-100">{group.rows.length}</span>
+          </div>
+          <div className="grid gap-2">
+            {group.rows.length ? group.rows.slice(0, 4).map((row) => (
+              <div key={row.id} className="rounded-xl bg-navy-950/50 p-3">
+                <strong className="block truncate text-sm text-white">{group.getTitle(row)}</strong>
+                <small className="text-slate-400">Status: {row.status?.replaceAll('_', ' ') || '-'}</small>
+              </div>
+            )) : <span className="text-sm text-slate-400">Sem registros.</span>}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

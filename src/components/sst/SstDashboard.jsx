@@ -1,4 +1,4 @@
-import { AlertTriangle, ClipboardCheck, GraduationCap, HardHat, PackageCheck, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, ClipboardCheck, GraduationCap, HardHat, ListChecks, PackageCheck, ShieldAlert, Siren } from 'lucide-react';
 import KpiCard from '../ui/KpiCard.jsx';
 
 function formatDate(value) {
@@ -21,6 +21,12 @@ export default function SstDashboard({ dashboard }) {
         <KpiCard icon={AlertTriangle} label="Trein. vencendo" value={dashboard?.treinamentosVencendo ?? 0} helper="Proximos 30 dias" tone="orange" />
         <KpiCard icon={ShieldAlert} label="CA vencidos" value={dashboard?.caVencidos ?? 0} helper="Certificado de aprovacao" tone="red" />
         <KpiCard icon={ShieldAlert} label="CA vencendo" value={dashboard?.caVencendo ?? 0} helper="Proximos 30 dias" tone="orange" />
+        <KpiCard icon={ClipboardCheck} label="APT abertas" value={dashboard?.aptAbertas ?? 0} helper="Permissoes de trabalho" tone="orange" />
+        <KpiCard icon={ListChecks} label="Inspecoes abertas" value={dashboard?.inspecoesAbertas ?? 0} helper="Campo e conformidade" />
+        <KpiCard icon={Siren} label="Ocorrencias abertas" value={dashboard?.ocorrenciasAbertas ?? 0} helper="Eventos em tratamento" tone="orange" />
+        <KpiCard icon={Siren} label="Criticas" value={dashboard?.ocorrenciasCriticas ?? 0} helper="Ocorrencias criticas abertas" tone="red" />
+        <KpiCard icon={ListChecks} label="Planos abertos" value={dashboard?.planosAbertos ?? 0} helper="Acoes pendentes" />
+        <KpiCard icon={AlertTriangle} label="Planos atrasados" value={dashboard?.planosAtrasados ?? 0} helper="Prazo vencido" tone="red" />
       </div>
 
       <section className="glass-card rounded-3xl p-5">
