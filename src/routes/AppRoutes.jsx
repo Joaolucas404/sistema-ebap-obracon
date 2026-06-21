@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout.jsx';
 import Almoxarifado from '../pages/Almoxarifado.jsx';
+import Administrativo from '../pages/Administrativo.jsx';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import ArquivoRelatorios from '../pages/ArquivoRelatorios.jsx';
@@ -10,6 +11,7 @@ import Config from '../pages/Config.jsx';
 import Compras from '../pages/Compras.jsx';
 import Dashboard from '../pages/Dashboard.jsx';
 import DetalheOS from '../pages/DetalheOS.jsx';
+import FinanceiroContratos from '../pages/FinanceiroContratos.jsx';
 import LocalizacaoEbaps from '../pages/LocalizacaoEbaps.jsx';
 import Login from '../pages/Login.jsx';
 import Manutencao from '../pages/Manutencao.jsx';
@@ -206,13 +208,25 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
+      <Route element={<ProtectedRoute permission="financeiroContrato" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/financeiro-contrato" element={<FinanceiroContratos />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="administrativo" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/administrativo" element={<Administrativo />} />
+        </Route>
+      </Route>
+
       <Route element={<ProtectedRoute permission="osDiaria" />}>
         <Route element={<AppLayout />}>
           <Route path="/os-diaria" element={<OsDiaria />} />
         </Route>
       </Route>
 
-      {placeholders.filter((page) => !['/localizacao-ebaps', '/cco-relatorios-diarios', '/cco-analise-os', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras', '/os-diaria'].includes(page.path)).map((page) => (
+      {placeholders.filter((page) => !['/localizacao-ebaps', '/cco-relatorios-diarios', '/cco-analise-os', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras', '/financeiro-contrato', '/administrativo', '/os-diaria'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />
