@@ -1,12 +1,17 @@
 import { supabase } from '../lib/supabase.js';
 
 export const OS_STATUS = [
+  { value: 'pendente_cco', label: 'Pendente CCO', tone: 'orange', perfil: 'CCO' },
+  { value: 'aprovada_cco', label: 'Aprovada pelo CCO', tone: 'green', perfil: 'CCO' },
+  { value: 'rejeitada_cco', label: 'Rejeitada pelo CCO', tone: 'red', perfil: 'CCO' },
+  { value: 'correcao_solicitada_cco', label: 'Correcao solicitada pelo CCO', tone: 'orange', perfil: 'CCO' },
   { value: 'solicitada_prefeitura', label: 'Solicitada pela Prefeitura', tone: 'blue', perfil: 'Prefeitura' },
   { value: 'aguardando_supervisor', label: 'Aguardando Supervisor', tone: 'green', perfil: 'Supervisor' },
   { value: 'analise_supervisor', label: 'Em Análise do Supervisor', tone: 'green', perfil: 'Supervisor' },
   { value: 'programada', label: 'Programada', tone: 'green', perfil: 'Supervisor' },
   { value: 'encaminhada_tecnicos', label: 'Encaminhada para Técnicos', tone: 'green', perfil: 'Supervisor' },
   { value: 'em_execucao', label: 'Em Execução', tone: 'cyan', perfil: 'Técnicos' },
+  { value: 'pausada', label: 'Pausada', tone: 'orange', perfil: 'Técnicos' },
   { value: 'concluida_tecnicos', label: 'Concluída pelos Técnicos', tone: 'cyan', perfil: 'Técnicos' },
   { value: 'validacao_supervisor', label: 'Em Validação do Supervisor', tone: 'green', perfil: 'Supervisor' },
   { value: 'enviada_prefeitura', label: 'Enviada para Prefeitura', tone: 'green', perfil: 'Supervisor' },
@@ -16,7 +21,7 @@ export const OS_STATUS = [
 ];
 
 export const OS_WORKFLOW = OS_STATUS.map((item, index) => ({ ...item, ordem: index + 1 }));
-export const OS_FINAL_STATUSES = ['concluida_arquivada', 'concluida', 'cancelada', 'rejeitada', 'arquivada', 'finalizada'];
+export const OS_FINAL_STATUSES = ['concluida_arquivada', 'concluida', 'cancelada', 'rejeitada', 'rejeitada_cco', 'arquivada', 'finalizada'];
 
 export const OS_PRIORIDADES = [
   { value: 'baixa', label: 'Baixa', tone: 'green' },
@@ -98,7 +103,7 @@ export function getWorkflowActions(perfil, os) {
       action(['aguardando_validacao_prefeitura', 'enviada_prefeitura'], 'nao_conforme', 'Reprovar OS', 'Prefeitura reprovou a OS e registrou não conformidade.', 'reject', true)
     ],
     supervisor: [
-      action(['solicitada_prefeitura', 'aguardando_supervisor'], 'analise_supervisor', 'Iniciar análise', 'Supervisor abriu a OS e iniciou a análise.', 'review'),
+      action(['solicitada_prefeitura', 'aguardando_supervisor', 'aprovada_cco'], 'analise_supervisor', 'Iniciar análise', 'Supervisor abriu a OS e iniciou a análise.', 'review'),
       action(['programada'], 'encaminhada_tecnicos', 'Encaminhar técnicos', 'OS encaminhada para execução técnica.', 'assign'),
       action(['concluida_tecnicos'], 'validacao_supervisor', 'Validar execução', 'Supervisor iniciou a validação da execução técnica.', 'validate'),
       action(['validacao_supervisor'], 'aguardando_validacao_prefeitura', 'Enviar Prefeitura', 'Supervisor aprovou a execução e enviou para validação da Prefeitura.', 'send'),
@@ -198,9 +203,10 @@ export async function criarOS(payload, user) {
   }
 
   const numero = payload.numero || gerarNumeroOS();
+  const origem = payload.origem || (user?.perfil === 'prefeitura' ? 'prefeitura' : 'operacao');
   const insertPayload = {
     numero,
-    origem: payload.origem || (user?.perfil === 'prefeitura' ? 'prefeitura' : 'operacao'),
+    origem,
     ebap_id: payload.ebap_id || null,
     equipamento_id: null,
     solicitante_id: payload.solicitante_id || user?.id || null,
@@ -209,6 +215,7 @@ export async function criarOS(payload, user) {
     descricao: payload.descricao,
     area: payload.area,
     prioridade: payload.prioridade || 'media',
+    status: payload.status || (origem === 'operacao' ? 'pendente_cco' : 'solicitada_prefeitura'),
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
@@ -237,6 +244,15 @@ export async function criarOS(payload, user) {
     perfil_destino: 'supervisor',
     tipo: 'alerta'
   });
+
+  if (origem === 'operacao') {
+    await criarNotificacaoOS(data, {
+      titulo: 'Nova OS aguardando CCO',
+      mensagem: `${data.numero} foi aberta pela operacao e aguarda validacao CCO.`,
+      perfil_destino: 'cco',
+      tipo: 'alerta'
+    });
+  }
 
   return buscarOS(data.id);
 }
@@ -617,7 +633,10 @@ async function criarNotificacaoOS(os, payload) {
     mensagem: payload.mensagem,
     tipo: payload.tipo || 'info',
     entidade_tipo: 'ordem_servico',
-    entidade_id: os.id
+    entidade_id: os.id,
+    modulo: 'os',
+    prioridade: os.prioridade === 'critica' ? 'critica' : os.prioridade === 'alta' ? 'alta' : 'normal',
+    acao_url: `/os/${os.id}`
   });
 
   if (error) throwSupabaseError(error);

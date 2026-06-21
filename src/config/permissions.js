@@ -14,6 +14,7 @@ export const PERFIS = [
 
 export const ROUTE_KEYS = {
   dashboard: '/dashboard',
+  notificacoes: '/notificacoes',
   dashboardOS: '/dashboard-os',
   localizacaoEbaps: '/localizacao-ebaps',
   relatorio: '/relatorio',
@@ -37,12 +38,13 @@ export const ROUTE_KEYS = {
 };
 
 export const ROLE_PERMISSIONS = {
-  operador: ['dashboard', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador'],
-  tecnico: ['dashboard', 'os', 'osDiaria', 'arquivoRelatorios'],
-  cco: ['dashboard', 'ccoRelatoriosDiarios', 'ccoAnaliseOS'],
-  supervisor: ['dashboard', 'dashboardOS', 'os', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios'],
+  operador: ['dashboard', 'notificacoes', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador'],
+  tecnico: ['dashboard', 'notificacoes', 'os', 'osDiaria', 'arquivoRelatorios'],
+  cco: ['dashboard', 'notificacoes', 'ccoRelatoriosDiarios', 'ccoAnaliseOS'],
+  supervisor: ['dashboard', 'notificacoes', 'dashboardOS', 'os', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras'],
   gerencia: [
     'dashboard',
+    'notificacoes',
     'dashboardOS',
     'localizacaoEbaps',
     'relatorio',
@@ -64,11 +66,11 @@ export const ROLE_PERMISSIONS = {
     'config'
   ],
   diretoria: ['*'],
-  prefeitura: ['dashboard', 'dashboardOS', 'os', 'localizacaoEbaps', 'relatorios', 'financeiroContrato'],
-  sst: ['dashboard', 'sst'],
-  administrativo: ['dashboard', 'administrativo'],
-  almoxarifado: ['dashboard', 'almoxarifado', 'compras'],
-  financeiro: ['dashboard', 'financeiroContrato', 'compras']
+  prefeitura: ['dashboard', 'notificacoes', 'dashboardOS', 'os', 'localizacaoEbaps', 'relatorios', 'financeiroContrato'],
+  sst: ['dashboard', 'notificacoes', 'sst'],
+  administrativo: ['dashboard', 'notificacoes', 'administrativo'],
+  almoxarifado: ['dashboard', 'notificacoes', 'almoxarifado', 'compras'],
+  financeiro: ['dashboard', 'notificacoes', 'financeiroContrato', 'compras']
 };
 
 export const START_ROUTE_BY_ROLE = {

@@ -2,15 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Clock3, LogOut, Shield } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MENU_ITEMS } from '../../config/menu.js';
+import NotificationBadgeButton from '../notificacoes/NotificationBadgeButton.jsx';
+import NotificationsPanel from '../notificacoes/NotificationsPanel.jsx';
 import { useAuthStore } from '../../store/authStore.js';
+import { useNotificacoesStore } from '../../store/notificacoesStore.js';
 
 function prettyRole(role) {
   const labels = {
     operador: 'Operador',
-    tecnico: 'Técnico',
+    tecnico: 'Tecnico',
     cco: 'CCO',
     supervisor: 'Supervisor',
-    gerencia: 'Gerência',
+    gerencia: 'Gerencia',
     diretoria: 'Diretoria',
     prefeitura: 'Prefeitura',
     sst: 'SST',
@@ -27,13 +30,30 @@ export default function Topbar() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const {
+    ultimas,
+    unreadCount,
+    saving,
+    carregarResumo,
+    marcarLida,
+    marcarTodasLidas,
+    iniciarRealtime,
+    pararRealtime
+  } = useNotificacoesStore();
   const current = MENU_ITEMS.find((item) => item.path === location.pathname);
   const [now, setNow] = useState(() => new Date());
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    carregarResumo(user);
+    iniciarRealtime(user);
+    return () => pararRealtime();
+  }, [user, carregarResumo, iniciarRealtime, pararRealtime]);
 
   const clock = useMemo(() => {
     const date = new Intl.DateTimeFormat('pt-BR', {
@@ -52,8 +72,17 @@ export default function Topbar() {
   }, [now]);
 
   function handleLogout() {
+    pararRealtime();
     logout();
     navigate('/login', { replace: true });
+  }
+
+  async function handleRead(id) {
+    await marcarLida(id, user);
+  }
+
+  async function handleReadAll() {
+    await marcarTodasLidas(user);
   }
 
   return (
@@ -64,7 +93,7 @@ export default function Topbar() {
         </div>
         <div className="min-w-0">
           <strong className="block truncate text-sm font-black uppercase tracking-wide">Sistema Operacional EBAPs</strong>
-          <span className="block truncate text-xs text-green-100/80">Consórcio União Obracon</span>
+          <span className="block truncate text-xs text-green-100/80">Consorcio Uniao Obracon</span>
         </div>
       </div>
 
@@ -81,13 +110,24 @@ export default function Topbar() {
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-xs font-black text-cyan-100">
           <Shield size={15} />
-          {user?.nome} • {prettyRole(user?.perfil)}
+          {user?.nome} - {prettyRole(user?.perfil)}
         </span>
+        <NotificationBadgeButton count={unreadCount} onClick={() => setNotificationsOpen(true)} />
         <button type="button" className="secondary-button" onClick={handleLogout}>
           <LogOut size={17} />
           Sair
         </button>
       </div>
+
+      <NotificationsPanel
+        open={notificationsOpen}
+        notifications={ultimas}
+        unreadCount={unreadCount}
+        saving={saving}
+        onClose={() => setNotificationsOpen(false)}
+        onRead={handleRead}
+        onReadAll={handleReadAll}
+      />
     </header>
   );
 }

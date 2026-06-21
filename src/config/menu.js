@@ -2,6 +2,7 @@ import {
   Activity,
   Archive,
   BarChart3,
+  BellRing,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export const MENU_ITEMS = [
+  { key: 'notificacoes', label: 'Alertas', path: '/notificacoes', icon: BellRing, description: 'Central de notificacoes' },
   { key: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visão geral das EBAPs' },
   { key: 'dashboardOS', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de serviço' },
   { key: 'localizacaoEbaps', label: 'Localização EBAPs', path: '/localizacao-ebaps', icon: MapPin, description: 'Mapa e links das unidades' },

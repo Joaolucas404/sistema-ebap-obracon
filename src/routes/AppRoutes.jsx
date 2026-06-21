@@ -4,12 +4,15 @@ import Almoxarifado from '../pages/Almoxarifado.jsx';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import ArquivoRelatorios from '../pages/ArquivoRelatorios.jsx';
+import CcoAnaliseOS from '../pages/CcoAnaliseOS.jsx';
 import CcoRelatoriosDiarios from '../pages/CcoRelatoriosDiarios.jsx';
 import Config from '../pages/Config.jsx';
+import Compras from '../pages/Compras.jsx';
 import Dashboard from '../pages/Dashboard.jsx';
 import DetalheOS from '../pages/DetalheOS.jsx';
 import Login from '../pages/Login.jsx';
 import Manutencao from '../pages/Manutencao.jsx';
+import Notificacoes from '../pages/Notificacoes.jsx';
 import OrdensServico from '../pages/OrdensServico.jsx';
 import PlaceholderPage from '../pages/PlaceholderPage.jsx';
 import RelatorioDiario from '../pages/RelatorioDiario.jsx';
@@ -128,6 +131,12 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
+      <Route element={<ProtectedRoute permission="notificacoes" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/notificacoes" element={<Notificacoes />} />
+        </Route>
+      </Route>
+
       <Route element={<ProtectedRoute permission="dashboardOS" />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard-os" element={<OrdensServico />} />
@@ -150,6 +159,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="ccoRelatoriosDiarios" />}>
         <Route element={<AppLayout />}>
           <Route path="/cco-relatorios-diarios" element={<CcoRelatoriosDiarios />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="ccoAnaliseOS" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/cco-analise-os" element={<CcoAnaliseOS />} />
         </Route>
       </Route>
 
@@ -177,7 +192,13 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao'].includes(page.path)).map((page) => (
+      <Route element={<ProtectedRoute permission="compras" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/compras" element={<Compras />} />
+        </Route>
+      </Route>
+
+      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/cco-analise-os', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />
