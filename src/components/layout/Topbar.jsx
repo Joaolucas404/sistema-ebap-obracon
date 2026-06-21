@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { MENU_ITEMS } from '../../config/menu.js';
 import NotificationBadgeButton from '../notificacoes/NotificationBadgeButton.jsx';
 import NotificationsPanel from '../notificacoes/NotificationsPanel.jsx';
+import GlobalSearch from './GlobalSearch.jsx';
 import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
 
@@ -86,7 +87,7 @@ export default function Topbar() {
   }
 
   return (
-    <header className="glass-card mx-auto mb-4 grid max-w-[1400px] gap-3 rounded-3xl px-4 py-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
+    <header className="glass-card mx-auto mb-4 grid max-w-[1400px] gap-3 rounded-3xl px-4 py-3 xl:grid-cols-[260px_minmax(260px,1fr)_auto] xl:items-center">
       <div className="flex min-w-0 items-center gap-3">
         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-green-300/30 bg-[#17B33A]/15 text-sm font-black text-green-100 shadow-lg shadow-black/20">
           EB
@@ -97,9 +98,12 @@ export default function Topbar() {
         </div>
       </div>
 
-      <div className="md:text-center">
+      <div className="grid gap-2 md:grid-cols-[auto_minmax(240px,1fr)] md:items-center">
+        <div className="min-w-0 md:text-center">
         <h1 className="text-xl font-black tracking-wide text-white md:text-2xl">{current?.label || 'EBAPS'}</h1>
         <p className="text-sm text-slate-300">{current?.description || 'Controle operacional integrado'}</p>
+        </div>
+        <GlobalSearch />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:justify-end">

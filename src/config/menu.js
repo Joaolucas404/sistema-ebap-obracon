@@ -21,27 +21,29 @@ import {
   Wrench
 } from 'lucide-react';
 
+export const MENU_GROUPS = ['Operacao', 'Infraestrutura', 'Seguranca', 'Administrativo', 'Inteligencia'];
+
 export const MENU_ITEMS = [
-  { key: 'notificacoes', label: 'Alertas', path: '/notificacoes', icon: BellRing, description: 'Central de notificacoes' },
-  { key: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visão geral das EBAPs' },
-  { key: 'dashboardOS', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de serviço' },
-  { key: 'localizacaoEbaps', label: 'Localização EBAPs', path: '/localizacao-ebaps', icon: MapPin, description: 'Mapa e links das unidades' },
-  { key: 'relatorio', label: 'Relatório Diário', path: '/relatorio', icon: FileText, description: 'RO do operador' },
-  { key: 'ccoRelatoriosDiarios', label: 'CCO - RO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Validação dos relatórios' },
-  { key: 'ccoAnaliseOS', label: 'CCO - OS', path: '/cco-analise-os', icon: ClipboardCheck, description: 'Análise de OS da operação' },
-  { key: 'os', label: 'Ordem de Serviço', path: '/os', icon: Wrench, description: 'Abertura e acompanhamento' },
-  { key: 'manutencao', label: 'Manutenção', path: '/manutencao', icon: Activity, description: 'Sala de situação e programação' },
-  { key: 'salaSituacaoEbaps', label: 'Sala de Situação', path: '/sala-situacao-ebaps', icon: FileCog, description: 'Fila e validações das EBAPs' },
-  { key: 'osDiaria', label: 'OS Diárias', path: '/os-diaria', icon: ClipboardList, description: 'Execução técnica' },
-  { key: 'arquivoRelatorios', label: 'Arquivo PDF', path: '/arquivo-relatorios', icon: Archive, description: 'Rastreabilidade de documentos' },
-  { key: 'acervoOperador', label: 'Acervo Operador', path: '/acervo-operador', icon: Boxes, description: 'Histórico de RO e OS' },
-  { key: 'relatorios', label: 'Relatórios', path: '/relatorios', icon: FileText, description: 'Consolidados e filtros' },
-  { key: 'almoxarifado', label: 'Almoxarifado', path: '/almoxarifado', icon: Boxes, description: 'Estoque e rastreabilidade' },
-  { key: 'compras', label: 'Compras', path: '/compras', icon: ShoppingCart, description: 'Solicitações e aprovações' },
-  { key: 'financeiroContrato', label: 'Financeiro/Contrato', path: '/financeiro-contrato', icon: WalletCards, description: 'Medições e custos' },
-  { key: 'sst', label: 'SST', path: '/sst', icon: HardHat, description: 'Segurança do trabalho' },
-  { key: 'administrativo', label: 'Administrativo', path: '/administrativo', icon: Building2, description: 'Contratos, DP/RH e documentos' },
-  { key: 'orientacoes', label: 'Orientações', path: '/orientacoes', icon: HelpCircle, description: 'Procedimentos operacionais' },
-  { key: 'config', label: 'Configurações', path: '/config', icon: Settings, description: 'Preferências e cadastros' },
-  { key: 'usuarios', label: 'Usuários', path: '/usuarios', icon: Users, description: 'Administração de acessos' }
+  { key: 'notificacoes', group: 'Operacao', label: 'Alertas', path: '/notificacoes', icon: BellRing, description: 'Central de notificacoes' },
+  { key: 'dashboard', group: 'Operacao', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visao geral das EBAPs' },
+  { key: 'dashboardOS', group: 'Operacao', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de servico' },
+  { key: 'os', group: 'Operacao', label: 'Ordem de Servico', path: '/os', icon: Wrench, description: 'Abertura e acompanhamento' },
+  { key: 'relatorio', group: 'Operacao', label: 'Relatorio Diario', path: '/relatorio', icon: FileText, description: 'RO do operador' },
+  { key: 'ccoRelatoriosDiarios', group: 'Operacao', label: 'CCO - RO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Validacao dos relatorios' },
+  { key: 'ccoAnaliseOS', group: 'Operacao', label: 'CCO - OS', path: '/cco-analise-os', icon: ClipboardCheck, description: 'Analise de OS da operacao' },
+  { key: 'salaSituacaoEbaps', group: 'Operacao', label: 'Sala de Situacao', path: '/sala-situacao-ebaps', icon: FileCog, description: 'Fila e validacoes das EBAPs' },
+  { key: 'osDiaria', group: 'Operacao', label: 'OS Diarias', path: '/os-diaria', icon: ClipboardList, description: 'Execucao tecnica' },
+  { key: 'localizacaoEbaps', group: 'Infraestrutura', label: 'Localizacao EBAPs', path: '/localizacao-ebaps', icon: MapPin, description: 'Mapa e links das unidades' },
+  { key: 'manutencao', group: 'Infraestrutura', label: 'Manutencao', path: '/manutencao', icon: Activity, description: 'Sala de situacao e programacao' },
+  { key: 'almoxarifado', group: 'Infraestrutura', label: 'Almoxarifado', path: '/almoxarifado', icon: Boxes, description: 'Estoque e rastreabilidade' },
+  { key: 'compras', group: 'Infraestrutura', label: 'Compras', path: '/compras', icon: ShoppingCart, description: 'Solicitacoes e aprovacoes' },
+  { key: 'sst', group: 'Seguranca', label: 'SST', path: '/sst', icon: HardHat, description: 'Seguranca do trabalho' },
+  { key: 'orientacoes', group: 'Seguranca', label: 'Orientacoes', path: '/orientacoes', icon: HelpCircle, description: 'Procedimentos operacionais' },
+  { key: 'administrativo', group: 'Administrativo', label: 'Administrativo', path: '/administrativo', icon: Building2, description: 'Contratos, DP/RH e documentos' },
+  { key: 'financeiroContrato', group: 'Administrativo', label: 'Financeiro/Contrato', path: '/financeiro-contrato', icon: WalletCards, description: 'Medicoes e custos' },
+  { key: 'usuarios', group: 'Administrativo', label: 'Usuarios', path: '/usuarios', icon: Users, description: 'Administracao de acessos' },
+  { key: 'config', group: 'Administrativo', label: 'Configuracoes', path: '/config', icon: Settings, description: 'Preferencias e cadastros' },
+  { key: 'relatorios', group: 'Inteligencia', label: 'Relatorios', path: '/relatorios', icon: FileText, description: 'Consolidados e filtros' },
+  { key: 'arquivoRelatorios', group: 'Inteligencia', label: 'Arquivo PDF', path: '/arquivo-relatorios', icon: Archive, description: 'Rastreabilidade de documentos' },
+  { key: 'acervoOperador', group: 'Inteligencia', label: 'Acervo Operador', path: '/acervo-operador', icon: Boxes, description: 'Historico de RO e OS' }
 ];

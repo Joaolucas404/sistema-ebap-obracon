@@ -70,6 +70,24 @@ async function countRows(builder) {
   return count || 0;
 }
 
+async function safeCountRows(builder) {
+  try {
+    return await countRows(builder);
+  } catch {
+    return 0;
+  }
+}
+
+async function safeRows(builder) {
+  try {
+    const { data, error } = await builder;
+    if (error) return [];
+    return data || [];
+  } catch {
+    return [];
+  }
+}
+
 async function fetchAllPages(builder, pageSize = 1000) {
   const rows = [];
   for (let from = 0; ; from += pageSize) {
@@ -113,6 +131,7 @@ function getEbapCriticidade(ebap, ordens) {
 
 export async function obterDashboardExecutivo() {
   const { start, end } = todayRange();
+  const currentMonth = new Date().toISOString().slice(0, 7);
 
   const [
     osAbertas,
@@ -164,7 +183,7 @@ export async function obterDashboardExecutivo() {
         .eq('ativa', true)
         .is('deleted_at', null)
     ),
-    supabase.from('ebaps').select('id,codigo,nome,nome_curto,status,ativa,bairro').is('deleted_at', null).order('nome'),
+    supabase.from('ebaps').select('id,codigo,nome,nome_curto,status,status_operacional,ativa,bairro,created_at,updated_at').is('deleted_at', null).order('nome'),
     fetchAllPages(
       supabase
         .from('ordens_servico')
@@ -193,6 +212,56 @@ export async function obterDashboardExecutivo() {
   const ebaps = ebapsResult.data || [];
   const osRows = osChartRows || [];
   const activeOsRows = osRows.filter((ordem) => ACTIVE_OS_STATUSES.includes(ordem.status));
+  const [
+    roPendentes,
+    aprPendentes,
+    estoqueCritico,
+    comprasPendentes,
+    medicoesPendentes,
+    contratosAtivos,
+    valorMedidoMesRows,
+    comprasPorStatusRows,
+    roPorEbapRows,
+    preventivasRows,
+    ultimasCompras,
+    ultimasApr,
+    ultimasMedicoes
+  ] = await Promise.all([
+    safeCountRows(supabase.from('relatorios_diarios').select('id', { count: 'exact', head: true }).in('status', ['pendente_validacao_cco', 'rascunho', 'correcao_solicitada']).is('deleted_at', null)),
+    safeCountRows(supabase.from('apr').select('id', { count: 'exact', head: true }).in('status', ['rascunho', 'em_analise']).is('deleted_at', null)),
+    safeCountRows(supabase.from('almoxarifado_itens').select('id', { count: 'exact', head: true }).lte('estoque_atual', 0).is('deleted_at', null)),
+    safeCountRows(supabase.from('compras').select('id', { count: 'exact', head: true }).in('status', ['solicitada', 'aguardando_aprovacao', 'em_cotacao']).is('deleted_at', null)),
+    safeCountRows(supabase.from('medicoes').select('id', { count: 'exact', head: true }).in('status', ['enviada', 'em_analise', 'rascunho']).is('deleted_at', null)),
+    safeCountRows(supabase.from('contratos').select('id', { count: 'exact', head: true }).eq('status', 'ativo').is('deleted_at', null)),
+    safeRows(supabase.from('medicoes').select('valor_medido,valor_aprovado,valor_glosa,competencia_mes,competencia_ano').is('deleted_at', null)),
+    safeRows(supabase.from('compras').select('status').is('deleted_at', null)),
+    safeRows(supabase.from('relatorios_diarios').select('id,ebap_id,ebap:ebaps(id,nome,nome_curto)').is('deleted_at', null)),
+    safeRows(supabase.from('manutencao_execucoes').select('status').is('deleted_at', null)),
+    safeRows(supabase.from('compras').select('id,numero,status,area,created_at').is('deleted_at', null).order('created_at', { ascending: false }).limit(10)),
+    safeRows(supabase.from('apr').select('id,codigo,atividade,status,created_at').is('deleted_at', null).order('created_at', { ascending: false }).limit(10)),
+    safeRows(supabase.from('medicoes').select('id,codigo,numero,status,valor_medido,valor_aprovado,created_at').is('deleted_at', null).order('created_at', { ascending: false }).limit(10))
+  ]);
+
+  const valorMedidoMes = valorMedidoMesRows
+    .filter((row) => `${row.competencia_ano}-${String(row.competencia_mes).padStart(2, '0')}` === currentMonth)
+    .reduce((sum, row) => sum + Number(row.valor_medido || 0), 0);
+  const valorAprovado = valorMedidoMesRows.reduce((sum, row) => sum + Number(row.valor_aprovado || 0), 0);
+  const valorGlosado = valorMedidoMesRows.reduce((sum, row) => sum + Number(row.valor_glosa || 0), 0);
+  const comprasPorStatus = countBy(comprasPorStatusRows, 'status');
+  const roPorEbap = Object.values(roPorEbapRows.reduce((acc, row) => {
+    const id = row.ebap_id || 'sem_ebap';
+    acc[id] ||= { value: id, name: row.ebap?.nome_curto || row.ebap?.nome || 'Sem EBAP', total: 0 };
+    acc[id].total += 1;
+    return acc;
+  }, {})).sort((a, b) => b.total - a.total);
+  const preventivasPorSituacao = countBy(preventivasRows, 'status');
+  const ultimasMovimentacoes = [
+    ...(ultimasOsResult.data || []).map((row) => ({ tipo: 'OS', titulo: row.numero, descricao: row.titulo, data: row.created_at, path: `/os/${row.id}` })),
+    ...(ultimosRelatoriosResult.data || []).map((row) => ({ tipo: 'RO', titulo: row.codigo, descricao: row.ebap?.nome || row.status, data: row.created_at, path: '/relatorio' })),
+    ...ultimasCompras.map((row) => ({ tipo: 'Compra', titulo: row.numero, descricao: `${row.area || '-'} - ${row.status}`, data: row.created_at, path: '/compras' })),
+    ...ultimasApr.map((row) => ({ tipo: 'APR', titulo: row.codigo, descricao: row.atividade || row.status, data: row.created_at, path: '/sst' })),
+    ...ultimasMedicoes.map((row) => ({ tipo: 'Medicao', titulo: row.numero || row.codigo, descricao: row.status, data: row.created_at, path: '/financeiro-contrato' }))
+  ].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0)).slice(0, 15);
 
   return {
     kpis: {
@@ -200,16 +269,32 @@ export async function obterDashboardExecutivo() {
       osConcluidasHoje,
       osAguardandoSupervisor,
       osCriticas,
-      ebapsOperando
+      ebapsOperando,
+      roPendentes,
+      aprPendentes,
+      estoqueCritico,
+      comprasPendentes,
+      medicoesPendentes,
+      contratosAtivos,
+      valorMedidoMes,
+      valorAprovado,
+      valorGlosado
     },
     ebaps: ebaps.map((ebap) => ({
       ...ebap,
       gerencial: obterDadosGerenciaisEbap(ebap),
       ordensAbertas: activeOsRows.filter((ordem) => ordem.ebap_id === ebap.id).length,
+      roPendentes: roPorEbapRows.filter((row) => row.ebap_id === ebap.id).length,
+      preventivasPendentes: 0,
+      updatedAt: ebap.updated_at || ebap.created_at,
       criticidade: getEbapCriticidade(ebap, activeOsRows)
     })),
     osPorStatus: countBy(osRows, 'status'),
     osPorArea: countBy(osRows, 'area'),
+    roPorEbap,
+    comprasPorStatus,
+    preventivasPorSituacao,
+    ultimasMovimentacoes,
     ultimasOs: ultimasOsResult.data || [],
     ultimosRelatorios: ultimosRelatoriosResult.data || []
   };

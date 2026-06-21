@@ -1,28 +1,31 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout.jsx';
-import Almoxarifado from '../pages/Almoxarifado.jsx';
-import Administrativo from '../pages/Administrativo.jsx';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import { useAuthStore } from '../store/authStore.js';
-import ArquivoRelatorios from '../pages/ArquivoRelatorios.jsx';
-import CcoAnaliseOS from '../pages/CcoAnaliseOS.jsx';
-import CcoRelatoriosDiarios from '../pages/CcoRelatoriosDiarios.jsx';
-import Config from '../pages/Config.jsx';
-import Compras from '../pages/Compras.jsx';
-import Dashboard from '../pages/Dashboard.jsx';
-import DetalheOS from '../pages/DetalheOS.jsx';
-import FinanceiroContratos from '../pages/FinanceiroContratos.jsx';
-import LocalizacaoEbaps from '../pages/LocalizacaoEbaps.jsx';
-import Login from '../pages/Login.jsx';
-import Manutencao from '../pages/Manutencao.jsx';
-import Notificacoes from '../pages/Notificacoes.jsx';
-import OrdensServico from '../pages/OrdensServico.jsx';
-import OsDiaria from '../pages/OsDiaria.jsx';
 import PlaceholderPage from '../pages/PlaceholderPage.jsx';
-import RelatorioDiario from '../pages/RelatorioDiario.jsx';
-import SST from '../pages/SST.jsx';
-import Unauthorized from '../pages/Unauthorized.jsx';
-import Usuarios from '../pages/Usuarios.jsx';
+
+const Almoxarifado = lazy(() => import('../pages/Almoxarifado.jsx'));
+const Administrativo = lazy(() => import('../pages/Administrativo.jsx'));
+const ArquivoRelatorios = lazy(() => import('../pages/ArquivoRelatorios.jsx'));
+const CcoAnaliseOS = lazy(() => import('../pages/CcoAnaliseOS.jsx'));
+const CcoRelatoriosDiarios = lazy(() => import('../pages/CcoRelatoriosDiarios.jsx'));
+const Config = lazy(() => import('../pages/Config.jsx'));
+const Compras = lazy(() => import('../pages/Compras.jsx'));
+const Dashboard = lazy(() => import('../pages/Dashboard.jsx'));
+const DetalheOS = lazy(() => import('../pages/DetalheOS.jsx'));
+const FinanceiroContratos = lazy(() => import('../pages/FinanceiroContratos.jsx'));
+const LocalizacaoEbaps = lazy(() => import('../pages/LocalizacaoEbaps.jsx'));
+const Login = lazy(() => import('../pages/Login.jsx'));
+const Manutencao = lazy(() => import('../pages/Manutencao.jsx'));
+const Notificacoes = lazy(() => import('../pages/Notificacoes.jsx'));
+const OrdensServico = lazy(() => import('../pages/OrdensServico.jsx'));
+const OsDiaria = lazy(() => import('../pages/OsDiaria.jsx'));
+const RelatorioDiario = lazy(() => import('../pages/RelatorioDiario.jsx'));
+const SST = lazy(() => import('../pages/SST.jsx'));
+const SalaSituacaoTV = lazy(() => import('../pages/SalaSituacaoTV.jsx'));
+const Unauthorized = lazy(() => import('../pages/Unauthorized.jsx'));
+const Usuarios = lazy(() => import('../pages/Usuarios.jsx'));
 
 const placeholders = [
   {
@@ -124,10 +127,12 @@ function RootRedirect() {
 
 export default function AppRoutes() {
   return (
+    <Suspense fallback={<div className="app-bg grid min-h-screen place-items-center text-sm font-black text-cyan-100">Carregando modulo...</div>}>
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="/sala-situacao-tv" element={<SalaSituacaoTV />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
@@ -248,5 +253,6 @@ export default function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, ClipboardList, Clock3, Factory, FileText, RefreshCcw, ShieldAlert, X } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, ClipboardList, Clock3, DollarSign, Factory, FileText, HardHat, PackageX, RefreshCcw, ShieldAlert, WalletCards, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import KpiCard from '../components/ui/KpiCard.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import { AREA_LABELS, obterDashboardExecutivo, STATUS_LABELS } from '../services/dashboardService.js';
+import { useAuthStore } from '../store/authStore.js';
 
 const STATUS_COLORS = {
   solicitada_prefeitura: '#38bdf8',
@@ -34,6 +36,22 @@ function formatDate(value) {
   if (!value) return '-';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('pt-BR');
+}
+
+function timeAgo(value) {
+  if (!value) return 'Sem data';
+  const diff = Date.now() - new Date(value).getTime();
+  if (Number.isNaN(diff)) return formatDate(value);
+  const minutes = Math.max(0, Math.round(diff / 60000));
+  if (minutes < 1) return 'Atualizado agora';
+  if (minutes < 60) return `Atualizado ha ${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `Atualizado ha ${hours} h`;
+  return formatDate(value);
+}
+
+function money(value) {
+  return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function statusTone(status) {
@@ -190,6 +208,8 @@ function EbapDetailPanel({ ebap, onClose }) {
 }
 
 export default function Dashboard() {
+  const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -221,11 +241,18 @@ export default function Dashboard() {
     };
   }, [data?.ebaps]);
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }, []);
+
   return (
     <div className="grid gap-4">
       <PageHeader
-        title="Dashboard Executivo"
-        description="Centro de operacoes com indicadores em tempo real conectados ao Supabase."
+        title={`${greeting}, ${user?.nome || 'Operacao'}`}
+        description={`Portal Executivo EBAPs - ${new Date().toLocaleString('pt-BR')}`}
         actions={
           <button type="button" className="secondary-button" onClick={loadDashboard} disabled={loading}>
             <RefreshCcw size={17} className={loading ? 'animate-spin' : ''} />
@@ -236,13 +263,46 @@ export default function Dashboard() {
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-3xl border border-green-300/25 bg-green-400/10 p-5 transition hover:-translate-y-0.5">
+          <span className="text-xs font-black uppercase text-green-100">Operando</span>
+          <strong className="mt-1 block text-4xl text-white">{criticidade.normais}</strong>
+        </div>
+        <div className="rounded-3xl border border-yellow-300/25 bg-yellow-400/10 p-5 transition hover:-translate-y-0.5">
+          <span className="text-xs font-black uppercase text-yellow-100">Atencao</span>
+          <strong className="mt-1 block text-4xl text-white">{criticidade.atencao}</strong>
+        </div>
+        <div className="rounded-3xl border border-red-300/25 bg-red-400/10 p-5 transition hover:-translate-y-0.5">
+          <span className="text-xs font-black uppercase text-red-100">Critica</span>
+          <strong className="mt-1 block text-4xl text-white">{criticidade.criticas}</strong>
+        </div>
+      </section>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <KpiCard icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} helper="Fluxos nao encerrados" tone="cyan" />
         <KpiCard icon={CheckCircle2} label="Concluidas hoje" value={loading ? '...' : data?.kpis.osConcluidasHoje ?? 0} helper="Encerradas no dia" tone="green" />
         <KpiCard icon={Clock3} label="Aguard. supervisor" value={loading ? '...' : data?.kpis.osAguardandoSupervisor ?? 0} helper="Na fila de analise" tone="orange" />
         <KpiCard icon={ShieldAlert} label="OS criticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} helper="Prioridade critica" tone="red" />
         <KpiCard icon={Factory} label="EBAPs operando" value={loading ? '...' : data?.kpis.ebapsOperando ?? 0} helper="Status normal" tone="green" />
+        <KpiCard icon={FileText} label="RO pendentes" value={loading ? '...' : data?.kpis.roPendentes ?? 0} helper="Validacao ou correcao" tone="orange" />
+        <KpiCard icon={HardHat} label="APR pendentes" value={loading ? '...' : data?.kpis.aprPendentes ?? 0} helper="SST aguardando acao" tone="cyan" />
+        <KpiCard icon={PackageX} label="Estoque critico" value={loading ? '...' : data?.kpis.estoqueCritico ?? 0} helper="Itens zerados" tone="red" />
+        <KpiCard icon={WalletCards} label="Compras pendentes" value={loading ? '...' : data?.kpis.comprasPendentes ?? 0} helper="Cotacao ou aprovacao" tone="orange" />
+        <KpiCard icon={DollarSign} label="Medicoes pendentes" value={loading ? '...' : data?.kpis.medicoesPendentes ?? 0} helper={`${data?.kpis.contratosAtivos || 0} contratos ativos`} tone="green" />
       </div>
+
+      <section className="glass-card rounded-3xl p-5">
+        <div className="mb-4">
+          <h3 className="text-lg font-black text-white">Indicadores financeiros</h3>
+          <p className="text-sm text-slate-300">Contratos, medicoes e valores consolidados do modulo financeiro.</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-4">
+          <FinanceMetric label="Valor medido no mes" value={money(data?.kpis.valorMedidoMes)} />
+          <FinanceMetric label="Valor aprovado" value={money(data?.kpis.valorAprovado)} />
+          <FinanceMetric label="Valor glosado" value={money(data?.kpis.valorGlosado)} />
+          <FinanceMetric label="Compras pendentes" value={data?.kpis.comprasPendentes || 0} />
+        </div>
+      </section>
 
       <section className="glass-card rounded-3xl p-5">
         <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -286,6 +346,14 @@ export default function Dashboard() {
                     <span className="text-xs font-black uppercase text-slate-400">Alerta operacional</span>
                     <strong className="mt-1 block text-2xl text-white">{ebap.criticidade?.score || 0}%</strong>
                   </div>
+                  <div className="rounded-2xl bg-navy-950/55 p-3">
+                    <span className="text-xs font-black uppercase text-slate-400">RO pendentes</span>
+                    <strong className="mt-1 block text-2xl text-white">{ebap.roPendentes || 0}</strong>
+                  </div>
+                  <div className="rounded-2xl bg-navy-950/55 p-3">
+                    <span className="text-xs font-black uppercase text-slate-400">Preventivas</span>
+                    <strong className="mt-1 block text-2xl text-white">{ebap.preventivasPendentes || 0}</strong>
+                  </div>
                 </div>
                 {ebap.gerencial && (
                   <div className="mt-3 rounded-2xl bg-navy-950/35 px-3 py-2 text-xs font-bold text-slate-200">
@@ -298,6 +366,7 @@ export default function Dashboard() {
                     style={{ width: `${ebap.criticidade?.score || 0}%` }}
                   />
                 </div>
+                <p className="mt-3 text-xs font-bold text-slate-300">{timeAgo(ebap.updatedAt)}</p>
               </button>
             ))}
           </div>
@@ -348,6 +417,59 @@ export default function Dashboard() {
           )}
         </ChartCard>
       </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <ChartCard title="RO por EBAP" subtitle="Relatorios diarios agrupados por unidade.">
+          {loading ? <EmptyPanel text="Carregando grafico..." /> : data?.roPorEbap?.length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.roPorEbap} margin={{ top: 8, right: 8, left: -18, bottom: 48 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" />
+                <XAxis dataKey="name" stroke="#cbd5e1" tick={{ fontSize: 10 }} angle={-28} textAnchor="end" interval={0} height={70} />
+                <YAxis allowDecimals={false} stroke="#cbd5e1" tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ background: '#08214f', border: '1px solid rgba(125,211,252,.35)', color: '#fff' }} />
+                <Bar dataKey="total" fill="#38bdf8" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <EmptyPanel text="Nenhum dado disponivel ainda." />}
+        </ChartCard>
+        <ChartCard title="Compras por Status" subtitle="Fluxo de compras e aprovacao.">
+          {loading ? <EmptyPanel text="Carregando grafico..." /> : data?.comprasPorStatus?.length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart><Pie data={data.comprasPorStatus} dataKey="total" nameKey="name" innerRadius={55} outerRadius={90}>{data.comprasPorStatus.map((entry, index) => <Cell key={entry.value} fill={AREA_COLORS[index % AREA_COLORS.length]} />)}</Pie><Tooltip contentStyle={{ background: '#08214f', border: '1px solid rgba(125,211,252,.35)', color: '#fff' }} /></PieChart>
+            </ResponsiveContainer>
+          ) : <EmptyPanel text="Nenhum dado disponivel ainda." />}
+        </ChartCard>
+        <ChartCard title="Preventivas por Situacao" subtitle="Execucoes de manutencao.">
+          {loading ? <EmptyPanel text="Carregando grafico..." /> : data?.preventivasPorSituacao?.length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.preventivasPorSituacao} margin={{ top: 8, right: 8, left: -18, bottom: 48 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" />
+                <XAxis dataKey="name" stroke="#cbd5e1" tick={{ fontSize: 10 }} angle={-28} textAnchor="end" interval={0} height={70} />
+                <YAxis allowDecimals={false} stroke="#cbd5e1" tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ background: '#08214f', border: '1px solid rgba(125,211,252,.35)', color: '#fff' }} />
+                <Bar dataKey="total" fill="#22c55e" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <EmptyPanel text="Nenhum dado disponivel ainda." />}
+        </ChartCard>
+      </div>
+
+      <section className="glass-card rounded-3xl p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Activity className="text-cyan-100" size={20} />
+          <h3 className="text-lg font-black text-white">Ultimas movimentacoes</h3>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {(data?.ultimasMovimentacoes || []).length ? data.ultimasMovimentacoes.map((item, index) => (
+            <button key={`${item.tipo}-${item.titulo}-${index}`} type="button" className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-200/60" onClick={() => navigate(item.path)}>
+              <span className="text-xs font-black uppercase text-cyan-100">{item.tipo}</span>
+              <strong className="mt-1 block text-white">{item.titulo}</strong>
+              <p className="truncate text-sm text-slate-300">{item.descricao || '-'}</p>
+              <small className="text-slate-500">{formatDate(item.data)}</small>
+            </button>
+          )) : <EmptyPanel text="Nenhum dado disponivel ainda." />}
+        </div>
+      </section>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <section className="glass-card rounded-3xl p-5">
@@ -428,6 +550,15 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function FinanceMetric({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 transition hover:-translate-y-0.5">
+      <span className="text-xs font-black uppercase text-slate-400">{label}</span>
+      <strong className="mt-2 block text-xl text-white">{value}</strong>
     </div>
   );
 }
