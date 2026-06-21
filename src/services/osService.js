@@ -254,6 +254,8 @@ export async function criarOS(payload, user) {
     });
   }
 
+  await criarNotificacaoOSAbertura(data, user, origem);
+
   return buscarOS(data.id);
 }
 
@@ -639,6 +641,42 @@ async function criarNotificacaoOS(os, payload) {
     acao_url: `/os/${os.id}`
   });
 
+  if (error) throwSupabaseError(error);
+}
+
+async function criarNotificacaoOSAbertura(os, user, origem) {
+  const { data: usuarios, error: usuariosError } = await supabase
+    .from('usuarios')
+    .select('id')
+    .eq('ativo', true)
+    .is('deleted_at', null);
+
+  if (usuariosError) throwSupabaseError(usuariosError);
+  if (!usuarios?.length) return;
+
+  const prioridade = os.prioridade === 'critica' ? 'critica' : os.prioridade === 'alta' ? 'alta' : 'normal';
+  const notificacoes = usuarios.map((usuario) => ({
+    usuario_id: usuario.id,
+    perfil_destino: null,
+    titulo: origem === 'operacao' ? 'Nova OS aberta pela operacao' : 'Nova OS aberta',
+    mensagem: `${os.numero} - ${os.titulo || 'Ordem de Servico'} foi aberta por ${user?.nome || 'usuario do sistema'} e esta em ${statusLabel(os.status)}.`,
+    tipo: os.prioridade === 'critica' ? 'alerta' : 'info',
+    entidade_tipo: 'ordem_servico',
+    entidade_id: os.id,
+    modulo: 'os',
+    prioridade,
+    acao_url: `/os/${os.id}`,
+    metadata: {
+      broadcast: true,
+      origem,
+      status: os.status,
+      prioridade: os.prioridade,
+      solicitante_id: os.solicitante_id || null,
+      created_by: user?.id || null
+    }
+  }));
+
+  const { error } = await supabase.from('notificacoes').insert(notificacoes);
   if (error) throwSupabaseError(error);
 }
 
