@@ -14,6 +14,7 @@ import Login from '../pages/Login.jsx';
 import Manutencao from '../pages/Manutencao.jsx';
 import Notificacoes from '../pages/Notificacoes.jsx';
 import OrdensServico from '../pages/OrdensServico.jsx';
+import OsDiaria from '../pages/OsDiaria.jsx';
 import PlaceholderPage from '../pages/PlaceholderPage.jsx';
 import RelatorioDiario from '../pages/RelatorioDiario.jsx';
 import SST from '../pages/SST.jsx';
@@ -198,7 +199,13 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/cco-analise-os', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras'].includes(page.path)).map((page) => (
+      <Route element={<ProtectedRoute permission="osDiaria" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/os-diaria" element={<OsDiaria />} />
+        </Route>
+      </Route>
+
+      {placeholders.filter((page) => !['/cco-relatorios-diarios', '/cco-analise-os', '/arquivo-relatorios', '/almoxarifado', '/sst', '/manutencao', '/compras', '/os-diaria'].includes(page.path)).map((page) => (
         <Route key={page.path} element={<ProtectedRoute permission={page.permission} />}>
           <Route element={<AppLayout />}>
             <Route path={page.path} element={<PlaceholderPage title={page.title} description={page.description} />} />
