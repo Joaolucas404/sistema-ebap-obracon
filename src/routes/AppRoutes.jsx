@@ -26,6 +26,7 @@ const RelatorioDiario = lazy(() => import('../pages/RelatorioDiario.jsx'));
 const SST = lazy(() => import('../pages/SST.jsx'));
 const SalaSituacao = lazy(() => import('../pages/SalaSituacao.jsx'));
 const SalaSituacaoTV = lazy(() => import('../pages/SalaSituacaoTV.jsx'));
+const Supervisao = lazy(() => import('../pages/Supervisao.jsx'));
 const Unauthorized = lazy(() => import('../pages/Unauthorized.jsx'));
 const Usuarios = lazy(() => import('../pages/Usuarios.jsx'));
 
@@ -164,6 +165,12 @@ export default function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/os" element={<OrdensServico />} />
           <Route path="/os/:id" element={<DetalheOS />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="supervisao" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/supervisao" element={<Supervisao />} />
         </Route>
       </Route>
 

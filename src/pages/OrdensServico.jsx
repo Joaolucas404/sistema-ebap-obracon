@@ -63,8 +63,8 @@ export default function OrdensServico() {
     setError('');
     try {
       const [lista, dash] = await Promise.all([
-        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id }),
-        obterDashboardOS({ perfil: user?.perfil, userId: user?.id })
+        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisao: user?.area_supervisao }),
+        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisao: user?.area_supervisao })
       ]);
       setItems(lista.data);
       setCount(lista.count);

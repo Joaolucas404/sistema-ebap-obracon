@@ -34,9 +34,11 @@ export const OS_AREAS = [
   { value: 'mecanica', label: 'Mecânica' },
   { value: 'eletrica', label: 'Elétrica' },
   { value: 'automacao', label: 'Automação' },
+  { value: 'operacional', label: 'Operação' },
+  { value: 'limpeza', label: 'Limpeza' },
   { value: 'civil', label: 'Civil / Estrutural' },
-  { value: 'hidraulica', label: 'Hidráulica' },
-  { value: 'operacional', label: 'Operacional' },
+  { value: 'sst', label: 'SST' },
+  { value: 'administrativo', label: 'Administrativo' },
   { value: 'outros', label: 'Outros' }
 ];
 
@@ -123,14 +125,15 @@ function action(from, to, label, descricao, acao, requiresMotivo = false) {
   return { from, to, label, descricao, acao, requiresMotivo };
 }
 
-function applyRoleScope(query, perfil, userId) {
-  if (['gerencia', 'diretoria', 'supervisor'].includes(perfil)) return query;
+function applyRoleScope(query, perfil, userId, areaSupervisao = '') {
+  if (['gerencia', 'diretoria'].includes(perfil)) return query;
+  if (perfil === 'supervisor') return areaSupervisao ? query.eq('area', areaSupervisao) : query;
   if (perfil === 'prefeitura') return query.eq('solicitante_id', userId);
   if (perfil === 'tecnico') return query.or(`responsavel_id.eq.${userId},status.eq.encaminhada_tecnicos`);
   return query.or(`solicitante_id.eq.${userId},responsavel_id.eq.${userId}`);
 }
 
-export async function listarOS({ page = 1, pageSize = 10, search = '', status = '', prioridade = '', ebapId = '', responsavelId = '', perfil, userId } = {}) {
+export async function listarOS({ page = 1, pageSize = 10, search = '', status = '', prioridade = '', ebapId = '', responsavelId = '', perfil, userId, areaSupervisao = '' } = {}) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   let query = supabase
@@ -139,7 +142,7 @@ export async function listarOS({ page = 1, pageSize = 10, search = '', status = 
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
-  query = applyRoleScope(query, perfil, userId);
+  query = applyRoleScope(query, perfil, userId, areaSupervisao);
 
   if (search) {
     const value = `%${search}%`;
@@ -204,6 +207,8 @@ export async function criarOS(payload, user) {
 
   const numero = payload.numero || gerarNumeroOS();
   const origem = payload.origem || (user?.perfil === 'prefeitura' ? 'prefeitura' : 'operacao');
+  const supervisorArea = await buscarSupervisorPorArea(payload.area);
+  const now = new Date().toISOString();
   const insertPayload = {
     numero,
     origem,
@@ -216,9 +221,25 @@ export async function criarOS(payload, user) {
     area: payload.area,
     prioridade: payload.prioridade || 'media',
     status: payload.status || (origem === 'operacao' ? 'pendente_cco' : 'solicitada_prefeitura'),
+    supervisor_responsavel: supervisorArea?.supervisor_id || null,
+    status_supervisor: 'aguardando_supervisor',
+    equipe: payload.equipe || payload.equipe_responsavel || null,
+    tecnico_responsavel: payload.tecnico_responsavel || payload.responsavel_id || null,
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
+    historico_roteamento: [
+      {
+        acao: 'roteamento_inicial',
+        area_anterior: null,
+        area_nova: payload.area,
+        supervisor_anterior: null,
+        supervisor_novo: supervisorArea?.supervisor_id || null,
+        justificativa: 'Roteamento automático por área da OS.',
+        usuario_id: user?.id || null,
+        data: now
+      }
+    ],
     created_by: user?.id || null,
     payload: {
       ...(payload.payload || {}),
@@ -257,6 +278,20 @@ export async function criarOS(payload, user) {
   await criarNotificacaoOSAbertura(data, user, origem);
 
   return buscarOS(data.id);
+}
+
+async function buscarSupervisorPorArea(area) {
+  if (!area) return null;
+  const { data, error } = await supabase
+    .from('supervisor_areas')
+    .select('area,nome,supervisor_id')
+    .eq('area', area)
+    .eq('ativo', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) throwSupabaseError(error);
+  return data;
 }
 
 export async function atualizarOS(id, payload, user) {
@@ -576,13 +611,13 @@ export async function obterUrlAssinadaAnexo(anexo, expiresIn = 3600) {
   return data?.signedUrl || '';
 }
 
-export async function obterDashboardOS({ perfil, userId } = {}) {
+export async function obterDashboardOS({ perfil, userId, areaSupervisao = '' } = {}) {
   let query = supabase
     .from('ordens_servico')
     .select('id,status,prioridade,created_at,data_programada,solicitante_id,responsavel_id')
     .is('deleted_at', null);
 
-  query = applyRoleScope(query, perfil, userId);
+  query = applyRoleScope(query, perfil, userId, areaSupervisao);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

@@ -21,6 +21,7 @@ export const ROUTE_KEYS = {
   ccoRelatoriosDiarios: '/cco-relatorios-diarios',
   ccoAnaliseOS: '/cco-analise-os',
   os: '/os',
+  supervisao: '/supervisao',
   manutencao: '/manutencao',
   salaSituacaoEbaps: '/sala-situacao-ebaps',
   osDiaria: '/os-diaria',
@@ -40,8 +41,8 @@ export const ROUTE_KEYS = {
 export const ROLE_PERMISSIONS = {
   operador: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes'],
   tecnico: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'os', 'osDiaria', 'arquivoRelatorios', 'orientacoes'],
-  cco: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'orientacoes'],
-  supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'dashboardOS', 'os', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes'],
+  cco: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'supervisao', 'orientacoes'],
+  supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes'],
   gerencia: [
     'dashboard',
     'notificacoes',
@@ -51,6 +52,7 @@ export const ROLE_PERMISSIONS = {
     'ccoRelatoriosDiarios',
     'ccoAnaliseOS',
     'os',
+    'supervisao',
     'manutencao',
     'salaSituacaoEbaps',
     'osDiaria',

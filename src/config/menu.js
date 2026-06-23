@@ -16,6 +16,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingCart,
+  UserCog,
   Users,
   WalletCards,
   Wrench
@@ -28,6 +29,7 @@ export const MENU_ITEMS = [
   { key: 'dashboard', group: 'Operacao', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visao geral das EBAPs' },
   { key: 'dashboardOS', group: 'Operacao', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de servico' },
   { key: 'os', group: 'Operacao', label: 'Ordem de Servico', path: '/os', icon: Wrench, description: 'Abertura e acompanhamento' },
+  { key: 'supervisao', group: 'Operacao', label: 'Supervisao', path: '/supervisao', icon: UserCog, description: 'Fila dos supervisores por area' },
   { key: 'relatorio', group: 'Operacao', label: 'Relatorio Diario', path: '/relatorio', icon: FileText, description: 'RO do operador' },
   { key: 'ccoRelatoriosDiarios', group: 'Operacao', label: 'CCO - RO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Validacao dos relatorios' },
   { key: 'ccoAnaliseOS', group: 'Operacao', label: 'CCO - OS', path: '/cco-analise-os', icon: ClipboardCheck, description: 'Analise de OS da operacao' },
