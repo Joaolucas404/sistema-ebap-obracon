@@ -51,6 +51,7 @@ export default function OrdensServico() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / filters.pageSize)), [count, filters.pageSize]);
   const canCreate = podeCriarOS(user?.perfil);
   const canDelete = podeExcluirOS(user?.perfil);
+  const userAreaOperacional = user?.area_operacional || user?.area_supervisao || '';
 
   async function loadBase() {
     const [ebapRows, responsavelRows] = await Promise.all([listarEbaps(), listarResponsaveis()]);
@@ -63,8 +64,8 @@ export default function OrdensServico() {
     setError('');
     try {
       const [lista, dash] = await Promise.all([
-        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisao: user?.area_supervisao }),
-        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisao: user?.area_supervisao })
+        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional }),
+        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional })
       ]);
       setItems(lista.data);
       setCount(lista.count);
@@ -82,7 +83,7 @@ export default function OrdensServico() {
 
   useEffect(() => {
     loadOS();
-  }, [filters, user?.id, user?.perfil]);
+  }, [filters, user?.id, user?.perfil, userAreaOperacional]);
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));

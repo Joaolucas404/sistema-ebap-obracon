@@ -7,8 +7,8 @@ const SUPERVISAO_SELECT = `
   *,
   ebap:ebaps(id,codigo,nome,nome_curto,status),
   solicitante:usuarios!ordens_servico_solicitante_id_fkey(id,nome,usuario,perfil,setor),
-  supervisor:usuarios!ordens_servico_supervisor_responsavel_fkey(id,nome,usuario,perfil,setor,area_supervisao),
-  tecnico:usuarios!ordens_servico_tecnico_responsavel_fkey(id,nome,usuario,perfil,setor),
+  supervisor:usuarios!ordens_servico_supervisor_responsavel_fkey(id,nome,usuario,perfil,setor,area_operacional,area_supervisao),
+  tecnico:usuarios!ordens_servico_tecnico_responsavel_fkey(id,nome,usuario,perfil,setor,area_operacional),
   responsavel:usuarios!ordens_servico_responsavel_id_fkey(id,nome,usuario,perfil,setor)
 `;
 
@@ -42,9 +42,9 @@ export async function obterContextoSupervisao(user) {
   if (!user?.id) throw new Error('Usuário não autenticado.');
 
   const [usuarioRes, areasRes, tecnicosRes, ebapsRes] = await Promise.all([
-    supabase.from('usuarios').select('id,nome,usuario,perfil,setor,area_supervisao').eq('id', user.id).maybeSingle(),
-    supabase.from('supervisor_areas').select('*, supervisor:usuarios(id,nome,usuario,perfil,setor,area_supervisao)').eq('ativo', true).is('deleted_at', null).order('nome'),
-    supabase.from('usuarios').select('id,nome,usuario,perfil,setor,ativo').eq('ativo', true).is('deleted_at', null).in('perfil', ['tecnico', 'supervisor']).order('nome'),
+    supabase.from('usuarios').select('id,nome,usuario,perfil,setor,area_operacional,area_supervisao').eq('id', user.id).maybeSingle(),
+    supabase.from('supervisor_areas').select('*, supervisor:usuarios(id,nome,usuario,perfil,setor,area_operacional,area_supervisao)').eq('ativo', true).is('deleted_at', null).order('nome'),
+    supabase.from('usuarios').select('id,nome,usuario,perfil,setor,area_operacional,ativo').eq('ativo', true).is('deleted_at', null).in('perfil', ['tecnico', 'supervisor']).order('nome'),
     supabase.from('ebaps').select('id,codigo,nome,nome_curto,status').is('deleted_at', null).order('nome')
   ]);
 
@@ -54,7 +54,7 @@ export async function obterContextoSupervisao(user) {
   if (ebapsRes.error) throw ebapsRes.error;
 
   const usuario = usuarioRes.data || user;
-  const areaAtual = user.perfil === 'supervisor' ? usuario.area_supervisao || user.area_supervisao || '' : '';
+  const areaAtual = user.perfil === 'supervisor' ? usuario.area_operacional || usuario.area_supervisao || user.area_operacional || user.area_supervisao || '' : '';
 
   return {
     usuario,
@@ -244,9 +244,9 @@ async function buscarSupervisorArea(area) {
 async function validarEscopoSupervisor(os, user) {
   if (podeVerTodasAreas(user?.perfil)) return;
   if (user?.perfil !== 'supervisor') throw new Error('Perfil sem permissão para movimentar supervisão.');
-  const { data, error } = await supabase.from('usuarios').select('area_supervisao').eq('id', user.id).maybeSingle();
+  const { data, error } = await supabase.from('usuarios').select('area_operacional,area_supervisao').eq('id', user.id).maybeSingle();
   if (error) throw error;
-  const userArea = data?.area_supervisao || user.area_supervisao;
+  const userArea = data?.area_operacional || data?.area_supervisao || user.area_operacional || user.area_supervisao;
   if (!userArea) throw new Error('Supervisor sem área configurada.');
   if (os.area !== userArea) throw new Error('Supervisor sem permissão para movimentar OS de outra área.');
 }

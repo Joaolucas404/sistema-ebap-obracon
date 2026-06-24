@@ -18,11 +18,11 @@ export default function Supervisao() {
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / filters.pageSize)), [count, filters.pageSize]);
-  const activeArea = user?.perfil === 'supervisor' ? contexto?.areaAtual || user?.area_supervisao : filters.area;
+  const activeArea = user?.perfil === 'supervisor' ? contexto?.areaAtual || user?.area_operacional || user?.area_supervisao : filters.area;
 
   useEffect(() => {
     carregar(user);
-  }, [filters, user?.id, user?.perfil, user?.area_supervisao]);
+  }, [filters, user?.id, user?.perfil, user?.area_operacional, user?.area_supervisao]);
 
   async function handleAction(action, os) {
     if (['confirmar', 'encaminhar', 'validar'].includes(action)) {

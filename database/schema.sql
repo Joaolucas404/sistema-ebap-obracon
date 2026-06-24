@@ -49,6 +49,8 @@ create table public.usuarios (
   perfil text not null,
   perfil_id uuid references public.perfis(id) on delete set null,
   setor text,
+  area_operacional text,
+  area_supervisao text,
   cargo text,
   telefone text,
   ativo boolean not null default true,
@@ -61,7 +63,11 @@ create table public.usuarios (
   deleted_at timestamptz,
   deleted_by uuid references public.usuarios(id) on delete set null,
   constraint usuarios_perfil_lower_chk check (perfil = lower(perfil)),
-  constraint usuarios_usuario_trim_chk check (usuario = btrim(usuario))
+  constraint usuarios_usuario_trim_chk check (usuario = btrim(usuario)),
+  constraint usuarios_area_operacional_check check (
+    area_operacional is null
+    or area_operacional in ('todas','mecanica','eletrica','automacao','operacional','sst','administrativo','almoxarifado','financeiro','cco','diretoria','gerencia','prefeitura')
+  )
 );
 
 create table public.ebaps (
@@ -80,6 +86,17 @@ create table public.ebaps (
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
   deleted_by uuid references public.usuarios(id) on delete set null
+);
+
+create table public.supervisor_areas (
+  id uuid primary key default gen_random_uuid(),
+  area text not null unique,
+  nome text not null,
+  supervisor_id uuid references public.usuarios(id) on delete set null,
+  ativo boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
 create table public.equipamento_tipos (
@@ -199,7 +216,11 @@ create table public.ordens_servico (
   area text,
   prioridade text not null default 'media' check (prioridade in ('baixa','media','alta','urgente','critica')),
   status text not null default 'solicitada_prefeitura' check (status in ('solicitada_prefeitura','aguardando_supervisor','analise_supervisor','programada','encaminhada_tecnicos','em_execucao','concluida_tecnicos','validacao_supervisor','enviada_prefeitura','aguardando_validacao_prefeitura','nao_conforme','concluida_arquivada','aberta','em_analise','enviada_cco','validada_cco','devolvida_cco','aguardando_material','execucao_concluida','aguardando_prefeitura','concluida','finalizada','arquivada','rejeitada','cancelada')),
+  supervisor_responsavel uuid references public.usuarios(id) on delete set null,
+  status_supervisor text not null default 'aguardando_supervisor' check (status_supervisor in ('aguardando_supervisor','analise_supervisor','programada','encaminhada_tecnicos','em_execucao','validacao_supervisor','devolvida_correcao','concluida','reencaminhada')),
   equipe_responsavel text,
+  equipe text,
+  tecnico_responsavel uuid references public.usuarios(id) on delete set null,
   data_programada date,
   hora_programada time,
   turno text,
@@ -210,6 +231,7 @@ create table public.ordens_servico (
   pendencias text,
   motivo_cancelamento text,
   payload jsonb not null default '{}'::jsonb,
+  historico_roteamento jsonb not null default '[]'::jsonb,
   created_by uuid references public.usuarios(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

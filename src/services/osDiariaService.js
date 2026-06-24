@@ -55,6 +55,10 @@ function periodRange(periodo) {
 
 function applyScope(query, user) {
   if (['supervisor', 'gerencia', 'diretoria'].includes(user?.perfil)) return query;
+  if (user?.perfil === 'tecnico') {
+    const base = query.or(`responsavel_id.eq.${user?.id},tecnico_responsavel.eq.${user?.id},responsavel_id.is.null`);
+    return user.area_operacional ? base.eq('area', user.area_operacional) : base;
+  }
   return query.or(`responsavel_id.eq.${user?.id},responsavel_id.is.null`);
 }
 

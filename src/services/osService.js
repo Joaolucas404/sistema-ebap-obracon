@@ -186,7 +186,7 @@ export async function listarEquipamentosPorEbap(ebapId) {
 export async function listarResponsaveis() {
   const { data, error } = await supabase
     .from('usuarios')
-    .select('id,nome,usuario,perfil,setor,ativo')
+    .select('id,nome,usuario,perfil,setor,area_operacional,ativo')
     .in('perfil', ['tecnico', 'supervisor'])
     .eq('ativo', true)
     .is('deleted_at', null)
@@ -262,7 +262,8 @@ export async function criarOS(payload, user) {
   await criarNotificacaoOS(data, {
     titulo: 'Nova OS da Prefeitura',
     mensagem: `${data.numero} foi aberta e aguarda análise do Supervisor.`,
-    perfil_destino: 'supervisor',
+    usuario_id: supervisorArea?.supervisor_id || null,
+    perfil_destino: supervisorArea?.supervisor_id ? null : 'supervisor',
     tipo: 'alerta'
   });
 
@@ -282,6 +283,20 @@ export async function criarOS(payload, user) {
 
 async function buscarSupervisorPorArea(area) {
   if (!area) return null;
+  const { data: supervisor, error: supervisorError } = await supabase
+    .from('usuarios')
+    .select('id,nome,usuario,perfil,area_operacional')
+    .eq('perfil', 'supervisor')
+    .eq('area_operacional', area)
+    .eq('ativo', true)
+    .is('deleted_at', null)
+    .order('nome')
+    .limit(1)
+    .maybeSingle();
+
+  if (supervisorError) throwSupabaseError(supervisorError);
+  if (supervisor) return { area, supervisor_id: supervisor.id, supervisor };
+
   const { data, error } = await supabase
     .from('supervisor_areas')
     .select('area,nome,supervisor_id')

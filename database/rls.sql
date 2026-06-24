@@ -3,6 +3,7 @@ alter table public.permissoes enable row level security;
 alter table public.perfil_permissoes enable row level security;
 alter table public.usuarios enable row level security;
 alter table public.ebaps enable row level security;
+alter table public.supervisor_areas enable row level security;
 alter table public.equipamento_tipos enable row level security;
 alter table public.equipamentos enable row level security;
 alter table public.relatorios_diarios enable row level security;
@@ -91,6 +92,8 @@ create policy "usuarios_diretoria_update" on public.usuarios for update using (p
 
 create policy "ebaps_read_all_profiles" on public.ebaps for select using (deleted_at is null and public.can_read_operational());
 create policy "ebaps_admin_write" on public.ebaps for all using (public.is_admin_role()) with check (public.is_admin_role());
+create policy "supervisor_areas_read_operational" on public.supervisor_areas for select using (deleted_at is null and public.can_read_operational());
+create policy "supervisor_areas_admin_write" on public.supervisor_areas for all using (public.current_app_role() in ('anon','gerencia','diretoria','service_role')) with check (true);
 create policy "equipamento_tipos_read_all_profiles" on public.equipamento_tipos for select using (public.can_read_operational());
 create policy "equipamento_tipos_admin_write" on public.equipamento_tipos for all using (public.is_admin_role()) with check (public.is_admin_role());
 create policy "equipamentos_read_all_profiles" on public.equipamentos for select using (deleted_at is null and public.can_read_operational());

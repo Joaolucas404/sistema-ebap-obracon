@@ -65,7 +65,8 @@ export const ROLE_PERMISSIONS = {
     'sst',
     'administrativo',
     'orientacoes',
-    'config'
+    'config',
+    'usuarios'
   ],
   diretoria: ['*'],
   prefeitura: ['dashboard', 'notificacoes', 'dashboardOS', 'os', 'localizacaoEbaps', 'relatorios', 'financeiroContrato', 'orientacoes'],

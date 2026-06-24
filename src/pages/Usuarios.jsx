@@ -6,7 +6,9 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Toast from '../components/ui/Toast.jsx';
 import { PERFIS } from '../config/permissions.js';
 import {
+  AREAS_OPERACIONAIS,
   atualizarUsuario,
+  areaOperacionalLabel,
   criarUsuario,
   desativarUsuario,
   excluirUsuario,
@@ -22,8 +24,24 @@ const blankForm = {
   senha: '',
   perfil: 'operador',
   setor: '',
+  area_operacional: '',
   ativo: true
 };
+
+const AUTO_AREA_BY_PROFILE = {
+  sst: 'sst',
+  administrativo: 'administrativo',
+  almoxarifado: 'almoxarifado',
+  financeiro: 'financeiro',
+  cco: 'cco',
+  prefeitura: 'prefeitura'
+};
+
+function canEditUser(currentUser, targetUser) {
+  if (currentUser?.perfil === 'diretoria') return true;
+  if (currentUser?.perfil === 'gerencia') return !['diretoria', 'gerencia'].includes(targetUser?.perfil);
+  return false;
+}
 
 function formatDate(value) {
   if (!value) return '-';
@@ -44,6 +62,10 @@ export default function Usuarios() {
   const canDeleteUsers = currentUser?.perfil === 'diretoria';
 
   const ativos = useMemo(() => usuarios.filter((usuario) => usuario.ativo).length, [usuarios]);
+  const perfisDisponiveis = useMemo(
+    () => currentUser?.perfil === 'gerencia' ? PERFIS.filter((perfil) => !['diretoria', 'gerencia'].includes(perfil)) : PERFIS,
+    [currentUser?.perfil]
+  );
 
   async function carregarUsuarios() {
     setLoading(true);
@@ -75,6 +97,7 @@ export default function Usuarios() {
       senha: '',
       perfil: user.perfil || 'operador',
       setor: user.setor || '',
+      area_operacional: user.area_operacional || user.area_supervisao || '',
       ativo: Boolean(user.ativo)
     });
     setModal({ type: 'edit', user });
@@ -94,7 +117,12 @@ export default function Usuarios() {
   }
 
   function updateForm(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      if (field === 'perfil') {
+        return { ...current, perfil: value, area_operacional: AUTO_AREA_BY_PROFILE[value] || current.area_operacional };
+      }
+      return { ...current, [field]: value };
+    });
   }
 
   async function handleSave(event) {
@@ -104,10 +132,10 @@ export default function Usuarios() {
 
     try {
       if (modal.type === 'create') {
-        await criarUsuario({ ...form, criado_por: currentUser?.id });
+        await criarUsuario({ ...form, criado_por: currentUser?.id }, currentUser);
         setToast({ message: 'Usuário criado com sucesso.', tone: 'green' });
       } else {
-        await atualizarUsuario(modal.user.id, form);
+        await atualizarUsuario(modal.user.id, form, currentUser);
         setToast({ message: 'Usuário atualizado com sucesso.', tone: 'green' });
       }
 
@@ -188,7 +216,7 @@ export default function Usuarios() {
     <div className="grid gap-4">
       <PageHeader
         title="Administração de Usuários"
-        description="Apenas Diretoria pode criar, editar, desativar, reativar, resetar senha e alterar perfil/setor."
+        description="Diretoria gerencia todos os usuários. Gerência pode criar e editar usuários operacionais, incluindo área operacional."
         actions={
           <>
             <button className="secondary-button" type="button" onClick={carregarUsuarios} disabled={loading}>
@@ -222,13 +250,14 @@ export default function Usuarios() {
 
       <section className="glass-card overflow-hidden rounded-3xl">
         <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full border-separate border-spacing-y-2 p-3 text-left">
+          <table className="min-w-[1120px] w-full border-separate border-spacing-y-2 p-3 text-left">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-slate-400">
                 <th className="px-3 py-2">Nome</th>
                 <th className="px-3 py-2">Usuário</th>
                 <th className="px-3 py-2">Perfil</th>
                 <th className="px-3 py-2">Setor</th>
+                <th className="px-3 py-2">Área Operacional</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Último login</th>
                 <th className="px-3 py-2 text-right">Ações</th>
@@ -237,7 +266,7 @@ export default function Usuarios() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={7}>
+                  <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={8}>
                     Carregando usuários...
                   </td>
                 </tr>
@@ -252,16 +281,17 @@ export default function Usuarios() {
                       <StatusBadge>{usuario.perfil}</StatusBadge>
                     </td>
                     <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.setor || '-'}</td>
+                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{areaOperacionalLabel(usuario.area_operacional || usuario.area_supervisao)}</td>
                     <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3">
                       <StatusBadge tone={usuario.ativo ? 'green' : 'orange'}>{usuario.ativo ? 'Ativo' : 'Inativo'}</StatusBadge>
                     </td>
                     <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-300">{formatDate(usuario.ultimo_login)}</td>
                     <td className="rounded-r-2xl border-y border-r border-cyan-300/10 bg-navy-950/55 px-3 py-3">
                       <div className="flex justify-end gap-2">
-                        <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openEdit(usuario)}>
+                        <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openEdit(usuario)} disabled={!canEditUser(currentUser, usuario)}>
                           Editar
                         </button>
-                        <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openReset(usuario)}>
+                        <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openReset(usuario)} disabled={!canEditUser(currentUser, usuario)}>
                           <RotateCcw size={15} />
                           Senha
                         </button>
@@ -269,7 +299,7 @@ export default function Usuarios() {
                           className={usuario.ativo ? 'danger-button min-h-10 px-3' : 'secondary-button min-h-10 px-3'}
                           type="button"
                           onClick={() => handleToggle(usuario)}
-                          disabled={saving}
+                          disabled={saving || !canEditUser(currentUser, usuario)}
                         >
                           {usuario.ativo ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
                           {usuario.ativo ? 'Desativar' : 'Reativar'}
@@ -291,7 +321,7 @@ export default function Usuarios() {
                 ))
               ) : (
                 <tr>
-                  <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={7}>
+                  <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={8}>
                     Nenhum usuário cadastrado.
                   </td>
                 </tr>
@@ -325,7 +355,7 @@ export default function Usuarios() {
             <label className="field-label">
               Perfil
               <select className="form-control" value={form.perfil} onChange={(event) => updateForm('perfil', event.target.value)}>
-                {PERFIS.map((perfil) => (
+                {perfisDisponiveis.map((perfil) => (
                   <option key={perfil} value={perfil}>
                     {perfil}
                   </option>
@@ -335,6 +365,22 @@ export default function Usuarios() {
             <label className="field-label">
               Setor
               <input className="form-control" value={form.setor} onChange={(event) => updateForm('setor', event.target.value)} />
+            </label>
+            <label className="field-label">
+              Área Operacional
+              <select
+                className="form-control"
+                value={form.area_operacional}
+                onChange={(event) => updateForm('area_operacional', event.target.value)}
+                required={['supervisor', 'tecnico'].includes(form.perfil)}
+              >
+                <option value="">Selecione...</option>
+                {AREAS_OPERACIONAIS.map((area) => (
+                  <option key={area.value} value={area.value}>
+                    {area.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="field-label">
               Status

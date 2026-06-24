@@ -60,7 +60,7 @@ select p.id, pe.id
 from public.perfis p
 join public.permissoes pe on (
   p.codigo = 'diretoria'
-  or (p.codigo = 'gerencia' and pe.codigo <> 'usuarios.manage' and pe.codigo <> 'orientacoes.delete')
+  or (p.codigo = 'gerencia' and pe.codigo <> 'orientacoes.delete')
   or (p.codigo = 'operador' and pe.codigo in ('dashboard.read','relatorio.read','relatorio.write','cco_ro.read','acervo.read','orientacoes.read'))
   or (p.codigo = 'tecnico' and pe.codigo in ('dashboard.read','os.read','os.write','os_diaria.execute','arquivo.read','orientacoes.read'))
   or (p.codigo = 'cco' and pe.codigo in ('dashboard.read','cco_ro.read','cco_ro.validate','cco_os.validate','supervisao.read','orientacoes.read'))

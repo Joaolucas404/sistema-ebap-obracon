@@ -40,6 +40,7 @@ export default function SupervisaoActionModal({ action, os, contexto, saving, on
   }
 
   const areas = contexto?.areas?.length ? contexto.areas.map((area) => ({ value: area.area, label: area.nome })) : OS_AREAS;
+  const tecnicosDaArea = (contexto?.tecnicos || []).filter((tecnico) => tecnico.perfil !== 'tecnico' || !os.area || tecnico.area_operacional === os.area);
 
   return (
     <Modal
@@ -65,7 +66,7 @@ export default function SupervisaoActionModal({ action, os, contexto, saving, on
             <label className="field-label">Técnico
               <select className="form-control" value={form.tecnico_responsavel} onChange={(event) => setField('tecnico_responsavel', event.target.value)}>
                 <option value="">A definir</option>
-                {(contexto?.tecnicos || []).map((tecnico) => <option key={tecnico.id} value={tecnico.id}>{tecnico.nome}</option>)}
+                {tecnicosDaArea.map((tecnico) => <option key={tecnico.id} value={tecnico.id}>{tecnico.nome}</option>)}
               </select>
             </label>
             <label className="field-label">Data<input className="form-control" type="date" value={form.data_programada} onChange={(event) => setField('data_programada', event.target.value)} required /></label>
