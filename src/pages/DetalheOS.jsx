@@ -9,6 +9,7 @@ import PdfTemplate from '../components/pdf/PdfTemplate.jsx';
 import OSComments from '../components/os/OSComments.jsx';
 import OSEquipmentSelector from '../components/os/OSEquipmentSelector.jsx';
 import OSTimeline from '../components/os/OSTimeline.jsx';
+import RelatorioTecnicoDinamico from '../components/os/RelatorioTecnicoDinamico.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import {
   atualizarOS,
@@ -40,6 +41,12 @@ import {
   uploadAnexoOS
 } from '../services/osService.js';
 import { listarSstVinculosOS } from '../services/sstService.js';
+import {
+  buscarRespostaRelatorioOS,
+  listarModelosRelatorio,
+  salvarRelatorioTecnicoOS,
+  resumoRelatorioTecnico
+} from '../services/relatorioTecnicoService.js';
 import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
 function formatDate(value) {
@@ -65,12 +72,15 @@ export default function DetalheOS() {
   const [comentarios, setComentarios] = useState([]);
   const [anexos, setAnexos] = useState([]);
   const [sstVinculos, setSstVinculos] = useState({ aprs: [], apts: [], inspecoes: [], ocorrencias: [], planos: [] });
+  const [modelosRelatorio, setModelosRelatorio] = useState([]);
+  const [respostaRelatorio, setRespostaRelatorio] = useState(null);
   const [responsaveis, setResponsaveis] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false });
+  const [relatorioTecnico, setRelatorioTecnico] = useState({ modelo_id: '', respostas: {}, fotos: {}, observacoes: '' });
   const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '' });
   const [workflowAction, setWorkflowAction] = useState(null);
   const [workflowForm, setWorkflowForm] = useState({ status: '', comentario: '', motivo: '' });
@@ -98,6 +108,14 @@ export default function DetalheOS() {
       setAnexos(anexosRows);
       setResponsaveis(responsavelRows);
       setSstVinculos(sstRows);
+
+      const [modelosAreaRows, respostaRows] = await Promise.all([
+        listarModelosRelatorio({ area: osData.area }),
+        buscarRespostaRelatorioOS(id)
+      ]);
+      const modelosRows = modelosAreaRows.length ? modelosAreaRows : await listarModelosRelatorio();
+      setModelosRelatorio(modelosRows);
+      setRespostaRelatorio(respostaRows);
     } catch (err) {
       setError(err.message || 'Falha ao carregar OS.');
     } finally {
@@ -108,6 +126,17 @@ export default function DetalheOS() {
   useEffect(() => {
     loadAll();
   }, [id]);
+
+  useEffect(() => {
+    if (!modelosRelatorio.length && !respostaRelatorio) return;
+    const modeloId = respostaRelatorio?.modelo_id || modelosRelatorio[0]?.id || '';
+    setRelatorioTecnico({
+      modelo_id: modeloId,
+      respostas: respostaRelatorio?.respostas || {},
+      fotos: {},
+      observacoes: respostaRelatorio?.observacoes || ''
+    });
+  }, [modelosRelatorio, respostaRelatorio]);
 
   function openEdit() {
     setForm({
@@ -185,8 +214,32 @@ export default function DetalheOS() {
     setSaving(true);
     setError('');
     try {
+      let relatorioSalvo = null;
+      if (relatorioTecnico.modelo_id) {
+        relatorioSalvo = await salvarRelatorioTecnicoOS(
+          id,
+          {
+            ...relatorioTecnico,
+            ativo_nome: os.payload?.equipamento_falha || os.equipamento?.nome || os.titulo,
+            observacoes: execucao.relatorio_tecnico || relatorioTecnico.observacoes
+          },
+          user,
+          execucao.concluir ? 'enviado_supervisor' : 'rascunho'
+        );
+
+        const fotos = Object.entries(relatorioTecnico.fotos || {}).filter(([, foto]) => foto?.file);
+        for (const [chave, foto] of fotos) {
+          await uploadAnexoOS(id, foto.file, user, foto.legenda || foto.label || chave, 'relatorio_tecnico_foto');
+        }
+      }
+
       await registrarExecucaoOS(id, execucao, user);
-      setToast({ message: execucao.concluir ? 'Execução concluída e enviada para aprovação.' : 'Execução registrada.', tone: 'green' });
+      setToast({
+        message: relatorioSalvo
+          ? (execucao.concluir ? 'Relatório técnico enviado ao Supervisor.' : 'Rascunho técnico salvo.')
+          : (execucao.concluir ? 'Execução concluída e enviada para aprovação.' : 'Execução registrada.'),
+        tone: 'green'
+      });
       setExecucao({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false });
       setModal(null);
       await loadAll();
@@ -294,6 +347,7 @@ export default function DetalheOS() {
           os,
           historico,
           comentarios,
+          relatorioTecnico: respostaRelatorio,
           fotos,
           areaLabel: areaLabel(os.area)
         }
@@ -427,6 +481,20 @@ export default function DetalheOS() {
         </div>
       </section>
 
+      <section className="glass-card rounded-3xl p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-xl font-black text-white">Relatório técnico da OS</h3>
+            <p className="text-sm text-slate-300">{resumoRelatorioTecnico(respostaRelatorio)}</p>
+          </div>
+          {respostaRelatorio?.status && (
+            <StatusBadge tone={respostaRelatorio.status === 'enviado_supervisor' ? 'orange' : respostaRelatorio.status === 'aprovado_supervisor' ? 'green' : 'cyan'}>
+              {respostaRelatorio.status.replaceAll('_', ' ')}
+            </StatusBadge>
+          )}
+        </div>
+      </section>
+
       <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
         <section className="glass-card rounded-3xl p-5">
           <h3 className="mb-4 text-xl font-black text-white">Comentários</h3>
@@ -551,9 +619,15 @@ export default function DetalheOS() {
 
       <Modal open={modal === 'execute'} title="Registrar execução técnica" onClose={() => setModal(null)}>
         <form className="grid gap-4" onSubmit={handleExecution}>
+          <RelatorioTecnicoDinamico
+            modelos={modelosRelatorio}
+            value={relatorioTecnico}
+            onChange={setRelatorioTecnico}
+            disabled={saving}
+          />
           <label className="field-label">
-            Relatório de execução
-            <textarea className="form-control min-h-28 py-3" value={execucao.relatorio_tecnico} onChange={(event) => setExecucao((current) => ({ ...current, relatorio_tecnico: event.target.value }))} required />
+            Observação geral da execução
+            <textarea className="form-control min-h-28 py-3" value={execucao.relatorio_tecnico} onChange={(event) => setExecucao((current) => ({ ...current, relatorio_tecnico: event.target.value }))} required={!relatorioTecnico.modelo_id} />
           </label>
           <label className="field-label">
             Materiais utilizados

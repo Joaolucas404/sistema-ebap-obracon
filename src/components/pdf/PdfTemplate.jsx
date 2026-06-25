@@ -508,6 +508,8 @@ function RoDocument({ data }) {
 
 function OsDocument({ data }) {
   const os = data?.os || {};
+  const relatorioTecnico = data?.relatorioTecnico;
+  const respostas = relatorioTecnico?.respostas || {};
   return (
     <>
       <Section title="Dados da OS">
@@ -538,6 +540,34 @@ function OsDocument({ data }) {
       </Section>
 
       <Section title="Relatorio tecnico e aprovacoes">
+        {relatorioTecnico && (
+          <>
+            <div className="pdf-meta">
+              <Field label="Modelo" value={relatorioTecnico.modelo?.titulo || relatorioTecnico.ativo_nome} />
+              <Field label="Tipo" value={pretty(relatorioTecnico.tipo_manutencao)} />
+              <Field label="Status" value={pretty(relatorioTecnico.status)} />
+              <Field label="Enviado em" value={formatDate(relatorioTecnico.enviado_em)} />
+            </div>
+            <div className="pdf-table-wrap">
+              <table className="pdf-table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resposta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(respostas).map(([key, value]) => (
+                    <tr key={key}>
+                      <td>{pretty(key)}</td>
+                      <td>{typeof value === 'boolean' ? (value ? 'OK' : 'Nao') : String(value || '-')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
         <p className="pdf-text">Relatorio tecnico: {os.relatorio_tecnico || '-'}</p>
         <p className="pdf-text">Materiais utilizados: {os.materiais_utilizados || '-'}</p>
         <p className="pdf-text">Pendencias: {os.pendencias || '-'}</p>

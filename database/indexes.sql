@@ -18,6 +18,9 @@ create index if not exists idx_ordens_servico_programacao on public.ordens_servi
 create index if not exists idx_os_historico_os on public.os_historico(os_id, created_at desc);
 create index if not exists idx_comentarios_entidade on public.comentarios(entidade_tipo, entidade_id) where deleted_at is null;
 create index if not exists idx_anexos_entidade on public.anexos(entidade_tipo, entidade_id) where deleted_at is null;
+create index if not exists idx_modelos_relatorio_tipo on public.modelos_relatorio(tipo_manutencao, area) where deleted_at is null;
+create index if not exists idx_campos_relatorio_modelo on public.campos_relatorio(modelo_id, ordem);
+create index if not exists idx_respostas_relatorio_os on public.respostas_relatorio(os_id, status) where deleted_at is null;
 create index if not exists idx_arquivo_pdf_entidade on public.arquivo_pdf(entidade_tipo, entidade_id) where deleted_at is null;
 create index if not exists idx_arquivo_pdf_periodo on public.arquivo_pdf(ano, mes, data_documento desc) where deleted_at is null;
 create index if not exists idx_archive_documents_entity on public.archive_documents(entity_type, entity_id) where deleted_at is null;

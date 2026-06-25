@@ -502,6 +502,33 @@ export async function movimentarOS(id, payload, user) {
     await criarComentarioOS(id, `[${statusLabel(selected.to)}] ${payload.comentario}`, user, false, selected.to);
   }
 
+  if (user?.perfil === 'supervisor' && selected.to === 'aguardando_validacao_prefeitura') {
+    await supabase
+      .from('respostas_relatorio')
+      .update({
+        status: 'aprovado_supervisor',
+        validado_por: user?.id || null,
+        validado_em: now,
+        updated_at: now
+      })
+      .eq('os_id', id)
+      .eq('status', 'enviado_supervisor');
+  }
+
+  if (user?.perfil === 'supervisor' && selected.acao === 'return') {
+    await supabase
+      .from('respostas_relatorio')
+      .update({
+        status: 'nao_conforme',
+        motivo_nao_conformidade: payload.motivo || payload.comentario || 'Correção solicitada pelo Supervisor.',
+        validado_por: user?.id || null,
+        validado_em: now,
+        updated_at: now
+      })
+      .eq('os_id', id)
+      .eq('status', 'enviado_supervisor');
+  }
+
   await notificarMovimentacaoOS(data, selected, user, payload.motivo);
   return data;
 }
@@ -579,7 +606,7 @@ export async function listarAnexosOS(osId) {
   return data || [];
 }
 
-export async function uploadAnexoOS(osId, file, user, legenda = '') {
+export async function uploadAnexoOS(osId, file, user, legenda = '', categoria = 'foto_execucao') {
   if (!file) throw new Error('Selecione um arquivo.');
 
   const safeName = file.name.replace(/[^\w.-]+/g, '-');
@@ -603,7 +630,7 @@ export async function uploadAnexoOS(osId, file, user, legenda = '') {
       mime_type: file.type || null,
       tamanho_bytes: file.size || null,
       legenda,
-      categoria: 'foto_execucao',
+      categoria,
       uploaded_by: user?.id || null
     })
     .select()

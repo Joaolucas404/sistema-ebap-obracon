@@ -12,6 +12,9 @@ alter table public.relatorio_diario_itens enable row level security;
 alter table public.validacoes_cco enable row level security;
 alter table public.ordens_servico enable row level security;
 alter table public.os_historico enable row level security;
+alter table public.modelos_relatorio enable row level security;
+alter table public.campos_relatorio enable row level security;
+alter table public.respostas_relatorio enable row level security;
 alter table public.comentarios enable row level security;
 alter table public.anexos enable row level security;
 alter table public.arquivo_pdf enable row level security;
@@ -111,6 +114,12 @@ create policy "os_insert_profiles" on public.ordens_servico for insert with chec
 create policy "os_update_profiles" on public.ordens_servico for update using (public.current_app_role() in ('anon','tecnico','cco','supervisor','gerencia','diretoria','prefeitura','service_role')) with check (true);
 create policy "os_historico_read_profiles" on public.os_historico for select using (public.can_read_operational());
 create policy "os_historico_insert_profiles" on public.os_historico for insert with check (public.can_read_operational());
+create policy "modelos_relatorio_read" on public.modelos_relatorio for select using (deleted_at is null and public.can_read_operational());
+create policy "modelos_relatorio_admin" on public.modelos_relatorio for all using (public.current_app_role() in ('anon','supervisor','gerencia','diretoria','service_role')) with check (true);
+create policy "campos_relatorio_read" on public.campos_relatorio for select using (public.can_read_operational());
+create policy "campos_relatorio_admin" on public.campos_relatorio for all using (public.current_app_role() in ('anon','supervisor','gerencia','diretoria','service_role')) with check (true);
+create policy "respostas_relatorio_read" on public.respostas_relatorio for select using (deleted_at is null and public.can_read_operational());
+create policy "respostas_relatorio_write" on public.respostas_relatorio for all using (public.current_app_role() in ('anon','tecnico','supervisor','gerencia','diretoria','service_role')) with check (true);
 
 create policy "comentarios_rw_profiles" on public.comentarios for all using (deleted_at is null and public.can_read_operational()) with check (public.can_read_operational());
 create policy "anexos_rw_profiles" on public.anexos for all using (deleted_at is null and public.can_read_operational()) with check (public.can_read_operational());

@@ -209,6 +209,8 @@ create table public.ordens_servico (
   relatorio_id uuid references public.relatorios_diarios(id) on delete set null,
   ebap_id uuid references public.ebaps(id) on delete set null,
   equipamento_id uuid references public.equipamentos(id) on delete set null,
+  modelo_relatorio_id uuid,
+  tipo_manutencao text,
   solicitante_id uuid references public.usuarios(id) on delete set null,
   responsavel_id uuid references public.usuarios(id) on delete set null,
   titulo text not null,
@@ -253,6 +255,65 @@ create table public.os_historico (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+create table public.modelos_relatorio (
+  id uuid primary key default gen_random_uuid(),
+  codigo text not null unique,
+  titulo text not null,
+  equipamento_tipo text not null,
+  tipo_manutencao text not null check (tipo_manutencao in ('corretiva','preventiva','preditiva')),
+  area text,
+  source_html text,
+  resumo text,
+  versao integer not null default 1,
+  ativo boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
+create table public.campos_relatorio (
+  id uuid primary key default gen_random_uuid(),
+  modelo_id uuid not null references public.modelos_relatorio(id) on delete cascade,
+  chave text not null,
+  label text not null,
+  tipo text not null check (tipo in ('texto','numero','textarea','select','checklist','foto','assinatura')),
+  grupo text not null default 'dados',
+  obrigatorio boolean not null default false,
+  ordem integer not null default 0,
+  opcoes jsonb not null default '[]'::jsonb,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (modelo_id, chave)
+);
+
+create table public.respostas_relatorio (
+  id uuid primary key default gen_random_uuid(),
+  os_id uuid not null references public.ordens_servico(id) on delete cascade,
+  modelo_id uuid not null references public.modelos_relatorio(id) on delete restrict,
+  equipamento_id uuid references public.equipamentos(id) on delete set null,
+  ativo_nome text,
+  tipo_manutencao text not null check (tipo_manutencao in ('corretiva','preventiva','preditiva')),
+  status text not null default 'rascunho' check (status in ('rascunho','enviado_supervisor','aprovado_supervisor','nao_conforme','cancelado')),
+  respostas jsonb not null default '{}'::jsonb,
+  fotos_obrigatorias jsonb not null default '[]'::jsonb,
+  observacoes text,
+  enviado_por uuid references public.usuarios(id) on delete set null,
+  enviado_em timestamptz,
+  validado_por uuid references public.usuarios(id) on delete set null,
+  validado_em timestamptz,
+  motivo_nao_conformidade text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
+  unique (os_id, modelo_id)
+);
+
+alter table public.ordens_servico
+  add constraint ordens_servico_modelo_relatorio_id_fkey
+  foreign key (modelo_relatorio_id) references public.modelos_relatorio(id) on delete set null;
 
 create table public.comentarios (
   id uuid primary key default gen_random_uuid(),
