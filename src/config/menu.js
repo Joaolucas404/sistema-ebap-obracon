@@ -13,6 +13,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   MapPin,
+  PackageCheck,
   Settings,
   ShieldCheck,
   ShoppingCart,
@@ -30,12 +31,13 @@ export const MENU_ITEMS = [
   { key: 'dashboardOS', group: 'Operacao', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de servico' },
   { key: 'os', group: 'Operacao', label: 'Ordem de Servico', path: '/os', icon: Wrench, description: 'Abertura e acompanhamento' },
   { key: 'supervisao', group: 'Operacao', label: 'Supervisao', path: '/supervisao', icon: UserCog, description: 'Fila dos supervisores por area' },
-  { key: 'relatorio', group: 'Operacao', label: 'Relatorio Diario', path: '/relatorio', icon: FileText, description: 'RO do operador' },
-  { key: 'ccoRelatoriosDiarios', group: 'Operacao', label: 'CCO - RO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Validacao dos relatorios' },
+  { key: 'relatorio', group: 'Operacao', label: 'RDO', path: '/relatorio', icon: FileText, description: 'Relatorio Diario Operacional' },
+  { key: 'ccoRelatoriosDiarios', group: 'Operacao', label: 'CCO - RDO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Validacao dos RDOs' },
   { key: 'ccoAnaliseOS', group: 'Operacao', label: 'CCO - OS', path: '/cco-analise-os', icon: ClipboardCheck, description: 'Analise de OS da operacao' },
   { key: 'salaSituacaoEbaps', group: 'Operacao', label: 'Sala de Situacao', path: '/sala-situacao-ebaps', icon: FileCog, description: 'Fila e validacoes das EBAPs' },
   { key: 'osDiaria', group: 'Operacao', label: 'OS Diarias', path: '/os-diaria', icon: ClipboardList, description: 'Execucao tecnica' },
   { key: 'localizacaoEbaps', group: 'Infraestrutura', label: 'Localizacao EBAPs', path: '/localizacao-ebaps', icon: MapPin, description: 'Mapa e links das unidades' },
+  { key: 'ativos', group: 'Infraestrutura', label: 'Ativos', path: '/ativos', icon: PackageCheck, description: 'Equipamentos e historico operacional' },
   { key: 'manutencao', group: 'Infraestrutura', label: 'Manutencao', path: '/manutencao', icon: Activity, description: 'Sala de situacao e programacao' },
   { key: 'almoxarifado', group: 'Infraestrutura', label: 'Almoxarifado', path: '/almoxarifado', icon: Boxes, description: 'Estoque e rastreabilidade' },
   { key: 'compras', group: 'Infraestrutura', label: 'Compras', path: '/compras', icon: ShoppingCart, description: 'Solicitacoes e aprovacoes' },
@@ -47,5 +49,5 @@ export const MENU_ITEMS = [
   { key: 'config', group: 'Administrativo', label: 'Configuracoes', path: '/config', icon: Settings, description: 'Preferencias e cadastros' },
   { key: 'relatorios', group: 'Inteligencia', label: 'Relatorios', path: '/relatorios', icon: FileText, description: 'Consolidados e filtros' },
   { key: 'arquivoRelatorios', group: 'Inteligencia', label: 'Arquivo PDF', path: '/arquivo-relatorios', icon: Archive, description: 'Rastreabilidade de documentos' },
-  { key: 'acervoOperador', group: 'Inteligencia', label: 'Acervo Operador', path: '/acervo-operador', icon: Boxes, description: 'Historico de RO e OS' }
+  { key: 'acervoOperador', group: 'Inteligencia', label: 'Acervo Operador', path: '/acervo-operador', icon: Boxes, description: 'Historico de RDO e OS' }
 ];

@@ -63,7 +63,7 @@ export default function SalaSituacao() {
     <div className="grid gap-4">
       <PageHeader
         title="Sala de Situacao Operacional"
-        description="Centro operacional em tempo real integrado a OS, RO, CCO, SST, Almoxarifado, Compras e EBAPs."
+        description="Centro operacional em tempo real integrado a OS, RDO, CCO, SST, Almoxarifado, Compras e EBAPs."
         leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><ShieldAlert size={24} /></span>}
         actions={
           <>
@@ -92,7 +92,7 @@ export default function SalaSituacao() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard icon={ShieldAlert} label="OS criticas" value={loading ? '...' : kpis.osCriticas || 0} helper="Prioridade critica aberta" tone="red" />
         <KpiCard icon={Wrench} label="Aguard. supervisor" value={loading ? '...' : kpis.osAguardandoSupervisor || 0} helper="Fila de decisao" tone="orange" />
-        <KpiCard icon={FileText} label="RO pendentes" value={loading ? '...' : kpis.roPendentes || 0} helper="Validacao CCO" tone="cyan" />
+        <KpiCard icon={FileText} label="RDO pendentes" value={loading ? '...' : kpis.roPendentes || 0} helper="Validacao CCO" tone="cyan" />
         <KpiCard icon={AlertTriangle} label="Alertas SST" value={loading ? '...' : kpis.alertasSst || 0} helper="APR/APT em atencao" tone="orange" />
         <KpiCard icon={PackageX} label="Estoque critico" value={loading ? '...' : kpis.estoqueCritico || 0} helper="Abaixo do minimo" tone="red" />
         <KpiCard icon={ShoppingCart} label="Compras aprovacao" value={loading ? '...' : kpis.comprasAprovacao || 0} helper="Aguardando decisao" tone="orange" />
@@ -104,7 +104,7 @@ export default function SalaSituacao() {
         <div className="grid gap-4">
           <QueuePanel title="OS criticas" items={filas.osCriticas} empty="Nenhuma OS critica aberta." path={(item) => `/os/${item.id}`} />
           <QueuePanel title="OS aguardando Supervisor" items={filas.osAguardandoSupervisor} empty="Nenhuma OS aguardando supervisor." path={(item) => `/os/${item.id}`} />
-          <QueuePanel title="RO pendentes de validacao" items={filas.roPendentes} empty="Nenhum RO pendente." path={() => '/cco-relatorios-diarios'} />
+          <QueuePanel title="RDO pendentes de validacao" items={filas.roPendentes} empty="Nenhum RDO pendente." path={() => '/cco-relatorios-diarios'} />
         </div>
 
         <div className="grid gap-4">

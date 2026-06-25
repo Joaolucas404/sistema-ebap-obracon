@@ -19,10 +19,13 @@ import {
   podeCriarOS,
   podeExcluirOS
 } from '../services/osService.js';
+import { ativoStatusLabel, listarAtivosPorEbap } from '../services/ativosService.js';
 
 const emptyForm = {
   ebap_id: '',
+  ativo_id: '',
   equipamento_falha: '',
+  tipo_manutencao: 'corretiva',
   titulo: '',
   descricao: '',
   prioridade: 'media',
@@ -39,6 +42,7 @@ export default function OrdensServico() {
   const [count, setCount] = useState(0);
   const [dashboard, setDashboard] = useState(null);
   const [ebaps, setEbaps] = useState([]);
+  const [ativosEbap, setAtivosEbap] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [filters, setFilters] = useState({ search: '', status: '', prioridade: '', ebapId: '', responsavelId: '', page: 1, pageSize: 8 });
   const [loading, setLoading] = useState(true);
@@ -85,14 +89,35 @@ export default function OrdensServico() {
     loadOS();
   }, [filters, user?.id, user?.perfil, userAreaOperacional]);
 
+  useEffect(() => {
+    if (!modalOpen || !form.ebap_id) {
+      setAtivosEbap([]);
+      return;
+    }
+    listarAtivosPorEbap(form.ebap_id)
+      .then(setAtivosEbap)
+      .catch((err) => setError(err.message || 'Falha ao carregar ativos da EBAP.'));
+  }, [modalOpen, form.ebap_id]);
+
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
   function openCreate() {
     setForm(emptyForm);
+    setAtivosEbap([]);
     setError('');
     setModalOpen(true);
+  }
+
+  function handleAtivoChange(ativoId) {
+    const ativo = ativosEbap.find((item) => item.id === ativoId);
+    setForm((current) => ({
+      ...current,
+      ativo_id: ativoId,
+      equipamento_falha: ativo ? ativo.nome_operacional : current.equipamento_falha,
+      area: ativo?.area_responsavel || current.area
+    }));
   }
 
   async function handleCreate(event) {
@@ -203,7 +228,12 @@ export default function OrdensServico() {
           <div className="grid gap-4 md:grid-cols-2">
             <label className="field-label">
               EBAP
-              <select className="form-control" value={form.ebap_id} onChange={(event) => updateForm('ebap_id', event.target.value)} required>
+              <select
+                className="form-control"
+                value={form.ebap_id}
+                onChange={(event) => setForm((current) => ({ ...current, ebap_id: event.target.value, ativo_id: '', equipamento_falha: '' }))}
+                required
+              >
                 <option value="">Selecione...</option>
                 {ebaps.map((ebap) => (
                   <option key={ebap.id} value={ebap.id}>
@@ -214,6 +244,14 @@ export default function OrdensServico() {
             </label>
             <label className="field-label">
               Equipamento com falha
+              <select className="form-control mb-2" value={form.ativo_id} onChange={(event) => handleAtivoChange(event.target.value)}>
+                <option value="">Selecionar ativo cadastrado...</option>
+                {ativosEbap.map((ativo) => (
+                  <option key={ativo.id} value={ativo.id}>
+                    {ativo.nome_operacional} - {ativoStatusLabel(ativo.status_operacional)}
+                  </option>
+                ))}
+              </select>
               <input
                 className="form-control"
                 value={form.equipamento_falha}
@@ -223,6 +261,14 @@ export default function OrdensServico() {
                 placeholder="Ex.: Bomba 02, painel elétrico, comporta norte..."
                 required
               />
+            </label>
+            <label className="field-label">
+              Tipo de manutenÃ§Ã£o
+              <select className="form-control" value={form.tipo_manutencao} onChange={(event) => updateForm('tipo_manutencao', event.target.value)}>
+                <option value="corretiva">Corretiva</option>
+                <option value="preventiva">Preventiva</option>
+                <option value="preditiva">Preditiva</option>
+              </select>
             </label>
             <label className="field-label">
               Prioridade

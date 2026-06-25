@@ -68,7 +68,7 @@ export default function SalaSituacaoTV() {
         <section className="grid gap-6 lg:grid-cols-4">
           <TvMetric icon={Wrench} label="OS abertas" value={data?.kpis.osAbertas || 0} />
           <TvMetric icon={ShieldAlert} label="OS críticas" value={data?.kpis.osCriticas || 0} />
-          <TvMetric icon={FileText} label="RO pendentes" value={data?.kpis.roPendentes || 0} />
+          <TvMetric icon={FileText} label="RDO pendentes" value={data?.kpis.roPendentes || 0} />
           <TvMetric icon={Clock3} label="Medições pendentes" value={data?.kpis.medicoesPendentes || 0} />
         </section>
 

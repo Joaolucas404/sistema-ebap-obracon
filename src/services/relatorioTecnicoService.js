@@ -73,6 +73,7 @@ export async function salvarRelatorioTecnicoOS(osId, payload, user, status = 'ra
     os_id: osId,
     modelo_id: payload.modelo_id,
     equipamento_id: payload.equipamento_id || null,
+    ativo_id: payload.ativo_id || null,
     ativo_nome: payload.ativo_nome || modelo.equipamento_tipo,
     tipo_manutencao: modelo.tipo_manutencao,
     status,

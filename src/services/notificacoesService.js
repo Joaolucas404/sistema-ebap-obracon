@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase.js';
 
 export const NOTIFICACAO_MODULOS = [
   { value: 'os', label: 'OS' },
-  { value: 'ro', label: 'RO' },
+  { value: 'ro', label: 'RDO' },
   { value: 'cco', label: 'CCO' },
   { value: 'sst', label: 'SST' },
   { value: 'almoxarifado', label: 'Almoxarifado' },

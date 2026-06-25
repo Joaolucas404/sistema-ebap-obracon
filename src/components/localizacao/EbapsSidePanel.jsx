@@ -48,7 +48,7 @@ export default function EbapsSidePanel({ ebaps, filters, onFilterChange, onSelec
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-bold text-slate-300">
               <span className="rounded-xl bg-navy-950/60 p-2">OS: {ebap.os_abertas || 0}</span>
-              <span className="rounded-xl bg-navy-950/60 p-2">RO: {ebap.ro_pendentes || 0}</span>
+              <span className="rounded-xl bg-navy-950/60 p-2">RDO: {ebap.ro_pendentes || 0}</span>
             </div>
           </button>
         ))}

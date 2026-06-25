@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { supabase } from '../lib/supabase.js';
 import { normalizePerfil } from '../config/permissions.js';
 
-const PUBLIC_USER_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, ativo, ultimo_login, criado_em';
+const PUBLIC_USER_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, status_aprovacao, ativo, ultimo_login, criado_em';
 
 export async function loginWithUsuarioSenha(usuario, senha) {
   const cleanUsuario = String(usuario || '').trim();
@@ -19,6 +19,14 @@ export async function loginWithUsuarioSenha(usuario, senha) {
 
   if (error || !data) {
     throw new Error('Usuário ou senha inválidos.');
+  }
+
+  if (data.status_aprovacao === 'pendente') {
+    throw new Error('Acesso em aprovação. Aguarde a liberação do Supervisor da sua área.');
+  }
+
+  if (data.status_aprovacao === 'rejeitado') {
+    throw new Error('Solicitação de acesso rejeitada. Procure seu Supervisor.');
   }
 
   if (!data.ativo) {
@@ -46,6 +54,8 @@ export async function loginWithUsuarioSenha(usuario, senha) {
     setor: data.setor,
     area_operacional: data.area_operacional,
     area_supervisao: data.area_supervisao,
+    equipe: data.equipe,
+    status_aprovacao: data.status_aprovacao,
     ativo: data.ativo,
     ultimo_login: ultimoLogin,
     criado_em: data.criado_em

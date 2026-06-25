@@ -8,6 +8,7 @@ import PlaceholderPage from '../pages/PlaceholderPage.jsx';
 const Almoxarifado = lazy(() => import('../pages/Almoxarifado.jsx'));
 const Administrativo = lazy(() => import('../pages/Administrativo.jsx'));
 const ArquivoRelatorios = lazy(() => import('../pages/ArquivoRelatorios.jsx'));
+const Ativos = lazy(() => import('../pages/Ativos.jsx'));
 const CcoAnaliseOS = lazy(() => import('../pages/CcoAnaliseOS.jsx'));
 const CcoRelatoriosDiarios = lazy(() => import('../pages/CcoRelatoriosDiarios.jsx'));
 const Config = lazy(() => import('../pages/Config.jsx'));
@@ -40,8 +41,8 @@ const placeholders = [
   {
     path: '/cco-relatorios-diarios',
     permission: 'ccoRelatoriosDiarios',
-    title: 'CCO - Relatórios dos Operadores - RO',
-    description: 'Fila de validação dos relatórios diários pelo CCO.'
+    title: 'CCO - Relatórios dos Operadores - RDO',
+    description: 'Fila de validação dos Relatórios Diários Operacionais pelo CCO.'
   },
   {
     path: '/cco-analise-os',
@@ -77,7 +78,7 @@ const placeholders = [
     path: '/acervo-operador',
     permission: 'acervoOperador',
     title: 'Acervo do Operador',
-    description: 'Consulta rastreável de RO e OS criadas por operadores.'
+    description: 'Consulta rastreável de RDO e OS criadas por operadores.'
   },
   {
     path: '/relatorios',
@@ -152,6 +153,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="localizacaoEbaps" />}>
         <Route element={<AppLayout />}>
           <Route path="/localizacao-ebaps" element={<LocalizacaoEbaps />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="ativos" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/ativos" element={<Ativos />} />
         </Route>
       </Route>
 

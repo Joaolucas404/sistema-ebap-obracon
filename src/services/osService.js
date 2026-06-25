@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { alterarStatusAtivo, IMPACTO_EQUIPAMENTO } from './ativosService.js';
 
 export const OS_STATUS = [
   { value: 'pendente_cco', label: 'Pendente CCO', tone: 'orange', perfil: 'CCO' },
@@ -46,6 +47,7 @@ const OS_SELECT = `
   *,
   ebap:ebaps(id,nome,nome_curto,status),
   equipamento:equipamentos(id,nome,tag,codigo,status_operacional),
+  ativo:ativos(id,codigo,nome_operacional,tipo,status_operacional,area_responsavel,ebap_id),
   solicitante:usuarios!ordens_servico_solicitante_id_fkey(id,nome,usuario,perfil,setor),
   responsavel:usuarios!ordens_servico_responsavel_id_fkey(id,nome,usuario,perfil,setor)
 `;
@@ -214,11 +216,13 @@ export async function criarOS(payload, user) {
     origem,
     ebap_id: payload.ebap_id || null,
     equipamento_id: null,
+    ativo_id: payload.ativo_id || null,
     solicitante_id: payload.solicitante_id || user?.id || null,
     responsavel_id: payload.responsavel_id || null,
     titulo: payload.titulo,
     descricao: payload.descricao,
     area: payload.area,
+    tipo_manutencao: payload.tipo_manutencao || 'corretiva',
     prioridade: payload.prioridade || 'media',
     status: payload.status || (origem === 'operacao' ? 'pendente_cco' : 'solicitada_prefeitura'),
     supervisor_responsavel: supervisorArea?.supervisor_id || null,
@@ -244,6 +248,8 @@ export async function criarOS(payload, user) {
     payload: {
       ...(payload.payload || {}),
       equipamento_falha: equipamentoFalha,
+      ativo_id: payload.ativo_id || null,
+      tipo_manutencao: payload.tipo_manutencao || 'corretiva',
       roteamento_base: 'area'
     }
   };
@@ -314,10 +320,12 @@ export async function atualizarOS(id, payload, user) {
   const updatePayload = {
     ebap_id: payload.ebap_id || null,
     equipamento_id: payload.equipamento_id || null,
+    ativo_id: payload.ativo_id || null,
     responsavel_id: payload.responsavel_id || null,
     titulo: payload.titulo,
     descricao: payload.descricao,
     area: payload.area || null,
+    tipo_manutencao: payload.tipo_manutencao || atual.tipo_manutencao || 'corretiva',
     prioridade: payload.prioridade || 'media',
     status: payload.status || atual.status,
     equipe_responsavel: payload.equipe_responsavel || null,
@@ -414,11 +422,21 @@ export async function registrarExecucaoOS(id, payload, user) {
 export async function encerrarOS(id, payload, user) {
   const atual = await buscarOS(id);
   const status = payload.status === 'concluida' ? 'concluida_arquivada' : payload.status || 'concluida_arquivada';
+  const impacto = IMPACTO_EQUIPAMENTO.find((item) => item.value === payload.impacto_equipamento);
+  const exigeImpacto = atual.tipo_manutencao === 'corretiva' && atual.ativo_id && status === 'concluida_arquivada';
+  if (exigeImpacto && impacto?.status && !String(payload.motivo_impacto || '').trim()) {
+    throw new Error('Informe o motivo do impacto no equipamento.');
+  }
   const updatePayload = {
     status,
     fim_execucao: payload.fim_execucao || atual.fim_execucao || new Date().toISOString(),
     pendencias: payload.pendencias ?? atual.pendencias,
-    motivo_cancelamento: payload.motivo_cancelamento || null
+    motivo_cancelamento: payload.motivo_cancelamento || null,
+    payload: {
+      ...(atual.payload || {}),
+      impacto_equipamento: payload.impacto_equipamento || 'sem_alteracao',
+      motivo_impacto: payload.motivo_impacto || null
+    }
   };
 
   const { data, error } = await supabase.from('ordens_servico').update(updatePayload).eq('id', id).select(OS_SELECT).single();
@@ -430,8 +448,25 @@ export async function encerrarOS(id, payload, user) {
     status_anterior: atual.status,
     status_novo: status,
     descricao: payload.descricao || 'Encerramento da OS aprovado.',
-    metadata: { ...updatePayload, etapa: status }
+    metadata: { ...updatePayload, etapa: status, impacto_equipamento: payload.impacto_equipamento || 'sem_alteracao' }
   });
+
+  if (exigeImpacto && impacto?.status && impacto.status !== atual.ativo?.status_operacional) {
+    await alterarStatusAtivo(
+      atual.ativo_id,
+      {
+        status_operacional: impacto.status,
+        motivo: payload.motivo_impacto,
+        os_id: id,
+        metadata: {
+          origem: 'encerramento_os_corretiva',
+          os_status_final: status,
+          impacto_equipamento: payload.impacto_equipamento
+        }
+      },
+      user
+    );
+  }
 
   return data;
 }

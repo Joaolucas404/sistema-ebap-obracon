@@ -129,7 +129,7 @@ export default function ArquivoRelatorios() {
                 className="form-control pl-10"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Ex.: PDF-RO-20260619-3027053"
+                placeholder="Ex.: PDF-RDO-20260619-3027053"
               />
             </div>
           </label>

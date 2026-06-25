@@ -11,7 +11,7 @@ export default function LocalizacaoDashboard({ dashboard }) {
       <KpiCard icon={AlertTriangle} label="Atencao" value={data.atencao || 0} helper="Monitorar" tone="orange" />
       <KpiCard icon={AlertTriangle} label="Critica" value={data.critica || 0} helper="Prioridade operacional" tone="red" />
       <KpiCard icon={ClipboardList} label="OS abertas" value={data.osAbertas || 0} helper="Todas as EBAPs" tone="blue" />
-      <KpiCard icon={FileText} label="RO pendentes" value={data.roPendentes || 0} helper="Validacao ou rascunho" tone="cyan" />
+      <KpiCard icon={FileText} label="RDO pendentes" value={data.roPendentes || 0} helper="Validacao ou rascunho" tone="cyan" />
     </section>
   );
 }

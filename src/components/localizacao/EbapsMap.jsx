@@ -112,7 +112,7 @@ export default function EbapsMap({ ebaps, onSelect, compact = false }) {
                 <strong>{ebap.nome}</strong>
                 <div style={{ marginTop: 6 }}>{ebap.status_operacional}</div>
                 <div>OS abertas: {ebap.os_abertas || 0}</div>
-                <div>RO pendentes: {ebap.ro_pendentes || 0}</div>
+                <div>RDO pendentes: {ebap.ro_pendentes || 0}</div>
               </div>
             </Popup>
           </Marker>

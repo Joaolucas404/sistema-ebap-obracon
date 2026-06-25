@@ -18,6 +18,20 @@ export const AREAS_OPERACIONAIS = [
   { value: 'prefeitura', label: 'Prefeitura' }
 ];
 
+export const EQUIPES_TECNICAS = [
+  { value: 'mecanica_c', label: 'MecÃ¢nica C', area: 'mecanica' },
+  { value: 'mecanica_d', label: 'MecÃ¢nica D', area: 'mecanica' },
+  { value: 'mecanica_h', label: 'MecÃ¢nica H', area: 'mecanica' },
+  { value: 'eletrica_b', label: 'ElÃ©trica B', area: 'eletrica' },
+  { value: 'eletrica_f', label: 'ElÃ©trica F', area: 'eletrica' },
+  { value: 'eletrica_d', label: 'ElÃ©trica D', area: 'eletrica' },
+  { value: 'eletrica_h', label: 'ElÃ©trica H', area: 'eletrica' },
+  { value: 'automacao_a', label: 'AutomaÃ§Ã£o A', area: 'automacao' },
+  { value: 'automacao_e', label: 'AutomaÃ§Ã£o E', area: 'automacao' }
+];
+
+const GLOBAL_APPROVERS = ['gerencia', 'diretoria', 'administrador'];
+
 const AUTO_AREA_BY_PROFILE = {
   sst: 'sst',
   administrativo: 'administrativo',
@@ -27,14 +41,26 @@ const AUTO_AREA_BY_PROFILE = {
   prefeitura: 'prefeitura'
 };
 
-const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
+const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
 
 export function areaOperacionalLabel(area) {
   return AREAS_OPERACIONAIS.find((item) => item.value === area)?.label || area || '-';
 }
 
+export function equipeTecnicaLabel(equipe) {
+  return EQUIPES_TECNICAS.find((item) => item.value === equipe)?.label || equipe || '-';
+}
+
+export function areaFromEquipe(equipe) {
+  return EQUIPES_TECNICAS.find((item) => item.value === equipe)?.area || '';
+}
+
 export function podeGerenciarUsuarios(user) {
-  return ['diretoria', 'gerencia'].includes(user?.perfil);
+  return ['diretoria', 'gerencia', 'administrador'].includes(user?.perfil);
+}
+
+export function podeAprovarTecnicos(user) {
+  return user?.perfil === 'supervisor' || GLOBAL_APPROVERS.includes(user?.perfil);
 }
 
 function podeAlterarUsuario(alvoPerfil, currentUser) {
@@ -56,13 +82,21 @@ function normalizeAreaOperacional(area, perfil) {
 
 function normalizePayload(payload) {
   const perfil = normalizePerfil(payload.perfil);
+  const equipe = payload.equipe || null;
+  const equipeArea = equipe ? areaFromEquipe(equipe) : '';
+  if (equipe && !equipeArea) throw new Error('Equipe técnica inválida.');
+  if (perfil === 'tecnico' && !equipe) throw new Error('Equipe é obrigatória para técnico.');
   const area = normalizeAreaOperacional(payload.area_operacional, perfil);
+  if (perfil === 'tecnico' && equipeArea && area !== equipeArea) {
+    throw new Error('A área operacional do técnico deve corresponder à equipe selecionada.');
+  }
   const row = {
     nome: String(payload.nome || '').trim(),
     usuario: String(payload.usuario || '').trim(),
     perfil,
     setor: payload.setor ? String(payload.setor).trim() : null,
     area_operacional: area,
+    equipe,
     ativo: Boolean(payload.ativo)
   };
 
@@ -74,6 +108,136 @@ export async function listarUsuarios() {
   const { data, error } = await supabase.from('usuarios').select(SELECT_FIELDS).is('deleted_at', null).order('nome', { ascending: true });
   if (error) throw new Error(error.message);
   return data || [];
+}
+
+export async function solicitarAcessoTecnico(payload) {
+  const nome = String(payload.nome || '').trim();
+  const usuario = String(payload.usuario || '').trim();
+  const senha = String(payload.senha || '');
+  const confirmarSenha = String(payload.confirmarSenha || '');
+  const equipe = payload.equipe;
+  const area = areaFromEquipe(equipe);
+
+  if (!nome || !usuario || !senha || !confirmarSenha || !equipe) {
+    throw new Error('Nome, login, senha, confirmaÃ§Ã£o e equipe sÃ£o obrigatÃ³rios.');
+  }
+  if (!area) throw new Error('Selecione uma equipe oficial.');
+  if (senha.length < 6) throw new Error('A senha deve ter pelo menos 6 caracteres.');
+  if (senha !== confirmarSenha) throw new Error('As senhas nÃ£o conferem.');
+
+  const senha_hash = await bcrypt.hash(senha, 10);
+  const { data, error } = await supabase
+    .from('usuarios')
+    .insert({
+      nome,
+      usuario,
+      senha_hash,
+      perfil: 'tecnico',
+      setor: equipeTecnicaLabel(equipe),
+      area_operacional: area,
+      equipe,
+      ativo: false,
+      status_aprovacao: 'pendente',
+      atualizado_em: new Date().toISOString()
+    })
+    .select(SELECT_FIELDS)
+    .single();
+
+  if (error) {
+    if (error.code === '23505') throw new Error('Este login jÃ¡ estÃ¡ em uso.');
+    throw new Error(error.message);
+  }
+
+  await registrarAuditoriaUsuarios({
+    acao: 'auto_cadastro_tecnico',
+    usuario_alvo_id: data.id,
+    descricao: `SolicitaÃ§Ã£o de acesso tÃ©cnico criada para ${data.nome}.`,
+    metadata: { equipe, area_operacional: area }
+  });
+
+  return data;
+}
+
+export async function listarAcessosPendentes(currentUser) {
+  if (!podeAprovarTecnicos(currentUser)) return [];
+
+  let query = supabase
+    .from('usuarios')
+    .select(SELECT_FIELDS)
+    .eq('perfil', 'tecnico')
+    .eq('status_aprovacao', 'pendente')
+    .is('deleted_at', null)
+    .order('criado_em', { ascending: true });
+
+  if (currentUser?.perfil === 'supervisor') {
+    const area = currentUser.area_supervisao || currentUser.area_operacional;
+    query = query.eq('area_operacional', area);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function aprovarAcessoTecnico(id, currentUser) {
+  await garantirPodeAprovar(id, currentUser);
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update({
+      ativo: true,
+      status_aprovacao: 'aprovado',
+      aprovado_por: currentUser?.id || null,
+      aprovado_em: now,
+      rejeitado_por: null,
+      rejeitado_em: null,
+      motivo_rejeicao: null,
+      atualizado_em: now
+    })
+    .eq('id', id)
+    .select(SELECT_FIELDS)
+    .single();
+
+  if (error) throw new Error(error.message);
+  await registrarAuditoriaUsuarios({
+    acao: 'aprovacao_acesso_tecnico',
+    usuario_alvo_id: id,
+    responsavel_id: currentUser?.id,
+    descricao: `Acesso tÃ©cnico aprovado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
+    metadata: { equipe: data.equipe, area_operacional: data.area_operacional }
+  });
+  return data;
+}
+
+export async function rejeitarAcessoTecnico(id, currentUser, motivo) {
+  const cleanMotivo = String(motivo || '').trim();
+  if (!cleanMotivo) throw new Error('Informe o motivo da rejeiÃ§Ã£o.');
+  await garantirPodeAprovar(id, currentUser);
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update({
+      ativo: false,
+      status_aprovacao: 'rejeitado',
+      rejeitado_por: currentUser?.id || null,
+      rejeitado_em: now,
+      motivo_rejeicao: cleanMotivo,
+      atualizado_em: now
+    })
+    .eq('id', id)
+    .select(SELECT_FIELDS)
+    .single();
+
+  if (error) throw new Error(error.message);
+  await registrarAuditoriaUsuarios({
+    acao: 'rejeicao_acesso_tecnico',
+    usuario_alvo_id: id,
+    responsavel_id: currentUser?.id,
+    descricao: `Acesso tÃ©cnico rejeitado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
+    metadata: { equipe: data.equipe, area_operacional: data.area_operacional, motivo: cleanMotivo }
+  });
+  return data;
 }
 
 export async function criarUsuario(payload, currentUser) {
@@ -175,6 +339,36 @@ async function buscarUsuario(id) {
   const { data, error } = await supabase.from('usuarios').select(SELECT_FIELDS).eq('id', id).single();
   if (error) throw new Error(error.message);
   return data;
+}
+
+async function garantirPodeAprovar(id, currentUser) {
+  if (!podeAprovarTecnicos(currentUser)) throw new Error('Perfil sem permissÃ£o para aprovar tÃ©cnicos.');
+  const alvo = await buscarUsuario(id);
+  if (alvo.perfil !== 'tecnico' || alvo.status_aprovacao !== 'pendente') {
+    throw new Error('SolicitaÃ§Ã£o de acesso invÃ¡lida ou jÃ¡ processada.');
+  }
+  if (currentUser?.perfil === 'supervisor') {
+    const area = currentUser.area_supervisao || currentUser.area_operacional;
+    if (!area || alvo.area_operacional !== area) {
+      throw new Error('Supervisor sÃ³ pode aprovar tÃ©cnicos da prÃ³pria Ã¡rea.');
+    }
+  }
+  return alvo;
+}
+
+async function registrarAuditoriaUsuarios({ acao, usuario_alvo_id, responsavel_id = null, descricao, metadata = {} }) {
+  const { error } = await supabase.from('auditoria').insert({
+    usuario_id: responsavel_id,
+    acao,
+    tabela: 'usuarios',
+    registro_id: usuario_alvo_id,
+    descricao,
+    metadata
+  });
+
+  if (error && error.code !== '42P01') {
+    console.warn('Falha ao registrar auditoria de usuÃ¡rios:', error.message);
+  }
 }
 
 async function sincronizarSupervisorArea(usuario) {

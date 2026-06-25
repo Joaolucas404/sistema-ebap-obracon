@@ -71,7 +71,7 @@ export default function Notificacoes() {
     <div className="grid gap-4">
       <PageHeader
         title="Central de Alertas"
-        description="Notificacoes operacionais em tempo real para OS, RO, CCO, SST, almoxarifado, compras e manutencao."
+        description="Notificacoes operacionais em tempo real para OS, RDO, CCO, SST, almoxarifado, compras e manutencao."
         leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><BellRing size={24} /></span>}
         actions={
           <>

@@ -139,7 +139,7 @@ export async function obterSalaSituacaoOperacional() {
   const alertasSst = [...aprPendentes, ...aptPendentes].filter((item) => ['rascunho', 'em_analise'].includes(item.status));
   const ultimasMovimentacoes = sortByDate([
     ...ultimasOs.map((item) => ({ tipo: 'OS', titulo: item.numero, descricao: item.titulo, data: item.created_at, path: `/os/${item.id}` })),
-    ...ultimosRo.map((item) => ({ tipo: 'RO', titulo: item.codigo, descricao: item.status, data: item.created_at, path: '/relatorio' })),
+    ...ultimosRo.map((item) => ({ tipo: 'RDO', titulo: item.codigo, descricao: item.status, data: item.created_at, path: '/relatorio' })),
     ...ultimasCompras.map((item) => ({ tipo: 'Compra', titulo: item.numero, descricao: `${item.area || '-'} - ${item.status}`, data: item.created_at, path: '/compras' })),
     ...ultimasApr.map((item) => ({ tipo: 'APR', titulo: item.codigo, descricao: item.atividade || item.status, data: item.created_at, path: '/sst' }))
   ], 'data').slice(0, 12);

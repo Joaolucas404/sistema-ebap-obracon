@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { CheckCircle2, Lock, LogIn, User } from 'lucide-react';
+import { CheckCircle2, Lock, LogIn, User, UserPlus } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loginWithUsuarioSenha } from '../services/authService.js';
+import { EQUIPES_TECNICAS, solicitarAcessoTecnico } from '../services/usuariosService.js';
 import { START_ROUTE_BY_ROLE } from '../config/permissions.js';
 import { BRAND } from '../config/brand.js';
+import Modal from '../components/ui/Modal.jsx';
 import { useAuthStore } from '../store/authStore.js';
 
 const LOGIN_COPY = {
   titlePrefix: 'SIGEBAP',
   titleHighlight: 'Vila Velha',
   title: 'SIGEBAP Vila Velha',
-  subtitle: 'Sistema Integrado de Gestão das EBAPs de Vila Velha',
-  description: 'Centro Integrado de Operação, Manutenção e Gestão das Estações de Bombeamento de Vila Velha.',
+  subtitle: 'Sistema Integrado de Gestão das Estações de Bombeamento de Águas Pluviais de Vila Velha',
+  description: 'Plataforma operacional integrada para monitoramento, manutenção, segurança, contratos e gestão das EBAPs do Município de Vila Velha.',
   version: '0.1.0'
 };
 
@@ -36,8 +38,12 @@ export default function Login() {
   const location = useLocation();
   const setSession = useAuthStore((state) => state.setSession);
   const [form, setForm] = useState({ usuario: '', senha: '' });
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [accessForm, setAccessForm] = useState({ nome: '', usuario: '', senha: '', confirmarSenha: '', equipe: '' });
   const [loading, setLoading] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(false);
   const [error, setError] = useState('');
+  const [accessMessage, setAccessMessage] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -53,6 +59,23 @@ export default function Login() {
       setError(err.message || 'Não foi possível entrar.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSolicitarAcesso(event) {
+    event.preventDefault();
+    setError('');
+    setAccessMessage('');
+    setAccessLoading(true);
+
+    try {
+      await solicitarAcessoTecnico(accessForm);
+      setAccessMessage('Solicitação enviada. Aguarde a aprovação do Supervisor da sua área.');
+      setAccessForm({ nome: '', usuario: '', senha: '', confirmarSenha: '', equipe: '' });
+    } catch (err) {
+      setAccessMessage(err.message || 'Não foi possível solicitar o acesso.');
+    } finally {
+      setAccessLoading(false);
     }
   }
 
@@ -154,6 +177,11 @@ export default function Login() {
                 {loading ? 'Validando...' : 'Entrar'}
               </button>
 
+              <button className="secondary-button mt-3 w-full" type="button" onClick={() => setAccessOpen(true)}>
+                <UserPlus size={18} />
+                Solicitar Acesso Técnico
+              </button>
+
               <footer className="mt-6 border-t border-white/10 pt-5 text-center lg:hidden">
                 <InstitutionalFooter compact />
               </footer>
@@ -167,6 +195,55 @@ export default function Login() {
           </main>
         </section>
       </div>
+
+      <Modal open={accessOpen} title="Primeiro Acesso - Técnicos" onClose={() => setAccessOpen(false)}>
+        <form className="grid gap-4" onSubmit={handleSolicitarAcesso}>
+          <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/60 p-4 text-sm font-semibold text-slate-200">
+            O cadastro cria um usuário técnico pendente. O acesso só será liberado após aprovação do Supervisor da área.
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="field-label md:col-span-2">
+              Nome Completo
+              <input className="form-control" value={accessForm.nome} onChange={(event) => setAccessForm((current) => ({ ...current, nome: event.target.value }))} required />
+            </label>
+            <label className="field-label">
+              Login
+              <input className="form-control" value={accessForm.usuario} onChange={(event) => setAccessForm((current) => ({ ...current, usuario: event.target.value }))} required />
+            </label>
+            <label className="field-label">
+              Equipe
+              <select className="form-control" value={accessForm.equipe} onChange={(event) => setAccessForm((current) => ({ ...current, equipe: event.target.value }))} required>
+                <option value="">Selecione...</option>
+                {EQUIPES_TECNICAS.map((equipe) => (
+                  <option key={equipe.value} value={equipe.value}>{equipe.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field-label">
+              Senha
+              <input className="form-control" type="password" value={accessForm.senha} onChange={(event) => setAccessForm((current) => ({ ...current, senha: event.target.value }))} required />
+            </label>
+            <label className="field-label">
+              Confirmar Senha
+              <input className="form-control" type="password" value={accessForm.confirmarSenha} onChange={(event) => setAccessForm((current) => ({ ...current, confirmarSenha: event.target.value }))} required />
+            </label>
+          </div>
+
+          {accessMessage && (
+            <div className={`rounded-2xl border p-3 text-sm font-bold ${accessMessage.includes('enviada') ? 'border-green-300/30 bg-green-500/15 text-green-100' : 'border-red-300/30 bg-red-500/15 text-red-100'}`}>
+              {accessMessage}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button className="secondary-button" type="button" onClick={() => setAccessOpen(false)}>Fechar</button>
+            <button className="primary-button" type="submit" disabled={accessLoading}>
+              <UserPlus size={17} />
+              {accessLoading ? 'Enviando...' : 'Enviar solicitação'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

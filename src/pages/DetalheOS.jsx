@@ -47,6 +47,7 @@ import {
   salvarRelatorioTecnicoOS,
   resumoRelatorioTecnico
 } from '../services/relatorioTecnicoService.js';
+import { ativoStatusLabel, IMPACTO_EQUIPAMENTO } from '../services/ativosService.js';
 import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
 function formatDate(value) {
@@ -81,7 +82,7 @@ export default function DetalheOS() {
   const [form, setForm] = useState({});
   const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false });
   const [relatorioTecnico, setRelatorioTecnico] = useState({ modelo_id: '', respostas: {}, fotos: {}, observacoes: '' });
-  const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '' });
+  const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '', impacto_equipamento: 'sem_alteracao', motivo_impacto: '' });
   const [workflowAction, setWorkflowAction] = useState(null);
   const [workflowForm, setWorkflowForm] = useState({ status: '', comentario: '', motivo: '' });
   const [upload, setUpload] = useState({ file: null, legenda: '' });
@@ -220,7 +221,8 @@ export default function DetalheOS() {
           id,
           {
             ...relatorioTecnico,
-            ativo_nome: os.payload?.equipamento_falha || os.equipamento?.nome || os.titulo,
+            ativo_id: os.ativo_id || null,
+            ativo_nome: os.ativo?.nome_operacional || os.payload?.equipamento_falha || os.equipamento?.nome || os.titulo,
             observacoes: execucao.relatorio_tecnico || relatorioTecnico.observacoes
           },
           user,
@@ -403,7 +405,8 @@ export default function DetalheOS() {
   const canClose = podeEncerrarOS(user?.perfil);
   const canDelete = podeExcluirOS(user?.perfil);
   const workflowActions = getWorkflowActions(user?.perfil, os);
-  const equipamentoFalha = os.payload?.equipamento_falha || os.equipamento?.nome || '-';
+  const equipamentoFalha = os.payload?.equipamento_falha || os.ativo?.nome_operacional || os.equipamento?.nome || '-';
+  const isCorretivaComAtivo = os.tipo_manutencao === 'corretiva' && os.ativo_id;
 
   return (
     <div className="grid gap-4">
@@ -473,6 +476,9 @@ export default function DetalheOS() {
           <Info label="Prioridade" value={<StatusBadge tone={prioridadeTone(os.prioridade)}>{prioridadeLabel(os.prioridade)}</StatusBadge>} />
           <Info label="Área" value={areaLabel(os.area)} />
           <Info label="EBAP" value={os.ebap?.nome || '-'} />
+          <Info label="Ativo" value={os.ativo?.nome_operacional || '-'} />
+          <Info label="Status do ativo" value={os.ativo ? ativoStatusLabel(os.ativo.status_operacional) : '-'} />
+          <Info label="Tipo de manutenção" value={os.tipo_manutencao || '-'} />
           <Info label="Equipamento com falha" value={equipamentoFalha} />
           <Info label="Solicitante" value={os.solicitante?.nome || '-'} />
           <Info label="Responsável" value={os.responsavel?.nome || '-'} />
@@ -665,6 +671,24 @@ export default function DetalheOS() {
               Motivo
               <textarea className="form-control min-h-24 py-3" value={encerramento.motivo_cancelamento} onChange={(event) => setEncerramento((current) => ({ ...current, motivo_cancelamento: event.target.value }))} required />
             </label>
+          )}
+          {isCorretivaComAtivo && encerramento.status === 'concluida_arquivada' && (
+            <div className="grid gap-4 rounded-2xl border border-cyan-300/15 bg-navy-950/50 p-4">
+              <label className="field-label">
+                Impacto no Equipamento
+                <select className="form-control" value={encerramento.impacto_equipamento} onChange={(event) => setEncerramento((current) => ({ ...current, impacto_equipamento: event.target.value }))}>
+                  {IMPACTO_EQUIPAMENTO.map((impacto) => (
+                    <option key={impacto.value} value={impacto.value}>{impacto.label}</option>
+                  ))}
+                </select>
+              </label>
+              {encerramento.impacto_equipamento !== 'sem_alteracao' && (
+                <label className="field-label">
+                  Motivo da alteração do status do ativo
+                  <textarea className="form-control min-h-24 py-3" value={encerramento.motivo_impacto} onChange={(event) => setEncerramento((current) => ({ ...current, motivo_impacto: event.target.value }))} required />
+                </label>
+              )}
+            </div>
           )}
           <Actions saving={saving} onCancel={() => setModal(null)} label="Confirmar encerramento" />
         </form>

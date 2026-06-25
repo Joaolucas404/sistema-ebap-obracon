@@ -422,7 +422,7 @@ function PdfStyles() {
 }
 
 export default function PdfTemplate({ type, documentNumber, emittedAt, qrCode, data }) {
-  const title = type === 'ro' ? 'Relatorio Diario do Operador' : 'Ordem de Servico';
+  const title = type === 'ro' ? 'RDO - Relatorio Diario Operacional' : 'Ordem de Servico';
   const originCode = data?.codigo || data?.numero || data?.relatorio?.codigo || data?.os?.numero;
 
   return (

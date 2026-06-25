@@ -95,7 +95,7 @@ export default function RelatorioDiario() {
         if (draft.ebap_id) await loadEquipamentos(draft.ebap_id, draft.payload || blankPayload());
       }
     } catch (err) {
-      setError(err.message || 'Falha ao carregar relatório diário.');
+      setError(err.message || 'Falha ao carregar RDO.');
     } finally {
       setLoading(false);
     }
@@ -199,7 +199,7 @@ export default function RelatorioDiario() {
     setSaving(true);
     setError('');
     try {
-      const documentNumber = gerarNumeroDocumento('PDF-RO');
+      const documentNumber = gerarNumeroDocumento('PDF-RDO');
       const emittedAt = new Date().toISOString();
       const [signedFotos, validacoes] = await Promise.all([
         Promise.all(fotos.map(async (foto) => ({ ...foto, url: await obterUrlFotoRelatorio(foto) }))),
@@ -219,17 +219,17 @@ export default function RelatorioDiario() {
       });
 
       await new Promise((resolve) => setTimeout(resolve, 80));
-      const blob = await gerarPdfDeElemento(pdfRef.current, { title: `RO ${relatorio.codigo}` });
+      const blob = await gerarPdfDeElemento(pdfRef.current, { title: `RDO ${relatorio.codigo}` });
       await salvarPdfArquivo({
         blob,
         documentNumber,
         entityType: 'relatorio_diario',
         entityId: relatorio.id,
-        title: `Relatório Diário ${relatorio.codigo}`,
+        title: `RDO ${relatorio.codigo}`,
         userId: user?.id
       });
       await baixarBlobComoArquivo(blob, `${documentNumber}.pdf`);
-      setToast({ message: 'PDF do RO gerado e arquivado.', tone: 'green' });
+      setToast({ message: 'PDF do RDO gerado e arquivado.', tone: 'green' });
     } catch (err) {
       setError(err.message || 'Falha ao gerar PDF do relatório.');
     } finally {
@@ -252,14 +252,14 @@ export default function RelatorioDiario() {
   }
 
   if (loading) {
-    return <div className="glass-card rounded-3xl p-8 text-center text-slate-300">Carregando relatório diário...</div>;
+    return <div className="glass-card rounded-3xl p-8 text-center text-slate-300">Carregando RDO...</div>;
   }
 
   return (
     <div className="grid gap-4">
       <PageHeader
-        title="Relatório Diário do Operador"
-        description="RO completo com checklist por equipamento, salvamento automático, fotos e finalização para validação CCO."
+        title="RDO - Relatório Diário Operacional"
+        description="RDO completo com checklist por equipamento, salvamento automático, fotos e finalização para validação CCO."
         actions={
           <>
             <button className="secondary-button" type="button" onClick={loadInitial}>
@@ -320,7 +320,7 @@ export default function RelatorioDiario() {
         </>
       ) : (
         <div className="glass-card rounded-3xl p-8 text-center text-slate-300">
-          Selecione uma EBAP para criar ou carregar o rascunho do relatório diário.
+          Selecione uma EBAP para criar ou carregar o rascunho do RDO.
         </div>
       )}
 

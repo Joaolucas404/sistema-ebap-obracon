@@ -48,7 +48,7 @@ export default function GlobalSearch() {
         value={term}
         onChange={(event) => setTerm(event.target.value)}
         onFocus={() => setOpen(true)}
-        placeholder="Buscar OS, RO, compras, contratos..."
+        placeholder="Buscar OS, RDO, compras, contratos..."
       />
       {term && (
         <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white" onClick={() => setTerm('')}>

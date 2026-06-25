@@ -247,7 +247,7 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Criticidade</th>
               <th className="px-3 py-2">OS</th>
-              <th className="px-3 py-2">RO</th>
+              <th className="px-3 py-2">RDO</th>
               <th className="px-3 py-2">Atualizacao</th>
             </tr>
           </thead>
@@ -501,7 +501,7 @@ export default function Dashboard() {
         <MiniMetric icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} tone="cyan" />
         <MiniMetric icon={ShieldAlert} label="OS criticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} tone="red" />
         <MiniMetric icon={Clock3} label="Aguard. supervisor" value={loading ? '...' : data?.kpis.osAguardandoSupervisor ?? 0} tone="orange" />
-        <MiniMetric icon={FileText} label="RO pendentes" value={loading ? '...' : data?.kpis.roPendentes ?? 0} tone="orange" />
+        <MiniMetric icon={FileText} label="RDO pendentes" value={loading ? '...' : data?.kpis.roPendentes ?? 0} tone="orange" />
         <MiniMetric icon={Factory} label="EBAPs criticas" value={loading ? '...' : criticidade.criticas} tone="red" />
         <MiniMetric icon={CheckCircle2} label="OS concluidas hoje" value={loading ? '...' : data?.kpis.osConcluidasHoje ?? 0} tone="green" />
       </section>

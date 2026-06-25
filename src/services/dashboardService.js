@@ -257,7 +257,7 @@ export async function obterDashboardExecutivo() {
   const preventivasPorSituacao = countBy(preventivasRows, 'status');
   const ultimasMovimentacoes = [
     ...(ultimasOsResult.data || []).map((row) => ({ tipo: 'OS', titulo: row.numero, descricao: row.titulo, data: row.created_at, path: `/os/${row.id}` })),
-    ...(ultimosRelatoriosResult.data || []).map((row) => ({ tipo: 'RO', titulo: row.codigo, descricao: row.ebap?.nome || row.status, data: row.created_at, path: '/relatorio' })),
+    ...(ultimosRelatoriosResult.data || []).map((row) => ({ tipo: 'RDO', titulo: row.codigo, descricao: row.ebap?.nome || row.status, data: row.created_at, path: '/relatorio' })),
     ...ultimasCompras.map((row) => ({ tipo: 'Compra', titulo: row.numero, descricao: `${row.area || '-'} - ${row.status}`, data: row.created_at, path: '/compras' })),
     ...ultimasApr.map((row) => ({ tipo: 'APR', titulo: row.codigo, descricao: row.atividade || row.status, data: row.created_at, path: '/sst' })),
     ...ultimasMedicoes.map((row) => ({ tipo: 'Medicao', titulo: row.numero || row.codigo, descricao: row.status, data: row.created_at, path: '/financeiro-contrato' }))

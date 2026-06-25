@@ -8,7 +8,7 @@ export default function RelatorioStepper({ steps, currentStep, completedSteps = 
     <section className="glass-card rounded-3xl p-4">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-black text-white">Progresso do RO</h3>
+          <h3 className="text-lg font-black text-white">Progresso do RDO</h3>
           <p className="text-sm text-slate-300">{percent}% concluído</p>
         </div>
         <div className="h-3 w-36 overflow-hidden rounded-full border border-cyan-300/20 bg-navy-950 md:w-64">

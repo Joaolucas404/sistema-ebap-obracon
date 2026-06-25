@@ -17,6 +17,7 @@ export const ROUTE_KEYS = {
   notificacoes: '/notificacoes',
   dashboardOS: '/dashboard-os',
   localizacaoEbaps: '/localizacao-ebaps',
+  ativos: '/ativos',
   relatorio: '/relatorio',
   ccoRelatoriosDiarios: '/cco-relatorios-diarios',
   ccoAnaliseOS: '/cco-analise-os',
@@ -39,15 +40,16 @@ export const ROUTE_KEYS = {
 };
 
 export const ROLE_PERMISSIONS = {
-  operador: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes'],
-  tecnico: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'os', 'osDiaria', 'arquivoRelatorios', 'orientacoes'],
-  cco: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'supervisao', 'orientacoes'],
-  supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes'],
+  operador: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes'],
+  tecnico: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'os', 'osDiaria', 'arquivoRelatorios', 'orientacoes'],
+  cco: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'supervisao', 'orientacoes'],
+  supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes', 'usuarios'],
   gerencia: [
     'dashboard',
     'notificacoes',
     'dashboardOS',
     'localizacaoEbaps',
+    'ativos',
     'relatorio',
     'ccoRelatoriosDiarios',
     'ccoAnaliseOS',
@@ -69,11 +71,11 @@ export const ROLE_PERMISSIONS = {
     'usuarios'
   ],
   diretoria: ['*'],
-  prefeitura: ['dashboard', 'notificacoes', 'dashboardOS', 'os', 'localizacaoEbaps', 'relatorios', 'financeiroContrato', 'orientacoes'],
-  sst: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'sst', 'orientacoes'],
+  prefeitura: ['dashboard', 'notificacoes', 'dashboardOS', 'os', 'localizacaoEbaps', 'ativos', 'relatorios', 'financeiroContrato', 'orientacoes'],
+  sst: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'sst', 'orientacoes'],
   administrativo: ['dashboard', 'notificacoes', 'administrativo', 'orientacoes'],
-  almoxarifado: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'almoxarifado', 'compras', 'orientacoes'],
-  financeiro: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'financeiroContrato', 'compras', 'orientacoes']
+  almoxarifado: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'almoxarifado', 'compras', 'orientacoes'],
+  financeiro: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'financeiroContrato', 'compras', 'orientacoes']
 };
 
 export const START_ROUTE_BY_ROLE = {

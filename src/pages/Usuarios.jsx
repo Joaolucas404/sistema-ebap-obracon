@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCcw, RotateCcw, Save, ShieldOff, ShieldCheck, Trash2 } from 'lucide-react';
+import { CheckCircle2, Plus, RefreshCcw, RotateCcw, Save, ShieldCheck, ShieldOff, Trash2, XCircle } from 'lucide-react';
 import Modal from '../components/ui/Modal.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
@@ -7,13 +7,20 @@ import Toast from '../components/ui/Toast.jsx';
 import { PERFIS } from '../config/permissions.js';
 import {
   AREAS_OPERACIONAIS,
+  EQUIPES_TECNICAS,
+  aprovarAcessoTecnico,
   atualizarUsuario,
   areaOperacionalLabel,
   criarUsuario,
   desativarUsuario,
+  equipeTecnicaLabel,
   excluirUsuario,
+  listarAcessosPendentes,
   listarUsuarios,
+  podeAprovarTecnicos,
+  podeGerenciarUsuarios,
   reativarUsuario,
+  rejeitarAcessoTecnico,
   resetarSenha
 } from '../services/usuariosService.js';
 import { useAuthStore } from '../store/authStore.js';
@@ -25,6 +32,7 @@ const blankForm = {
   perfil: 'operador',
   setor: '',
   area_operacional: '',
+  equipe: '',
   ativo: true
 };
 
@@ -38,8 +46,8 @@ const AUTO_AREA_BY_PROFILE = {
 };
 
 function canEditUser(currentUser, targetUser) {
-  if (currentUser?.perfil === 'diretoria') return true;
-  if (currentUser?.perfil === 'gerencia') return !['diretoria', 'gerencia'].includes(targetUser?.perfil);
+  if (currentUser?.perfil === 'diretoria' || currentUser?.perfil === 'administrador') return true;
+  if (currentUser?.perfil === 'gerencia') return !['diretoria', 'gerencia', 'administrador'].includes(targetUser?.perfil);
   return false;
 }
 
@@ -52,15 +60,19 @@ function formatDate(value) {
 export default function Usuarios() {
   const currentUser = useAuthStore((state) => state.user);
   const [usuarios, setUsuarios] = useState([]);
+  const [pendentes, setPendentes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState({ type: null, user: null });
   const [form, setForm] = useState(blankForm);
   const [novaSenha, setNovaSenha] = useState('');
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [error, setError] = useState('');
-  const canDeleteUsers = currentUser?.perfil === 'diretoria';
 
+  const canManageUsers = podeGerenciarUsuarios(currentUser);
+  const canApproveAccess = podeAprovarTecnicos(currentUser);
+  const canDeleteUsers = currentUser?.perfil === 'diretoria' || currentUser?.perfil === 'administrador';
   const ativos = useMemo(() => usuarios.filter((usuario) => usuario.ativo).length, [usuarios]);
   const perfisDisponiveis = useMemo(
     () => currentUser?.perfil === 'gerencia' ? PERFIS.filter((perfil) => !['diretoria', 'gerencia'].includes(perfil)) : PERFIS,
@@ -72,7 +84,12 @@ export default function Usuarios() {
     setError('');
 
     try {
-      setUsuarios(await listarUsuarios());
+      const [usuariosRows, pendentesRows] = await Promise.all([
+        canManageUsers ? listarUsuarios() : Promise.resolve([]),
+        canApproveAccess ? listarAcessosPendentes(currentUser) : Promise.resolve([])
+      ]);
+      setUsuarios(usuariosRows);
+      setPendentes(pendentesRows);
     } catch (err) {
       setError(err.message || 'Falha ao carregar usuários.');
     } finally {
@@ -82,7 +99,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     carregarUsuarios();
-  }, []);
+  }, [currentUser?.id, currentUser?.perfil, currentUser?.area_operacional, currentUser?.area_supervisao]);
 
   function openCreate() {
     setForm(blankForm);
@@ -98,6 +115,7 @@ export default function Usuarios() {
       perfil: user.perfil || 'operador',
       setor: user.setor || '',
       area_operacional: user.area_operacional || user.area_supervisao || '',
+      equipe: user.equipe || '',
       ativo: Boolean(user.ativo)
     });
     setModal({ type: 'edit', user });
@@ -107,6 +125,17 @@ export default function Usuarios() {
   function openReset(user) {
     setNovaSenha('');
     setModal({ type: 'reset', user });
+    setError('');
+  }
+
+  function openDelete(user) {
+    setModal({ type: 'delete', user });
+    setError('');
+  }
+
+  function openReject(user) {
+    setMotivoRejeicao('');
+    setModal({ type: 'reject-access', user });
     setError('');
   }
 
@@ -120,6 +149,10 @@ export default function Usuarios() {
     setForm((current) => {
       if (field === 'perfil') {
         return { ...current, perfil: value, area_operacional: AUTO_AREA_BY_PROFILE[value] || current.area_operacional };
+      }
+      if (field === 'equipe') {
+        const selected = EQUIPES_TECNICAS.find((equipe) => equipe.value === value);
+        return { ...current, equipe: value, area_operacional: selected?.area || current.area_operacional, setor: selected?.label || current.setor };
       }
       return { ...current, [field]: value };
     });
@@ -169,11 +202,6 @@ export default function Usuarios() {
     }
   }
 
-  function openDelete(user) {
-    setModal({ type: 'delete', user });
-    setError('');
-  }
-
   async function handleDeleteUser() {
     if (!modal.user) return;
     if (modal.user.id === currentUser?.id) {
@@ -212,174 +240,219 @@ export default function Usuarios() {
     }
   }
 
+  async function handleAprovarPendente(user) {
+    setSaving(true);
+    setError('');
+    try {
+      await aprovarAcessoTecnico(user.id, currentUser);
+      setToast({ message: 'Acesso técnico aprovado.', tone: 'green' });
+      await carregarUsuarios();
+    } catch (err) {
+      setError(err.message || 'Não foi possível aprovar o acesso.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRejeitarPendente(event) {
+    event.preventDefault();
+    if (!modal.user) return;
+    setSaving(true);
+    setError('');
+    try {
+      await rejeitarAcessoTecnico(modal.user.id, currentUser, motivoRejeicao);
+      setToast({ message: 'Acesso técnico rejeitado.', tone: 'orange' });
+      await carregarUsuarios();
+      closeModal();
+    } catch (err) {
+      setError(err.message || 'Não foi possível rejeitar o acesso.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="grid gap-4">
       <PageHeader
         title="Administração de Usuários"
-        description="Diretoria gerencia todos os usuários. Gerência pode criar e editar usuários operacionais, incluindo área operacional."
+        description="Gestão de usuários, áreas operacionais e aprovação de primeiro acesso técnico."
         actions={
           <>
             <button className="secondary-button" type="button" onClick={carregarUsuarios} disabled={loading}>
               <RefreshCcw size={17} />
               Atualizar
             </button>
-            <button className="primary-button" type="button" onClick={openCreate}>
-              <Plus size={18} />
-              Novo usuário
-            </button>
+            {canManageUsers && (
+              <button className="primary-button" type="button" onClick={openCreate}>
+                <Plus size={18} />
+                Novo usuário
+              </button>
+            )}
           </>
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="glass-card rounded-2xl p-4">
-          <small className="font-black uppercase tracking-wide text-slate-400">Total</small>
-          <strong className="mt-1 block text-3xl font-black text-white">{usuarios.length}</strong>
-        </div>
-        <div className="glass-card rounded-2xl p-4">
-          <small className="font-black uppercase tracking-wide text-slate-400">Ativos</small>
-          <strong className="mt-1 block text-3xl font-black text-green-100">{ativos}</strong>
-        </div>
-        <div className="glass-card rounded-2xl p-4">
-          <small className="font-black uppercase tracking-wide text-slate-400">Inativos</small>
-          <strong className="mt-1 block text-3xl font-black text-orange-100">{usuarios.length - ativos}</strong>
-        </div>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Metric label="Total" value={usuarios.length} />
+        <Metric label="Ativos" value={ativos} tone="green" />
+        <Metric label="Inativos" value={usuarios.length - ativos} tone="orange" />
+        <Metric label="Acessos Pendentes" value={pendentes.length} tone="cyan" />
       </div>
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
-      <section className="glass-card overflow-hidden rounded-3xl">
-        <div className="overflow-x-auto">
-          <table className="min-w-[1120px] w-full border-separate border-spacing-y-2 p-3 text-left">
-            <thead>
-              <tr className="text-xs uppercase tracking-wide text-slate-400">
-                <th className="px-3 py-2">Nome</th>
-                <th className="px-3 py-2">Usuário</th>
-                <th className="px-3 py-2">Perfil</th>
-                <th className="px-3 py-2">Setor</th>
-                <th className="px-3 py-2">Área Operacional</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Último login</th>
-                <th className="px-3 py-2 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+      {canApproveAccess && (
+        <section className="glass-card overflow-hidden rounded-3xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-300/10 px-5 py-4">
+            <div>
+              <h2 className="text-xl font-black text-white">Acessos Pendentes</h2>
+              <p className="text-sm font-semibold text-slate-300">Solicitações de primeiro acesso técnico conforme a hierarquia de supervisão.</p>
+            </div>
+            <StatusBadge tone={pendentes.length ? 'orange' : 'green'}>{pendentes.length} pendente(s)</StatusBadge>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[840px] w-full text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-slate-400">
                 <tr>
-                  <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={8}>
-                    Carregando usuários...
-                  </td>
+                  <th className="px-5 py-3">Nome</th>
+                  <th className="px-5 py-3">Login</th>
+                  <th className="px-5 py-3">Equipe</th>
+                  <th className="px-5 py-3">Data Solicitação</th>
+                  <th className="px-5 py-3 text-right">Ações</th>
                 </tr>
-              ) : usuarios.length ? (
-                usuarios.map((usuario) => (
-                  <tr key={usuario.id}>
-                    <td className="rounded-l-2xl border-y border-l border-cyan-300/10 bg-navy-950/55 px-3 py-3 font-bold text-white">
-                      {usuario.nome}
-                    </td>
-                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.usuario}</td>
-                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3">
-                      <StatusBadge>{usuario.perfil}</StatusBadge>
-                    </td>
-                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.setor || '-'}</td>
-                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{areaOperacionalLabel(usuario.area_operacional || usuario.area_supervisao)}</td>
-                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3">
-                      <StatusBadge tone={usuario.ativo ? 'green' : 'orange'}>{usuario.ativo ? 'Ativo' : 'Inativo'}</StatusBadge>
-                    </td>
-                    <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-300">{formatDate(usuario.ultimo_login)}</td>
-                    <td className="rounded-r-2xl border-y border-r border-cyan-300/10 bg-navy-950/55 px-3 py-3">
+              </thead>
+              <tbody className="divide-y divide-cyan-300/10">
+                {pendentes.map((usuario) => (
+                  <tr key={usuario.id} className="bg-navy-950/35">
+                    <td className="px-5 py-3 font-bold text-white">{usuario.nome}</td>
+                    <td className="px-5 py-3 text-slate-200">{usuario.usuario}</td>
+                    <td className="px-5 py-3 text-slate-200">{equipeTecnicaLabel(usuario.equipe)}</td>
+                    <td className="px-5 py-3 text-slate-300">{formatDate(usuario.criado_em)}</td>
+                    <td className="px-5 py-3">
                       <div className="flex justify-end gap-2">
-                        <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openEdit(usuario)} disabled={!canEditUser(currentUser, usuario)}>
-                          Editar
+                        <button className="primary-button min-h-10 px-3" type="button" onClick={() => handleAprovarPendente(usuario)} disabled={saving}>
+                          <CheckCircle2 size={15} />
+                          Aprovar
                         </button>
-                        <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openReset(usuario)} disabled={!canEditUser(currentUser, usuario)}>
-                          <RotateCcw size={15} />
-                          Senha
+                        <button className="danger-button min-h-10 px-3" type="button" onClick={() => openReject(usuario)} disabled={saving}>
+                          <XCircle size={15} />
+                          Rejeitar
                         </button>
-                        <button
-                          className={usuario.ativo ? 'danger-button min-h-10 px-3' : 'secondary-button min-h-10 px-3'}
-                          type="button"
-                          onClick={() => handleToggle(usuario)}
-                          disabled={saving || !canEditUser(currentUser, usuario)}
-                        >
-                          {usuario.ativo ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
-                          {usuario.ativo ? 'Desativar' : 'Reativar'}
-                        </button>
-                        {canDeleteUsers && (
-                          <button
-                            className="danger-button min-h-10 px-3"
-                            type="button"
-                            onClick={() => openDelete(usuario)}
-                            disabled={saving || usuario.id === currentUser?.id}
-                          >
-                            <Trash2 size={15} />
-                            Excluir
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={8}>
-                    Nenhum usuário cadastrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                ))}
+                {!pendentes.length && (
+                  <tr>
+                    <td className="px-5 py-8 text-center font-bold text-slate-300" colSpan={5}>Nenhum acesso pendente para sua área.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
-      <Modal
-        open={modal.type === 'create' || modal.type === 'edit'}
-        title={modal.type === 'create' ? 'Criar usuário' : 'Editar usuário'}
-        onClose={closeModal}
-      >
+      {canManageUsers && (
+        <section className="glass-card overflow-hidden rounded-3xl">
+          <div className="overflow-x-auto">
+            <table className="min-w-[1320px] w-full border-separate border-spacing-y-2 p-3 text-left">
+              <thead>
+                <tr className="text-xs uppercase tracking-wide text-slate-400">
+                  <th className="px-3 py-2">Nome</th>
+                  <th className="px-3 py-2">Usuário</th>
+                  <th className="px-3 py-2">Perfil</th>
+                  <th className="px-3 py-2">Setor</th>
+                  <th className="px-3 py-2">Área Operacional</th>
+                  <th className="px-3 py-2">Equipe</th>
+                  <th className="px-3 py-2">Aprovação</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Último login</th>
+                  <th className="px-3 py-2 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={10}>Carregando usuários...</td>
+                  </tr>
+                ) : usuarios.length ? (
+                  usuarios.map((usuario) => (
+                    <tr key={usuario.id}>
+                      <td className="rounded-l-2xl border-y border-l border-cyan-300/10 bg-navy-950/55 px-3 py-3 font-bold text-white">{usuario.nome}</td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.usuario}</td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3"><StatusBadge>{usuario.perfil}</StatusBadge></td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.setor || '-'}</td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{areaOperacionalLabel(usuario.area_operacional || usuario.area_supervisao)}</td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{equipeTecnicaLabel(usuario.equipe)}</td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3">
+                        <StatusBadge tone={usuario.status_aprovacao === 'pendente' ? 'orange' : usuario.status_aprovacao === 'rejeitado' ? 'red' : 'green'}>
+                          {usuario.status_aprovacao || 'aprovado'}
+                        </StatusBadge>
+                      </td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3">
+                        <StatusBadge tone={usuario.ativo ? 'green' : 'orange'}>{usuario.ativo ? 'Ativo' : 'Inativo'}</StatusBadge>
+                      </td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-300">{formatDate(usuario.ultimo_login)}</td>
+                      <td className="rounded-r-2xl border-y border-r border-cyan-300/10 bg-navy-950/55 px-3 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openEdit(usuario)} disabled={!canEditUser(currentUser, usuario)}>Editar</button>
+                          <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openReset(usuario)} disabled={!canEditUser(currentUser, usuario)}>
+                            <RotateCcw size={15} />
+                            Senha
+                          </button>
+                          <button className={usuario.ativo ? 'danger-button min-h-10 px-3' : 'secondary-button min-h-10 px-3'} type="button" onClick={() => handleToggle(usuario)} disabled={saving || !canEditUser(currentUser, usuario)}>
+                            {usuario.ativo ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
+                            {usuario.ativo ? 'Desativar' : 'Reativar'}
+                          </button>
+                          {canDeleteUsers && (
+                            <button className="danger-button min-h-10 px-3" type="button" onClick={() => openDelete(usuario)} disabled={saving || usuario.id === currentUser?.id}>
+                              <Trash2 size={15} />
+                              Excluir
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={10}>Nenhum usuário cadastrado.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <Modal open={modal.type === 'create' || modal.type === 'edit'} title={modal.type === 'create' ? 'Criar usuário' : 'Editar usuário'} onClose={closeModal}>
         <form className="grid gap-4" onSubmit={handleSave}>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="field-label">
-              Nome
-              <input className="form-control" value={form.nome} onChange={(event) => updateForm('nome', event.target.value)} />
-            </label>
-            <label className="field-label">
-              Usuário
-              <input className="form-control" value={form.usuario} onChange={(event) => updateForm('usuario', event.target.value)} />
-            </label>
-            {modal.type === 'create' && (
-              <label className="field-label">
-                Senha inicial
-                <input className="form-control" type="password" value={form.senha} onChange={(event) => updateForm('senha', event.target.value)} />
-              </label>
-            )}
+            <Input label="Nome" value={form.nome} onChange={(value) => updateForm('nome', value)} />
+            <Input label="Usuário" value={form.usuario} onChange={(value) => updateForm('usuario', value)} />
+            {modal.type === 'create' && <Input label="Senha inicial" type="password" value={form.senha} onChange={(value) => updateForm('senha', value)} />}
             <label className="field-label">
               Perfil
               <select className="form-control" value={form.perfil} onChange={(event) => updateForm('perfil', event.target.value)}>
-                {perfisDisponiveis.map((perfil) => (
-                  <option key={perfil} value={perfil}>
-                    {perfil}
-                  </option>
-                ))}
+                {perfisDisponiveis.map((perfil) => <option key={perfil} value={perfil}>{perfil}</option>)}
               </select>
             </label>
-            <label className="field-label">
-              Setor
-              <input className="form-control" value={form.setor} onChange={(event) => updateForm('setor', event.target.value)} />
-            </label>
+            <Input label="Setor" value={form.setor} onChange={(value) => updateForm('setor', value)} />
+            {form.perfil === 'tecnico' && (
+              <label className="field-label">
+                Equipe
+                <select className="form-control" value={form.equipe} onChange={(event) => updateForm('equipe', event.target.value)} required>
+                  <option value="">Selecione...</option>
+                  {EQUIPES_TECNICAS.map((equipe) => <option key={equipe.value} value={equipe.value}>{equipe.label}</option>)}
+                </select>
+              </label>
+            )}
             <label className="field-label">
               Área Operacional
-              <select
-                className="form-control"
-                value={form.area_operacional}
-                onChange={(event) => updateForm('area_operacional', event.target.value)}
-                required={['supervisor', 'tecnico'].includes(form.perfil)}
-              >
+              <select className="form-control" value={form.area_operacional} onChange={(event) => updateForm('area_operacional', event.target.value)} required={['supervisor', 'tecnico'].includes(form.perfil)}>
                 <option value="">Selecione...</option>
-                {AREAS_OPERACIONAIS.map((area) => (
-                  <option key={area.value} value={area.value}>
-                    {area.label}
-                  </option>
-                ))}
+                {AREAS_OPERACIONAIS.map((area) => <option key={area.value} value={area.value}>{area.label}</option>)}
               </select>
             </label>
             <label className="field-label">
@@ -392,9 +465,7 @@ export default function Usuarios() {
           </div>
           {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
           <div className="flex justify-end gap-2">
-            <button className="secondary-button" type="button" onClick={closeModal}>
-              Cancelar
-            </button>
+            <button className="secondary-button" type="button" onClick={closeModal}>Cancelar</button>
             <button className="primary-button" type="submit" disabled={saving}>
               <Save size={17} />
               Salvar
@@ -405,32 +476,21 @@ export default function Usuarios() {
 
       <Modal open={modal.type === 'reset'} title={`Resetar senha - ${modal.user?.nome || ''}`} onClose={closeModal}>
         <form className="grid gap-4" onSubmit={handleResetSenha}>
-          <label className="field-label">
-            Nova senha
-            <input className="form-control" type="password" value={novaSenha} onChange={(event) => setNovaSenha(event.target.value)} />
-          </label>
+          <Input label="Nova senha" type="password" value={novaSenha} onChange={setNovaSenha} />
           {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
           <div className="flex justify-end gap-2">
-            <button className="secondary-button" type="button" onClick={closeModal}>
-              Cancelar
-            </button>
-            <button className="primary-button" type="submit" disabled={saving}>
-              Resetar senha
-            </button>
+            <button className="secondary-button" type="button" onClick={closeModal}>Cancelar</button>
+            <button className="primary-button" type="submit" disabled={saving}>Resetar senha</button>
           </div>
         </form>
       </Modal>
 
       <Modal open={modal.type === 'delete'} title={`Excluir usuário - ${modal.user?.nome || ''}`} onClose={closeModal}>
         <div className="grid gap-4">
-          <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">
-            Esta ação remove o usuário das listas e impede novo login, mantendo o histórico já registrado no sistema.
-          </div>
+          <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">Esta ação remove o usuário das listas e impede novo login, mantendo o histórico já registrado no sistema.</div>
           {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
           <div className="flex justify-end gap-2">
-            <button className="secondary-button" type="button" onClick={closeModal}>
-              Cancelar
-            </button>
+            <button className="secondary-button" type="button" onClick={closeModal}>Cancelar</button>
             <button className="danger-button" type="button" onClick={handleDeleteUser} disabled={saving}>
               <Trash2 size={17} />
               Excluir usuário
@@ -439,7 +499,49 @@ export default function Usuarios() {
         </div>
       </Modal>
 
+      <Modal open={modal.type === 'reject-access'} title={`Rejeitar acesso - ${modal.user?.nome || ''}`} onClose={closeModal}>
+        <form className="grid gap-4" onSubmit={handleRejeitarPendente}>
+          <div className="rounded-2xl border border-orange-300/25 bg-orange-500/15 p-4 text-sm font-bold text-orange-100">Informe o motivo da rejeição. O usuário continuará sem acesso ao sistema.</div>
+          <label className="field-label">
+            Motivo obrigatório
+            <textarea className="form-control min-h-24 py-3" value={motivoRejeicao} onChange={(event) => setMotivoRejeicao(event.target.value)} required />
+          </label>
+          {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
+          <div className="flex justify-end gap-2">
+            <button className="secondary-button" type="button" onClick={closeModal}>Cancelar</button>
+            <button className="danger-button" type="submit" disabled={saving}>
+              <XCircle size={17} />
+              Rejeitar acesso
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />
     </div>
+  );
+}
+
+function Metric({ label, value, tone = 'cyan' }) {
+  const colors = {
+    cyan: 'text-cyan-100',
+    green: 'text-green-100',
+    orange: 'text-orange-100'
+  };
+
+  return (
+    <div className="glass-card rounded-2xl p-4">
+      <small className="font-black uppercase tracking-wide text-slate-400">{label}</small>
+      <strong className={`mt-1 block text-3xl font-black ${colors[tone] || colors.cyan}`}>{value}</strong>
+    </div>
+  );
+}
+
+function Input({ label, value, onChange, type = 'text' }) {
+  return (
+    <label className="field-label">
+      {label}
+      <input className="form-control" type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
   );
 }

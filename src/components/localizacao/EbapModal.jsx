@@ -27,7 +27,7 @@ export default function EbapModal({ ebap, onClose }) {
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <Info label="OS abertas" value={ebap.os_abertas || 0} />
-          <Info label="RO pendentes" value={ebap.ro_pendentes || 0} />
+          <Info label="RDO pendentes" value={ebap.ro_pendentes || 0} />
           <Info label="Preventivas pendentes" value={ebap.preventivas_pendentes || 0} />
           <Info label="Ultima atualizacao" value={formatDate(ebap.updated_at || ebap.created_at)} />
         </div>
