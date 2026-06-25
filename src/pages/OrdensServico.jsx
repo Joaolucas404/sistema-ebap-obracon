@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, CheckCircle2, Clock, Plus, RefreshCcw, Search, TriangleAlert } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import KpiCard from '../components/ui/KpiCard.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -38,6 +39,7 @@ const emptyForm = {
 
 export default function OrdensServico() {
   const user = useAuthStore((state) => state.user);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [count, setCount] = useState(0);
   const [dashboard, setDashboard] = useState(null);
@@ -56,6 +58,18 @@ export default function OrdensServico() {
   const canCreate = podeCriarOS(user?.perfil);
   const canDelete = podeExcluirOS(user?.perfil);
   const userAreaOperacional = user?.area_operacional || user?.area_supervisao || '';
+  const tecnicoScope = user?.perfil === 'tecnico' ? searchParams.get('visao') || '' : '';
+  const isTecnico = user?.perfil === 'tecnico';
+  const pageTitle = isTecnico
+    ? tecnicoScope === 'equipe'
+      ? 'OS da Equipe'
+      : tecnicoScope === 'historico'
+        ? 'Histórico'
+        : 'Minhas OS'
+    : 'Ordens de Serviço';
+  const pageDescription = isTecnico
+    ? `Equipe ${user?.equipe || '-'} • visualização restrita ao técnico e à própria equipe.`
+    : 'Cadastro, acompanhamento, filtros, dashboard e rastreabilidade de OS conectados ao Supabase.';
 
   async function loadBase() {
     const [ebapRows, responsavelRows] = await Promise.all([listarEbaps(), listarResponsaveis()]);
@@ -68,8 +82,8 @@ export default function OrdensServico() {
     setError('');
     try {
       const [lista, dash] = await Promise.all([
-        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional }),
-        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional })
+        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional, equipe: user?.equipe, scope: tecnicoScope }),
+        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional, equipe: user?.equipe, scope: tecnicoScope })
       ]);
       setItems(lista.data);
       setCount(lista.count);
@@ -87,7 +101,7 @@ export default function OrdensServico() {
 
   useEffect(() => {
     loadOS();
-  }, [filters, user?.id, user?.perfil, userAreaOperacional]);
+  }, [filters, user?.id, user?.perfil, userAreaOperacional, user?.equipe, tecnicoScope]);
 
   useEffect(() => {
     if (!modalOpen || !form.ebap_id) {
@@ -98,6 +112,13 @@ export default function OrdensServico() {
       .then(setAtivosEbap)
       .catch((err) => setError(err.message || 'Falha ao carregar ativos da EBAP.'));
   }, [modalOpen, form.ebap_id]);
+
+  useEffect(() => {
+    if (searchParams.get('nova') === '1' && canCreate) {
+      openCreate();
+      setSearchParams(tecnicoScope ? { visao: tecnicoScope } : {});
+    }
+  }, [searchParams, canCreate]);
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -166,8 +187,8 @@ export default function OrdensServico() {
   return (
     <div className="grid gap-4">
       <PageHeader
-        title="Ordens de Serviço"
-        description="Cadastro, acompanhamento, filtros, dashboard e rastreabilidade de OS conectados ao Supabase."
+        title={pageTitle}
+        description={pageDescription}
         actions={
           <>
             <button className="secondary-button" type="button" onClick={loadOS} disabled={loading}>
@@ -183,6 +204,22 @@ export default function OrdensServico() {
           </>
         }
       />
+
+      {isTecnico && (
+        <section className="glass-card rounded-3xl p-3">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button className={tecnicoScope === 'minhas' || !tecnicoScope ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visao: 'minhas' })}>
+              Minhas OS
+            </button>
+            <button className={tecnicoScope === 'equipe' ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visao: 'equipe' })}>
+              OS da Equipe
+            </button>
+            <button className={tecnicoScope === 'historico' ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visao: 'historico' })}>
+              Histórico
+            </button>
+          </div>
+        </section>
+      )}
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
@@ -225,6 +262,18 @@ export default function OrdensServico() {
 
       <Modal open={modalOpen} title="Nova Ordem de Serviço" onClose={() => setModalOpen(false)}>
         <form className="grid gap-4" onSubmit={handleCreate}>
+          {isTecnico && (
+            <div className="grid gap-3 rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 md:grid-cols-2">
+              <div>
+                <small className="block text-xs font-black uppercase tracking-wide text-slate-400">Técnico</small>
+                <strong className="mt-1 block text-white">{user?.nome || user?.usuario}</strong>
+              </div>
+              <div>
+                <small className="block text-xs font-black uppercase tracking-wide text-slate-400">Equipe</small>
+                <strong className="mt-1 block text-white">{user?.equipe || '-'}</strong>
+              </div>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="field-label">
               EBAP

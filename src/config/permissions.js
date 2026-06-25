@@ -23,6 +23,7 @@ export const ROUTE_KEYS = {
   ccoAnaliseOS: '/cco-analise-os',
   os: '/os',
   supervisao: '/supervisao',
+  perfil: '/perfil',
   manutencao: '/manutencao',
   salaSituacaoEbaps: '/sala-situacao-ebaps',
   osDiaria: '/os-diaria',
@@ -41,7 +42,7 @@ export const ROUTE_KEYS = {
 
 export const ROLE_PERMISSIONS = {
   operador: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes'],
-  tecnico: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'os', 'osDiaria', 'arquivoRelatorios', 'orientacoes'],
+  tecnico: ['os', 'relatorio', 'perfil'],
   cco: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'supervisao', 'orientacoes'],
   supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes', 'usuarios'],
   gerencia: [
@@ -80,7 +81,7 @@ export const ROLE_PERMISSIONS = {
 
 export const START_ROUTE_BY_ROLE = {
   operador: '/dashboard',
-  tecnico: '/dashboard',
+  tecnico: '/os',
   cco: '/dashboard',
   supervisor: '/dashboard',
   gerencia: '/dashboard',

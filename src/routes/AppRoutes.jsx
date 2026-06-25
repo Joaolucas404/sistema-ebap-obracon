@@ -19,6 +19,7 @@ const FinanceiroContratos = lazy(() => import('../pages/FinanceiroContratos.jsx'
 const LocalizacaoEbaps = lazy(() => import('../pages/LocalizacaoEbaps.jsx'));
 const Login = lazy(() => import('../pages/Login.jsx'));
 const Manutencao = lazy(() => import('../pages/Manutencao.jsx'));
+const MeuPerfil = lazy(() => import('../pages/MeuPerfil.jsx'));
 const Notificacoes = lazy(() => import('../pages/Notificacoes.jsx'));
 const OrdensServico = lazy(() => import('../pages/OrdensServico.jsx'));
 const Orientacoes = lazy(() => import('../pages/Orientacoes.jsx'));
@@ -138,7 +139,7 @@ export default function AppRoutes() {
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/sala-situacao-tv" element={<SalaSituacaoTV />} />
 
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute permission="dashboard" />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
@@ -178,6 +179,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="supervisao" />}>
         <Route element={<AppLayout />}>
           <Route path="/supervisao" element={<Supervisao />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="perfil" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/perfil" element={<MeuPerfil />} />
         </Route>
       </Route>
 

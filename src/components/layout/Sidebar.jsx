@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ClipboardList, FileText, History, Plus, UserRound, UsersRound } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { MENU_GROUPS, MENU_ITEMS } from '../../config/menu.js';
 import { canAccess } from '../../config/permissions.js';
@@ -8,6 +8,15 @@ import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
 
 const STORAGE_KEY = 'sigebap.sidebar.groups';
+
+const TECH_ITEMS = [
+  { key: 'tecnico-nova-os', label: 'Nova OS', path: '/os?nova=1', icon: Plus, description: 'Abrir nova ordem' },
+  { key: 'tecnico-minhas-os', label: 'Minhas OS', path: '/os?visao=minhas', icon: ClipboardList, description: 'Criadas ou atribuídas' },
+  { key: 'tecnico-equipe', label: 'OS da Equipe', path: '/os?visao=equipe', icon: UsersRound, description: 'Somente minha equipe' },
+  { key: 'tecnico-historico', label: 'Histórico', path: '/os?visao=historico', icon: History, description: 'Meu histórico e equipe' },
+  { key: 'tecnico-relatorios', label: 'Relatórios', path: '/relatorio', icon: FileText, description: 'RDO e relatórios' },
+  { key: 'tecnico-perfil', label: 'Meu Perfil', path: '/perfil', icon: UserRound, description: 'Dados de acesso' }
+];
 
 export default function Sidebar({ onNavigate }) {
   const user = useAuthStore((state) => state.user);
@@ -35,6 +44,44 @@ export default function Sidebar({ onNavigate }) {
 
   function toggleGroup(group) {
     setOpenGroups((current) => ({ ...current, [group]: !current[group] }));
+  }
+
+  if (perfil === 'tecnico') {
+    return (
+      <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-86px)] lg:overflow-auto">
+        <div className="grid justify-items-center gap-1.5 px-2 pb-3 pt-1 text-center">
+          <div className="login-logo-frame w-20 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-24">
+            <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
+          </div>
+          <div>
+            <strong className="block text-xs font-black leading-tight text-white drop-shadow">Área Técnica</strong>
+            <span className="block text-[11px] font-extrabold text-[#17B33A]">{user?.equipe || user?.area_operacional || 'Equipe'}</span>
+          </div>
+        </div>
+
+        <nav className="grid gap-1">
+          {TECH_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.key}
+                to={item.path}
+                onClick={onNavigate}
+                className={({ isActive }) => ['nav-item', isActive ? 'nav-item-active' : 'nav-item-inactive'].join(' ')}
+              >
+                <span className="nav-icon">
+                  <Icon size={19} />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block truncate text-sm font-black leading-tight">{item.label}</strong>
+                  <small className="block truncate text-[11px] text-slate-300/80">{item.description}</small>
+                </span>
+              </NavLink>
+            );
+          })}
+        </nav>
+      </aside>
+    );
   }
 
   return (
