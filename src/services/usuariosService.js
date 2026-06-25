@@ -19,15 +19,15 @@ export const AREAS_OPERACIONAIS = [
 ];
 
 export const EQUIPES_TECNICAS = [
-  { value: 'mecanica_c', label: 'MecÃ¢nica C', area: 'mecanica' },
-  { value: 'mecanica_d', label: 'MecÃ¢nica D', area: 'mecanica' },
-  { value: 'mecanica_h', label: 'MecÃ¢nica H', area: 'mecanica' },
-  { value: 'eletrica_b', label: 'ElÃ©trica B', area: 'eletrica' },
-  { value: 'eletrica_f', label: 'ElÃ©trica F', area: 'eletrica' },
-  { value: 'eletrica_d', label: 'ElÃ©trica D', area: 'eletrica' },
-  { value: 'eletrica_h', label: 'ElÃ©trica H', area: 'eletrica' },
-  { value: 'automacao_a', label: 'AutomaÃ§Ã£o A', area: 'automacao' },
-  { value: 'automacao_e', label: 'AutomaÃ§Ã£o E', area: 'automacao' }
+  { value: 'mecanica_c', label: 'Mecânica C', area: 'mecanica' },
+  { value: 'mecanica_d', label: 'Mecânica D', area: 'mecanica' },
+  { value: 'mecanica_h', label: 'Mecânica H', area: 'mecanica' },
+  { value: 'eletrica_b', label: 'Elétrica B', area: 'eletrica' },
+  { value: 'eletrica_f', label: 'Elétrica F', area: 'eletrica' },
+  { value: 'eletrica_d', label: 'Elétrica D', area: 'eletrica' },
+  { value: 'eletrica_h', label: 'Elétrica H', area: 'eletrica' },
+  { value: 'automacao_a', label: 'Automação A', area: 'automacao' },
+  { value: 'automacao_e', label: 'Automação E', area: 'automacao' }
 ];
 
 const GLOBAL_APPROVERS = ['gerencia', 'diretoria', 'administrador'];
