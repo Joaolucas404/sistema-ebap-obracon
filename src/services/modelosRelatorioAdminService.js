@@ -6,6 +6,8 @@ const MODELO_SELECT = `
   campos:campos_relatorio(*)
 `;
 
+export const MODELO_PAGE_SIZE = 20;
+
 export const MODELO_AREAS = [
   { value: 'mecanica', label: 'Mecânica' },
   { value: 'eletrica', label: 'Elétrica' },
@@ -13,7 +15,7 @@ export const MODELO_AREAS = [
 ];
 
 export const MODELO_TIPOS_MANUTENCAO = ['preventiva', 'corretiva', 'preditiva'];
-export const MODELO_TIPOS_EQUIPAMENTO = ['Bomba', 'Gerador', 'Comporta', 'Rastelo', 'Painel', 'Sensor', 'Climatizador', 'Outros'];
+export const MODELO_TIPOS_EQUIPAMENTO = ['Bomba', 'Gerador', 'CCM', 'Monovia', 'Eletrocentro', 'Comporta', 'Rastelo', 'Outros'];
 
 function orderCampos(campos = []) {
   return [...campos].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
@@ -25,39 +27,71 @@ function gerarCodigoModelo() {
   return 'MR-' + ymd + '-' + String(now.getTime()).slice(-5);
 }
 
-export function podeAdministrarModelo(user, modelo = null) {
-  const perfil = normalizePerfil(user?.perfil);
-  if (['gerencia', 'diretoria'].includes(perfil)) return true;
-  if (perfil !== 'supervisor') return false;
-  if (!modelo) return true;
-  const area = user?.area_supervisao || user?.area_operacional;
-  return !modelo.area || modelo.area === area;
+function normalizeChecklist(checklist) {
+  if (Array.isArray(checklist)) return checklist.map((item) => String(item).trim()).filter(Boolean);
+  return String(checklist || '').split('\n').map((item) => item.trim()).filter(Boolean);
 }
 
-export async function listarModelosAdmin(user, filters = {}) {
-  let query = supabase.from('modelos_relatorio').select(MODELO_SELECT).is('deleted_at', null).order('area', { ascending: true }).order('equipamento_tipo', { ascending: true });
+function escopoAreaUsuario(user) {
   const perfil = normalizePerfil(user?.perfil);
-  if (perfil === 'supervisor') {
-    const area = user?.area_supervisao || user?.area_operacional;
-    if (area) query = query.eq('area', area);
-  } else if (!['gerencia', 'diretoria'].includes(perfil)) {
-    return [];
-  }
+  if (perfil === 'supervisor') return user?.area_supervisao || user?.area_operacional || '';
+  return '';
+}
+
+function canSeeAll(user) {
+  return ['gerencia', 'diretoria'].includes(normalizePerfil(user?.perfil));
+}
+
+function baseQuery(user, filters = {}, select = MODELO_SELECT, options = {}) {
+  let query = supabase.from('modelos_relatorio').select(select, options).is('deleted_at', null);
+  const scopedArea = escopoAreaUsuario(user);
+  if (scopedArea) query = query.eq('area', scopedArea);
+  else if (!canSeeAll(user)) return null;
+
   if (filters.area) query = query.eq('area', filters.area);
   if (filters.tipoManutencao) query = query.eq('tipo_manutencao', filters.tipoManutencao);
   if (filters.equipamentoTipo) query = query.eq('equipamento_tipo', filters.equipamentoTipo);
   if (filters.search) {
-    const value = '%' + filters.search + '%';
+    const value = '%' + String(filters.search).trim() + '%';
     query = query.or('titulo.ilike.' + value + ',equipamento_tipo.ilike.' + value + ',resumo.ilike.' + value);
   }
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-  return (data || []).map((modelo) => ({ ...modelo, campos: orderCampos(modelo.campos) }));
+  return query;
 }
 
-function normalizeChecklist(checklist) {
-  if (Array.isArray(checklist)) return checklist.map((item) => String(item).trim()).filter(Boolean);
-  return String(checklist || '').split('\n').map((item) => item.trim()).filter(Boolean);
+export function podeAdministrarModelo(user, modelo = null) {
+  if (canSeeAll(user)) return true;
+  if (normalizePerfil(user?.perfil) !== 'supervisor') return false;
+  if (!modelo) return true;
+  const area = escopoAreaUsuario(user);
+  return !modelo.area || modelo.area === area;
+}
+
+export async function listarModelosAdmin(user, filters = {}) {
+  const page = Math.max(1, Number(filters.page || 1));
+  const pageSize = Number(filters.pageSize || MODELO_PAGE_SIZE);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const query = baseQuery(user, filters, MODELO_SELECT, { count: 'exact' });
+  if (!query) return { data: [], count: 0, page, pageSize };
+
+  const { data, error, count } = await query
+    .order('area', { ascending: true })
+    .order('tipo_manutencao', { ascending: true })
+    .order('equipamento_tipo', { ascending: true })
+    .order('titulo', { ascending: true })
+    .range(from, to);
+  if (error) throw new Error(error.message);
+  return { data: (data || []).map((modelo) => ({ ...modelo, campos: orderCampos(modelo.campos) })), count: count || 0, page, pageSize };
+}
+
+export async function obterContadoresModelos(user, filters = {}) {
+  const query = baseQuery(user, { ...filters, tipoManutencao: '' }, 'id,tipo_manutencao', { count: 'exact' });
+  if (!query) return { total: 0, byTipo: {} };
+  const { data, error, count } = await query;
+  if (error) throw new Error(error.message);
+  const byTipo = Object.fromEntries(MODELO_TIPOS_MANUTENCAO.map((tipo) => [tipo, 0]));
+  (data || []).forEach((modelo) => { byTipo[modelo.tipo_manutencao] = (byTipo[modelo.tipo_manutencao] || 0) + 1; });
+  return { total: count || 0, byTipo };
 }
 
 export async function salvarModeloAdmin(payload, user) {
@@ -98,6 +132,19 @@ export async function salvarModeloAdmin(payload, user) {
     if (camposError) throw new Error(camposError.message);
   }
   return data;
+}
+
+export async function duplicarModeloAdmin(modelo, user) {
+  if (!podeAdministrarModelo(user, modelo)) throw new Error('Perfil sem permissão para duplicar este modelo.');
+  return salvarModeloAdmin({
+    titulo: modelo.titulo + ' - Cópia',
+    area: modelo.area,
+    tipo_manutencao: modelo.tipo_manutencao,
+    equipamento_tipo: modelo.equipamento_tipo,
+    resumo: modelo.resumo || '',
+    checklist: (modelo.campos || []).filter((campo) => campo.grupo === 'checklist').map((campo) => campo.label).join('\n'),
+    ativo: modelo.ativo !== false
+  }, user);
 }
 
 export async function excluirModeloAdmin(modelo, user) {
