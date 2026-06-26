@@ -1,4 +1,5 @@
 import { BRAND } from '../../config/brand.js';
+import { equipeTecnicaLabel } from '../../services/usuariosService.js';
 
 const labelMaps = {
   turno: {
@@ -24,7 +25,11 @@ const labelMaps = {
     enviada_prefeitura: 'Enviada para Prefeitura',
     aguardando_validacao_prefeitura: 'Aguardando validacao da Prefeitura',
     nao_conforme: 'Nao conforme',
-    concluida_arquivada: 'Concluida / Arquivada'
+    concluida_arquivada: 'Concluida / Arquivada',
+    operando: 'Operando',
+    atencao: 'Atenção',
+    parado: 'Parado',
+    em_manutencao: 'Em Manutenção'
   },
   prioridade: {
     baixa: 'Baixa',
@@ -43,6 +48,79 @@ function formatDate(value) {
 function pretty(value, mapName) {
   if (!value) return '-';
   return labelMaps[mapName]?.[value] || String(value).replaceAll('_', ' ');
+}
+
+function formatTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function osTimelineEvent(item) {
+  const key = String(item.acao || item.status_novo || item.status || '').toLowerCase();
+  const map = {
+    criada: ['📄', 'OS Criada'],
+    create: ['📄', 'OS Criada'],
+    atualizada: ['📄', 'OS Atualizada'],
+    review: ['👨‍💼', 'Análise do Supervisor'],
+    analise_supervisor: ['👨‍💼', 'Análise do Supervisor'],
+    assign: ['👷', 'Encaminhada aos Técnicos'],
+    encaminhada_tecnicos: ['👷', 'Encaminhada aos Técnicos'],
+    programada: ['👷', 'Encaminhada aos Técnicos'],
+    start: ['🔧', 'Início da Execução'],
+    em_execucao: ['🔧', 'Início da Execução'],
+    execucao_registrada: ['🔧', 'Execução Registrada'],
+    finish: ['✅', 'Serviço Concluído'],
+    execucao_concluida: ['✅', 'Serviço Concluído'],
+    concluida_tecnicos: ['✅', 'Serviço Concluído'],
+    encerrada: ['✅', 'Serviço Concluído'],
+    validate: ['✔️', 'Validação do Supervisor'],
+    validacao_supervisor: ['✔️', 'Validação do Supervisor'],
+    send: ['📤', 'Enviada para Aprovação'],
+    enviada_prefeitura: ['📤', 'Enviada para Aprovação'],
+    comentario: ['💬', 'Comentário'],
+    anexo: ['📷', 'Evidência Fotográfica'],
+    approve: ['✔️', 'Aprovação Registrada'],
+    aprovada: ['✔️', 'Aprovação Registrada'],
+    reject: ['⚠️', 'Não Conformidade'],
+    return: ['⚠️', 'Correção Solicitada'],
+    nao_conforme: ['⚠️', 'Não Conformidade']
+  };
+  const found = map[key] || map[key.replaceAll('_', '')] || ['•', pretty(key)];
+  return { icon: found[0], label: found[1] };
+}
+
+function osTeamLabel(os) {
+  return equipeTecnicaLabel(os.equipe_responsavel || os.equipe || os.payload?.equipe_executora);
+}
+
+function osParticipantes(data) {
+  const os = data?.os || {};
+  const selectedIds = Array.isArray(os.payload?.tecnicos_participantes_ultima_execucao) ? os.payload.tecnicos_participantes_ultima_execucao : [];
+  const equipe = data?.tecnicosEquipe || [];
+  const selected = selectedIds.length ? equipe.filter((tecnico) => selectedIds.includes(tecnico.id)) : equipe;
+  if (selected.length) return selected.map((tecnico) => tecnico.nome);
+  if (os.responsavel?.nome) return [os.responsavel.nome];
+  return [];
+}
+
+function osFinalEquipmentStatus(os) {
+  return os.payload?.impacto_equipamento || os.payload?.workflow?.status_ativo_final || os.status_ativo_final || os.ativo?.status_operacional || '-';
+}
+
+function photoStage(photo) {
+  const text = String((photo.categoria || '') + ' ' + (photo.legenda || '') + ' ' + (photo.nome_original || '')).toLowerCase();
+  if (text.includes('antes')) return 'antes';
+  if (text.includes('depois') || text.includes('final')) return 'depois';
+  return 'durante';
+}
+
+function groupedOsPhotos(photos = []) {
+  return {
+    antes: photos.filter((photo) => photoStage(photo) === 'antes'),
+    durante: photos.filter((photo) => photoStage(photo) === 'durante'),
+    depois: photos.filter((photo) => photoStage(photo) === 'depois')
+  };
 }
 
 function Field({ label, value, wide = false }) {
@@ -67,10 +145,10 @@ function StatusPill({ label }) {
   return <span className="pdf-pill">{label || '-'}</span>;
 }
 
-function PhotoGrid({ photos = [] }) {
+function PhotoGrid({ photos = [], large = false }) {
   if (!photos.length) return <p className="pdf-muted">Nenhuma foto anexada.</p>;
   return (
-    <div className="pdf-photos">
+    <div className={large ? 'pdf-photos pdf-photos-large' : 'pdf-photos'}>
       {photos.map((photo) => (
         <figure key={photo.id || photo.url}>
           {photo.url ? <img src={photo.url} alt={photo.legenda || photo.nome_original || 'Foto'} crossOrigin="anonymous" /> : <div />}
@@ -81,26 +159,25 @@ function PhotoGrid({ photos = [] }) {
   );
 }
 
-function Timeline({ items = [] }) {
+function Timeline({ items = [], variant = 'default' }) {
   if (!items.length) return <p className="pdf-muted">Nenhum registro encontrado.</p>;
   return (
-    <div className="pdf-timeline">
-      {items.map((item) => (
-        <div key={item.id || `${item.acao}-${item.created_at}`}>
-          <div>
-            <strong>{item.acao || item.status || 'Registro'}</strong>
-            <span>{formatDate(item.created_at || item.validado_em)}</span>
+    <div className={variant === 'os' ? 'pdf-os-timeline' : 'pdf-timeline'}>
+      {items.map((item) => {
+        const event = variant === 'os' ? osTimelineEvent(item) : null;
+        return (
+          <div key={item.id || String(item.acao || item.status || item.created_at)}>
+            <div>
+              <strong>{event ? event.icon + ' ' + event.label : item.acao || item.status || 'Registro'}</strong>
+              <span>{formatTime(item.created_at || item.validado_em)}</span>
+            </div>
+            <p>{item.descricao || item.observacoes || item.motivo_devolucao || item.motivo || '-'}</p>
+            {(item.status_anterior || item.status_novo) && <small>{pretty(item.status_anterior, 'status')} para {pretty(item.status_novo, 'status')}</small>}
+            {item.usuario?.nome && <small>Responsável: {item.usuario.nome}</small>}
+            {item.operador_cco?.nome && <small>CCO: {item.operador_cco.nome}</small>}
           </div>
-          <p>{item.descricao || item.observacoes || item.motivo_devolucao || item.motivo || '-'}</p>
-          {(item.status_anterior || item.status_novo) && (
-            <small>
-              {pretty(item.status_anterior, 'status')} para {pretty(item.status_novo, 'status')}
-            </small>
-          )}
-          {item.usuario?.nome && <small>Responsavel: {item.usuario.nome}</small>}
-          {item.operador_cco?.nome && <small>CCO: {item.operador_cco.nome}</small>}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -403,6 +480,81 @@ function PdfStyles() {
           color: #475569;
           line-height: 1.25;
         }
+        .pdf-photos-large {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .pdf-photos-large img,
+        .pdf-photos-large figure > div {
+          height: 188px;
+        }
+        .pdf-technical-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+        .pdf-tech-card {
+          border: 1px solid #dbe4f0;
+          border-radius: 10px;
+          background: #f8fbff;
+          padding: 9px;
+        }
+        .pdf-tech-card strong {
+          color: #0B2D6B;
+          font-size: 9px;
+          text-transform: uppercase;
+        }
+        .pdf-tech-card p {
+          margin: 5px 0 0;
+          color: #172033;
+          font-size: 10px;
+          line-height: 1.35;
+          white-space: pre-wrap;
+        }
+        .pdf-os-timeline {
+          display: grid;
+          gap: 7px;
+        }
+        .pdf-os-timeline > div {
+          border: 1px solid #dbe4f0;
+          border-left: 4px solid #0B2D6B;
+          border-radius: 9px;
+          padding: 8px;
+          background: #fbfdff;
+        }
+        .pdf-os-timeline > div > div {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .pdf-os-timeline strong {
+          color: #0B2D6B;
+          font-size: 10px;
+        }
+        .pdf-os-timeline span,
+        .pdf-os-timeline small {
+          color: #64748b;
+          font-size: 9px;
+        }
+        .pdf-os-timeline p {
+          margin: 5px 0 2px;
+          color: #172033;
+          font-size: 10px;
+          line-height: 1.35;
+        }
+        .pdf-participants {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 6px;
+        }
+        .pdf-participants span {
+          border: 1px solid #dbe4f0;
+          border-radius: 999px;
+          background: #f8fbff;
+          padding: 6px 9px;
+          color: #172033;
+          font-size: 10px;
+          font-weight: 700;
+        }
         .pdf-signatures {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -510,71 +662,75 @@ function OsDocument({ data }) {
   const os = data?.os || {};
   const relatorioTecnico = data?.relatorioTecnico;
   const respostas = relatorioTecnico?.respostas || {};
+  const fotos = groupedOsPhotos(data?.fotos || []);
+  const tecnico = {
+    diagnostico: respostas.diagnostico || respostas['diagnóstico'] || respostas.descricao_falha || os.payload?.equipamento_falha || os.descricao,
+    servico: respostas.servico_executado || respostas['serviço_executado'] || respostas.execucao || os.relatorio_tecnico,
+    materiais: respostas.materiais_utilizados || os.materiais_utilizados,
+    pendencias: respostas.pendencias || os.pendencias,
+    statusFinal: pretty(osFinalEquipmentStatus(os), 'status')
+  };
+
   return (
     <>
-      <Section title="Dados da OS">
+      <Section title="Resumo executivo da OS">
+        <h3 className="pdf-executive-title">Relatório Técnico Operacional</h3>
         <div className="pdf-meta">
-          <Field label="Numero" value={os.numero} />
-          <Field label="Status" value={<StatusPill label={pretty(os.status, 'status')} />} />
-          <Field label="Prioridade" value={pretty(os.prioridade, 'prioridade')} />
+          <Field label="OS" value={os.numero} />
           <Field label="EBAP" value={os.ebap?.nome} />
-          <Field label="Area" value={data?.areaLabel || os.area} />
-          <Field label="Equipamento com falha" value={os.payload?.equipamento_falha || os.equipamento?.nome} />
+          <Field label="Área" value={data?.areaLabel || os.area} />
+          <Field label="Prioridade" value={pretty(os.prioridade, 'prioridade')} />
+          <Field label="Equipamento" value={os.ativo?.nome_operacional || os.payload?.equipamento_falha || os.equipamento?.nome} />
           <Field label="Solicitante" value={os.solicitante?.nome} />
-          <Field label="Responsavel" value={os.responsavel?.nome} />
-          <Field label="Criada em" value={formatDate(os.created_at)} />
+          <Field label="Equipe Executora" value={osTeamLabel(os)} />
+          <Field label="Abertura" value={formatDate(os.created_at)} />
+          <Field label="Conclusão" value={formatDate(os.fim_execucao)} />
+          <Field label="Status atual" value={<StatusPill label={pretty(os.status, 'status')} />} />
+          <Field label="Tipo" value={pretty(os.tipo_manutencao)} />
+          <Field label="Status final do equipamento" value={tecnico.statusFinal} />
         </div>
-        <p className="pdf-text">
-          <strong>{os.titulo}</strong>
-          {'\n'}
-          {os.descricao}
-        </p>
+        <p className="pdf-text"><strong>{os.titulo}</strong>{'\n'}{os.descricao}</p>
       </Section>
 
-      <Section title="Historico completo">
-        <Timeline items={data?.historico || []} />
-      </Section>
-
-      <Section title="Comentarios por etapa">
-        <Timeline items={(data?.comentarios || []).map((comentario) => ({ ...comentario, acao: 'comentario', descricao: comentario.comentario }))} />
-      </Section>
-
-      <Section title="Relatorio tecnico e aprovacoes">
+      <Section title="Relatório técnico operacional">
         {relatorioTecnico && (
-          <>
-            <div className="pdf-meta">
-              <Field label="Modelo" value={relatorioTecnico.modelo?.titulo || relatorioTecnico.ativo_nome} />
-              <Field label="Tipo" value={pretty(relatorioTecnico.tipo_manutencao)} />
-              <Field label="Status" value={pretty(relatorioTecnico.status)} />
-              <Field label="Enviado em" value={formatDate(relatorioTecnico.enviado_em)} />
-            </div>
-            <div className="pdf-table-wrap">
-              <table className="pdf-table">
-                <thead>
-                  <tr>
-                    <th>Campo</th>
-                    <th>Resposta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(respostas).map(([key, value]) => (
-                    <tr key={key}>
-                      <td>{pretty(key)}</td>
-                      <td>{typeof value === 'boolean' ? (value ? 'OK' : 'Nao') : String(value || '-')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <div className="pdf-meta">
+            <Field label="Modelo" value={relatorioTecnico.modelo?.titulo || relatorioTecnico.ativo_nome} />
+            <Field label="Tipo" value={pretty(relatorioTecnico.tipo_manutencao)} />
+            <Field label="Situação" value={pretty(relatorioTecnico.status)} />
+          </div>
         )}
-        <p className="pdf-text">Relatorio tecnico: {os.relatorio_tecnico || '-'}</p>
-        <p className="pdf-text">Materiais utilizados: {os.materiais_utilizados || '-'}</p>
-        <p className="pdf-text">Pendencias: {os.pendencias || '-'}</p>
+        <div className="pdf-technical-grid">
+          <div className="pdf-tech-card"><strong>Diagnóstico</strong><p>{tecnico.diagnostico || '-'}</p></div>
+          <div className="pdf-tech-card"><strong>Serviço executado</strong><p>{tecnico.servico || '-'}</p></div>
+          <div className="pdf-tech-card"><strong>Materiais utilizados</strong><p>{tecnico.materiais || '-'}</p></div>
+          <div className="pdf-tech-card"><strong>Pendências</strong><p>{tecnico.pendencias || '-'}</p></div>
+          <div className="pdf-tech-card"><strong>Status final do equipamento</strong><p>{tecnico.statusFinal || '-'}</p></div>
+        </div>
       </Section>
 
-      <Section title="Fotos e anexos">
-        <PhotoGrid photos={data?.fotos || []} />
+      <Section title="Técnicos participantes">
+        <div className="pdf-participants">
+          {osParticipantes(data).length ? osParticipantes(data).map((nome) => <span key={nome}>{nome}</span>) : <p className="pdf-muted">Nenhum técnico participante informado.</p>}
+        </div>
+      </Section>
+
+      <Section title="Linha do tempo operacional">
+        <Timeline items={data?.historico || []} variant="os" />
+      </Section>
+
+      <Section title="Comentários e observações">
+        <Timeline items={(data?.comentarios || []).map((comentario) => ({ ...comentario, acao: 'comentario', descricao: comentario.comentario }))} variant="os" />
+      </Section>
+
+      <Section title="Evidências fotográficas - Antes">
+        <PhotoGrid photos={fotos.antes} large />
+      </Section>
+      <Section title="Evidências fotográficas - Durante">
+        <PhotoGrid photos={fotos.durante} large />
+      </Section>
+      <Section title="Evidências fotográficas - Depois">
+        <PhotoGrid photos={fotos.depois} large />
       </Section>
     </>
   );

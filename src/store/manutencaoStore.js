@@ -24,14 +24,14 @@ export const useManutencaoStore = create((set, get) => ({
   saving: false,
   error: '',
 
-  carregarTudo: async () => {
+  carregarTudo: async (user = null) => {
     set({ loading: true, error: '' });
     try {
       const [dashboard, planos, execucoes, osManutencao, ebaps, equipamentos, responsaveis] = await Promise.all([
         obterDashboardManutencao(),
         listarPlanosManutencao({ ativo: true }),
         listarExecucoesManutencao(),
-        listarOsManutencao(),
+        listarOsManutencao(500, user),
         listarEbapsManutencao(),
         listarEquipamentosManutencao(),
         listarResponsaveisManutencao()

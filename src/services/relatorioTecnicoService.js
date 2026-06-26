@@ -10,7 +10,7 @@ function orderCampos(campos = []) {
   return [...campos].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 }
 
-export async function listarModelosRelatorio({ area = '', tipoManutencao = '', search = '' } = {}) {
+export async function listarModelosRelatorio({ area = '', tipoManutencao = '', equipamentoTipo = '', search = '' } = {}) {
   let query = supabase
     .from('modelos_relatorio')
     .select(MODELO_SELECT)

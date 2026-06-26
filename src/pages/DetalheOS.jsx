@@ -80,7 +80,7 @@ export default function DetalheOS() {
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
-  const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false });
+  const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false, tecnicos_participantes: [] });
   const [relatorioTecnico, setRelatorioTecnico] = useState({ modelo_id: '', respostas: {}, fotos: {}, observacoes: '' });
   const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '', impacto_equipamento: 'operando', motivo_impacto: '' });
   const [workflowAction, setWorkflowAction] = useState(null);
@@ -111,7 +111,7 @@ export default function DetalheOS() {
       setSstVinculos(sstRows);
 
       const [modelosAreaRows, respostaRows] = await Promise.all([
-        listarModelosRelatorio({ area: osData.area }),
+        listarModelosRelatorio({ area: osData.area, tipoManutencao: osData.tipo_manutencao, equipamentoTipo: osData.ativo?.tipo || osData.equipamento?.nome }),
         buscarRespostaRelatorioOS(id)
       ]);
       const modelosRows = modelosAreaRows.length ? modelosAreaRows : await listarModelosRelatorio();
@@ -242,7 +242,7 @@ export default function DetalheOS() {
           : (execucao.concluir ? 'Execução concluída e enviada para aprovação.' : 'Execução registrada.'),
         tone: 'green'
       });
-      setExecucao({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false });
+      setExecucao({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false, tecnicos_participantes: [] });
       setModal(null);
       await loadAll();
     } catch (err) {
@@ -401,7 +401,11 @@ export default function DetalheOS() {
 
   const canEdit = podeEditarOS(user?.perfil, os);
   const canSchedule = podeAtribuirOS(user?.perfil) && ['analise_supervisor', 'nao_conforme'].includes(os.status);
-  const canExecute = podeExecutarOS(user?.perfil, os, user?.id) && ['encaminhada_tecnicos', 'em_execucao'].includes(os.status);
+  const equipeExecutora = os.equipe_responsavel || os.equipe || '';
+  const equipesTecnicas = listarEquipesTecnicas();
+  const tecnicosEquipe = responsaveis.filter((responsavel) => responsavel.perfil === 'tecnico' && responsavel.equipe === equipeExecutora);
+  const tecnicosParticipantes = Array.isArray(execucao.tecnicos_participantes) ? execucao.tecnicos_participantes : [];
+  const canExecute = podeExecutarOS(user?.perfil, os, user) && ['encaminhada_tecnicos', 'em_execucao'].includes(os.status);
   const canClose = podeEncerrarOS(user?.perfil);
   const canDelete = podeExcluirOS(user?.perfil);
   const workflowActions = getWorkflowActions(user?.perfil, os);
@@ -591,20 +595,14 @@ export default function DetalheOS() {
       <Modal open={modal === 'schedule'} title="Atribuir e programar OS" onClose={() => setModal(null)}>
         <form className="grid gap-4" onSubmit={handleSchedule}>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="field-label">
-              Responsável técnico
-              <select className="form-control" value={form.responsavel_id || ''} onChange={(event) => updateForm('responsavel_id', event.target.value)} required>
+            <label className="field-label md:col-span-2">
+              Equipe responsável
+              <select className="form-control" value={form.equipe_responsavel || ''} onChange={(event) => updateForm('equipe_responsavel', event.target.value)} required>
                 <option value="">Selecione...</option>
-                {responsaveis.map((responsavel) => (
-                  <option key={responsavel.id} value={responsavel.id}>
-                    {responsavel.nome} - {responsavel.perfil}
-                  </option>
+                {equipesTecnicas.map((equipe) => (
+                  <option key={equipe.value} value={equipe.value}>{equipe.label}</option>
                 ))}
               </select>
-            </label>
-            <label className="field-label">
-              Equipe
-              <input className="form-control" value={form.equipe_responsavel || ''} onChange={(event) => updateForm('equipe_responsavel', event.target.value)} placeholder="Equipe A" />
             </label>
             <label className="field-label">
               Data programada
@@ -647,6 +645,30 @@ export default function DetalheOS() {
             <input type="checkbox" checked={execucao.concluir} onChange={(event) => setExecucao((current) => ({ ...current, concluir: event.target.checked }))} />
             Concluir atividade e enviar para aprovação do Supervisor
           </label>
+          {execucao.concluir && tecnicosEquipe.length > 0 && (
+            <div className="grid gap-3 rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+              <div>
+                <strong className="text-white">Técnicos participantes</strong>
+                <p className="text-sm text-slate-300">Seleção opcional dos técnicos da {equipeTecnicaLabel(equipeExecutora)} que participaram da execução.</p>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                {tecnicosEquipe.map((tecnico) => (
+                  <label key={tecnico.id} className="flex items-center gap-3 rounded-xl border border-cyan-300/10 bg-navy-950/50 p-3 text-sm font-bold text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={tecnicosParticipantes.includes(tecnico.id)}
+                      onChange={(event) => setExecucao((current) => {
+                        const selected = new Set(current.tecnicos_participantes || []);
+                        if (event.target.checked) selected.add(tecnico.id); else selected.delete(tecnico.id);
+                        return { ...current, tecnicos_participantes: Array.from(selected) };
+                      })}
+                    />
+                    {tecnico.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <Actions saving={saving} onCancel={() => setModal(null)} label="Salvar execução" />
         </form>
       </Modal>

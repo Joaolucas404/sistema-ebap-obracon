@@ -1,14 +1,15 @@
 import { supabase } from '../lib/supabase.js';
+import { EQUIPES_TECNICAS, equipeTecnicaLabel } from './usuariosService.js';
 
 export const MANUTENCAO_AREAS = [
-  { value: 'mecanica', label: 'Mecanica' },
-  { value: 'eletrica', label: 'Eletrica' },
-  { value: 'automacao', label: 'Automacao' },
-  { value: 'operacional', label: 'Operacao' }
+  { value: 'mecanica', label: 'Mecânica' },
+  { value: 'eletrica', label: 'Elétrica' },
+  { value: 'automacao', label: 'Automação' },
+  { value: 'operacional', label: 'Operação' }
 ];
 
 export const MANUTENCAO_FREQUENCIAS = [
-  { value: 'diaria', label: 'Diaria' },
+  { value: 'diaria', label: 'Diária' },
   { value: 'semanal', label: 'Semanal' },
   { value: 'quinzenal', label: 'Quinzenal' },
   { value: 'mensal', label: 'Mensal' },
@@ -19,6 +20,15 @@ export const MANUTENCAO_FREQUENCIAS = [
 
 export const MANUTENCAO_TIPOS = ['preventiva', 'preditiva', 'corretiva'];
 export const MANUTENCAO_STATUS_EXECUCAO = ['pendente', 'programada', 'em_execucao', 'concluida', 'atrasada', 'cancelada'];
+export const MANUTENCAO_FINAL_OS_STATUS = ['concluida_arquivada', 'concluida', 'cancelada', 'rejeitada', 'rejeitada_cco', 'arquivada', 'finalizada'];
+export const MANUTENCAO_CALENDARIO_STATUS = ['programada', 'encaminhada_tecnicos', 'em_execucao', 'pausada', 'concluida_tecnicos'];
+
+export function equipesPorArea(area) {
+  if (!area || ['todas', 'gerencia', 'diretoria'].includes(area)) return EQUIPES_TECNICAS;
+  return EQUIPES_TECNICAS.filter((equipe) => equipe.area === area);
+}
+
+export { equipeTecnicaLabel };
 
 export const CHECKLISTS_PADRAO = {
   mecanica: [
@@ -65,6 +75,12 @@ function emptyToNull(value) {
   return value === '' || value == null ? null : value;
 }
 
+function gerarCodigoPlanoManutencao() {
+  const now = new Date();
+  const ymd = now.toISOString().slice(0, 10).replaceAll('-', '');
+  return 'PM-' + ymd + '-' + String(now.getTime()).slice(-5);
+}
+
 function normalizeChecklist(checklist) {
   if (Array.isArray(checklist)) {
     return checklist.map((item) => String(item).trim()).filter(Boolean);
@@ -104,7 +120,7 @@ export async function listarEquipamentosManutencao(ebapId = null) {
 export async function listarResponsaveisManutencao() {
   const { data, error } = await supabase
     .from('usuarios')
-    .select('id,nome,usuario,perfil,setor,ativo')
+    .select('id,nome,usuario,perfil,setor,equipe,area_operacional,ativo')
     .in('perfil', ['tecnico', 'supervisor'])
     .eq('ativo', true)
     .is('deleted_at', null)
@@ -143,18 +159,58 @@ export async function listarExecucoesManutencao(limit = 200) {
   return data || [];
 }
 
-export async function listarOsManutencao(limit = 200) {
-  const { data, error } = await supabase
+export async function listarOsManutencao(limit = 500, user = null) {
+  let query = supabase
     .from('ordens_servico')
-    .select('id,numero,titulo,status,prioridade,area,ebap_id,equipamento_id,data_programada,created_at,payload')
-    .eq('origem', 'manutencao')
+    .select('id,numero,titulo,status,prioridade,area,ebap_id,equipamento_id,ativo_id,equipe,equipe_responsavel,data_programada,hora_programada,turno,created_at,updated_at,fim_execucao,payload,ebap:ebaps(id,codigo,nome,nome_curto),ativo:ativos(id,nome_operacional,tipo),equipamento:equipamentos(id,codigo,tag,nome)')
     .is('deleted_at', null)
-    .order('created_at', { ascending: false })
+    .order('data_programada', { ascending: true, nullsFirst: false })
     .limit(limit);
 
+  const perfil = user?.perfil;
+  if (perfil === 'supervisor') {
+    const area = user.area_supervisao || user.area_operacional;
+    if (area) query = query.eq('area', area);
+  } else if (!['gerencia', 'diretoria'].includes(perfil)) {
+    if (user?.equipe) query = query.or('equipe.eq.' + user.equipe + ',equipe_responsavel.eq.' + user.equipe);
+    else if (user?.area_operacional) query = query.eq('area', user.area_operacional);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
+
+export function filtrarOsCalendario(osRows = [], filters = {}) {
+  const inicio = filters.inicio || '';
+  const fim = filters.fim || '';
+  return osRows.filter((os) => {
+    const data = String(os.data_programada || '').slice(0, 10);
+    if (!data) return false;
+    if (MANUTENCAO_FINAL_OS_STATUS.includes(os.status)) return false;
+    if (!MANUTENCAO_CALENDARIO_STATUS.includes(os.status)) return false;
+    if (filters.ebapId && os.ebap_id !== filters.ebapId) return false;
+    if (filters.area && os.area !== filters.area) return false;
+    if (filters.equipe && (os.equipe_responsavel || os.equipe) !== filters.equipe) return false;
+    if (filters.status && os.status !== filters.status) return false;
+    if (inicio && data < inicio) return false;
+    if (fim && data > fim) return false;
+    return true;
+  });
+}
+
+export function obterDashboardCalendarioOS(osRows = []) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const mesAtual = hoje.slice(0, 7);
+  const visiveis = osRows.filter((os) => os.data_programada && !MANUTENCAO_FINAL_OS_STATUS.includes(os.status));
+  return {
+    programadas: visiveis.filter((os) => os.status === 'programada' || os.status === 'encaminhada_tecnicos').length,
+    emAndamento: visiveis.filter((os) => ['em_execucao', 'pausada', 'concluida_tecnicos'].includes(os.status)).length,
+    atrasadas: visiveis.filter((os) => String(os.data_programada).slice(0, 10) < hoje && !['concluida_tecnicos'].includes(os.status)).length,
+    concluidasMes: osRows.filter((os) => MANUTENCAO_FINAL_OS_STATUS.includes(os.status) && String(os.fim_execucao || os.updated_at || '').startsWith(mesAtual)).length
+  };
+}
+
 
 export async function obterDashboardManutencao() {
   const [planos, execucoes, osManutencao] = await Promise.all([
@@ -167,8 +223,8 @@ export async function obterDashboardManutencao() {
   const mesAtual = hoje.slice(0, 7);
   const preventivasProgramadas = execucoes.filter((item) => item.tipo === 'preventiva' && ['pendente', 'programada', 'em_execucao'].includes(item.status)).length;
   const preventivasConcluidas = execucoes.filter((item) => item.tipo === 'preventiva' && item.status === 'concluida' && String(item.data_execucao || '').startsWith(mesAtual)).length;
-  const corretivasAbertas = osManutencao.filter((os) => !['concluida_arquivada', 'concluida', 'finalizada', 'arquivada', 'cancelada'].includes(os.status)).length;
-  const corretivasCriticas = osManutencao.filter((os) => os.prioridade === 'critica' && !['concluida_arquivada', 'concluida', 'finalizada', 'arquivada', 'cancelada'].includes(os.status)).length;
+  const corretivasAbertas = osManutencao.filter((os) => !MANUTENCAO_FINAL_OS_STATUS.includes(os.status)).length;
+  const corretivasCriticas = osManutencao.filter((os) => os.prioridade === 'critica' && !MANUTENCAO_FINAL_OS_STATUS.includes(os.status)).length;
   const backlog = execucoes.filter((item) => ['pendente', 'programada', 'em_execucao', 'atrasada'].includes(item.status)).length + corretivasAbertas;
   const vencidos = planos.filter((plano) => plano.proxima_execucao <= hoje);
   const concluidasMes = execucoes.filter((item) => item.status === 'concluida' && String(item.data_execucao || '').startsWith(mesAtual)).length;
@@ -198,7 +254,7 @@ export async function salvarPlanoManutencao(payload, user) {
   const { data, error } = await supabase.rpc('manutencao_salvar_plano', {
     p_user_id: user.id,
     p_id: payload.id || null,
-    p_codigo: payload.codigo,
+    p_codigo: payload.codigo || gerarCodigoPlanoManutencao(),
     p_nome: payload.nome,
     p_ebap_id: emptyToNull(payload.ebap_id),
     p_area: payload.area,
@@ -210,7 +266,7 @@ export async function salvarPlanoManutencao(payload, user) {
     p_prioridade: payload.prioridade || 'media',
     p_proxima_execucao: emptyToNull(payload.proxima_execucao),
     p_ativo: payload.ativo !== false,
-    p_observacoes: payload.observacoes || null
+    p_observacoes: [payload.observacoes, payload.equipe_responsavel ? 'Equipe responsável: ' + equipeTecnicaLabel(payload.equipe_responsavel) : ''].filter(Boolean).join('\n') || null
   });
 
   if (error) throw error;

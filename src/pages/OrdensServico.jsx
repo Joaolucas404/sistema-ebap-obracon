@@ -13,6 +13,7 @@ import {
   excluirOS,
   listarEbaps,
   listarOS,
+  listarEquipesTecnicas,
   listarResponsaveis,
   obterDashboardOS,
   OS_AREAS,
@@ -31,7 +32,7 @@ const emptyForm = {
   descricao: '',
   prioridade: 'media',
   area: '',
-  responsavel_id: '',
+  equipe_responsavel: '',
   data_programada: '',
   hora_programada: '',
   turno: ''
@@ -46,6 +47,7 @@ export default function OrdensServico() {
   const [ebaps, setEbaps] = useState([]);
   const [ativosEbap, setAtivosEbap] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
+  const equipesTecnicas = listarEquipesTecnicas();
   const [filters, setFilters] = useState({ search: '', status: '', prioridade: '', ebapId: '', responsavelId: '', page: 1, pageSize: 8 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -312,7 +314,7 @@ export default function OrdensServico() {
               />
             </label>
             <label className="field-label">
-              Tipo de manutenÃ§Ã£o
+              Tipo de manutenção
               <select className="form-control" value={form.tipo_manutencao} onChange={(event) => updateForm('tipo_manutencao', event.target.value)}>
                 <option value="corretiva">Corretiva</option>
                 <option value="preventiva">Preventiva</option>
@@ -337,6 +339,15 @@ export default function OrdensServico() {
                   <option key={area.value} value={area.value}>
                     {area.label}
                   </option>
+                ))}
+              </select>
+            </label>
+            <label className="field-label">
+              Equipe responsável
+              <select className="form-control" value={form.equipe_responsavel} onChange={(event) => updateForm('equipe_responsavel', event.target.value)} required>
+                <option value="">Selecione...</option>
+                {equipesTecnicas.map((equipe) => (
+                  <option key={equipe.value} value={equipe.value}>{equipe.label}</option>
                 ))}
               </select>
             </label>

@@ -1,4 +1,4 @@
-import { CHECKLISTS_PADRAO, MANUTENCAO_AREAS, MANUTENCAO_FREQUENCIAS, MANUTENCAO_TIPOS } from '../../services/manutencaoService.js';
+import { CHECKLISTS_PADRAO, MANUTENCAO_AREAS, MANUTENCAO_FREQUENCIAS, MANUTENCAO_TIPOS, equipesPorArea } from '../../services/manutencaoService.js';
 
 export const blankPlanoManutencao = {
   id: null,
@@ -8,7 +8,7 @@ export const blankPlanoManutencao = {
   area: 'mecanica',
   equipamento_id: '',
   frequencia: 'mensal',
-  responsavel_id: '',
+  equipe_responsavel: '',
   checklist: CHECKLISTS_PADRAO.mecanica.join('\n'),
   tipo: 'preventiva',
   prioridade: 'media',
@@ -26,7 +26,7 @@ export function mapPlanoToForm(plano) {
     area: plano.area || 'mecanica',
     equipamento_id: plano.equipamento_id || '',
     frequencia: plano.frequencia || 'mensal',
-    responsavel_id: plano.responsavel_id || '',
+    equipe_responsavel: plano.equipe_responsavel || plano.equipe || '',
     checklist: Array.isArray(plano.checklist) ? plano.checklist.join('\n') : '',
     tipo: plano.tipo || 'preventiva',
     prioridade: plano.prioridade || 'media',
@@ -36,8 +36,9 @@ export function mapPlanoToForm(plano) {
   };
 }
 
-export default function PlanoManutencaoForm({ form, ebaps, equipamentos, responsaveis, saving, onChange, onSubmit, onCancel }) {
+export default function PlanoManutencaoForm({ form, ebaps, equipamentos, saving, onChange, onSubmit, onCancel }) {
   const equipamentosFiltrados = equipamentos.filter((equipamento) => !form.ebap_id || equipamento.ebap_id === form.ebap_id);
+  const equipes = equipesPorArea(form.area);
 
   function changeArea(area) {
     onChange('area', area);
@@ -47,7 +48,6 @@ export default function PlanoManutencaoForm({ form, ebaps, equipamentos, respons
   return (
     <form className="grid gap-4" onSubmit={onSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
-        <Input label="Codigo" value={form.codigo} onChange={(value) => onChange('codigo', value)} required minLength={2} />
         <Input label="Nome" value={form.nome} onChange={(value) => onChange('nome', value)} required minLength={3} />
 
         <Select label="EBAP" value={form.ebap_id} onChange={(value) => onChange('ebap_id', value)}>
@@ -68,9 +68,9 @@ export default function PlanoManutencaoForm({ form, ebaps, equipamentos, respons
           {MANUTENCAO_FREQUENCIAS.map((freq) => <option key={freq.value} value={freq.value}>{freq.label}</option>)}
         </Select>
 
-        <Select label="Responsavel" value={form.responsavel_id} onChange={(value) => onChange('responsavel_id', value)}>
-          <option value="">Sem responsavel</option>
-          {responsaveis.map((resp) => <option key={resp.id} value={resp.id}>{resp.nome} - {resp.perfil}</option>)}
+        <Select label="Equipe responsável" value={form.equipe_responsavel} onChange={(value) => onChange('equipe_responsavel', value)} required>
+          <option value="">Selecione...</option>
+          {equipes.map((equipe) => <option key={equipe.value} value={equipe.value}>{equipe.label}</option>)}
         </Select>
 
         <Select label="Tipo" value={form.tipo} onChange={(value) => onChange('tipo', value)} required>

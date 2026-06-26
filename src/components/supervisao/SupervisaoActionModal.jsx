@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '../ui/Modal.jsx';
-import { OS_AREAS, areaLabel } from '../../services/supervisaoService.js';
+import { EQUIPES_TECNICAS, OS_AREAS, areaLabel } from '../../services/supervisaoService.js';
 
 export default function SupervisaoActionModal({ action, os, contexto, saving, onClose, onSubmit }) {
   const [form, setForm] = useState({});
@@ -40,7 +40,6 @@ export default function SupervisaoActionModal({ action, os, contexto, saving, on
   }
 
   const areas = contexto?.areas?.length ? contexto.areas.map((area) => ({ value: area.area, label: area.nome })) : OS_AREAS;
-  const tecnicosDaArea = (contexto?.tecnicos || []).filter((tecnico) => tecnico.perfil !== 'tecnico' || !os.area || tecnico.area_operacional === os.area);
 
   return (
     <Modal
@@ -62,11 +61,10 @@ export default function SupervisaoActionModal({ action, os, contexto, saving, on
 
         {action === 'programar' && (
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="field-label">Equipe<input className="form-control" value={form.equipe} onChange={(event) => setField('equipe', event.target.value)} required /></label>
-            <label className="field-label">Técnico
-              <select className="form-control" value={form.tecnico_responsavel} onChange={(event) => setField('tecnico_responsavel', event.target.value)}>
-                <option value="">A definir</option>
-                {tecnicosDaArea.map((tecnico) => <option key={tecnico.id} value={tecnico.id}>{tecnico.nome}</option>)}
+            <label className="field-label md:col-span-2">Equipe responsável
+              <select className="form-control" value={form.equipe} onChange={(event) => setField('equipe', event.target.value)} required>
+                <option value="">Selecione...</option>
+                {EQUIPES_TECNICAS.map((equipe) => <option key={equipe.value} value={equipe.value}>{equipe.label}</option>)}
               </select>
             </label>
             <label className="field-label">Data<input className="form-control" type="date" value={form.data_programada} onChange={(event) => setField('data_programada', event.target.value)} required /></label>

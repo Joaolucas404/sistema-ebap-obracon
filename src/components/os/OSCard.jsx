@@ -1,7 +1,7 @@
 import { CalendarClock, MapPin, Trash2, UserRound, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
-import { prioridadeLabel, prioridadeTone, statusLabel, statusTone } from '../../services/osService.js';
+import { equipeTecnicaLabel, prioridadeLabel, prioridadeTone, statusLabel, statusTone } from '../../services/osService.js';
 
 function formatDate(value) {
   if (!value) return 'Sem data';
@@ -10,7 +10,8 @@ function formatDate(value) {
 }
 
 export default function OSCard({ os, canDelete = false, onDelete }) {
-  const equipamentoFalha = os.payload?.equipamento_falha || os.equipamento?.nome || 'Equipamento não informado';
+  const equipamentoFalha = os.payload?.equipamento_falha || os.ativo?.nome_operacional || os.equipamento?.nome || 'Equipamento não informado';
+  const equipeExecutora = os.equipe_responsavel || os.equipe;
 
   return (
     <article className="glass-card rounded-3xl p-4 transition hover:border-cyan-300/40">
@@ -48,7 +49,7 @@ export default function OSCard({ os, canDelete = false, onDelete }) {
         </span>
         <span className="flex items-center gap-2">
           <UserRound size={16} className="text-cyan-200" />
-          {os.responsavel?.nome || 'Sem responsável'}
+          {equipeTecnicaLabel(equipeExecutora) || os.responsavel?.nome || 'Sem equipe'}
         </span>
         <span className="flex items-center gap-2">
           <CalendarClock size={16} className="text-cyan-200" />

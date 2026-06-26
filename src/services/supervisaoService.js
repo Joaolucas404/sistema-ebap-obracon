@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase.js';
 import { OS_AREAS, OS_PRIORIDADES, OS_STATUS, areaLabel, prioridadeLabel, statusLabel } from './osService.js';
+import { EQUIPES_TECNICAS, equipeTecnicaLabel } from './usuariosService.js';
 
-export { OS_AREAS, OS_PRIORIDADES, OS_STATUS, areaLabel, prioridadeLabel, statusLabel };
+export { OS_AREAS, OS_PRIORIDADES, OS_STATUS, EQUIPES_TECNICAS, areaLabel, prioridadeLabel, statusLabel, equipeTecnicaLabel };
 
 const SUPERVISAO_SELECT = `
   *,
@@ -44,7 +45,7 @@ export async function obterContextoSupervisao(user) {
   const [usuarioRes, areasRes, tecnicosRes, ebapsRes] = await Promise.all([
     supabase.from('usuarios').select('id,nome,usuario,perfil,setor,area_operacional,area_supervisao').eq('id', user.id).maybeSingle(),
     supabase.from('supervisor_areas').select('*, supervisor:usuarios(id,nome,usuario,perfil,setor,area_operacional,area_supervisao)').eq('ativo', true).is('deleted_at', null).order('nome'),
-    supabase.from('usuarios').select('id,nome,usuario,perfil,setor,area_operacional,ativo').eq('ativo', true).is('deleted_at', null).in('perfil', ['tecnico', 'supervisor']).order('nome'),
+    supabase.from('usuarios').select('id,nome,usuario,perfil,setor,area_operacional,equipe,ativo').eq('ativo', true).is('deleted_at', null).in('perfil', ['tecnico', 'supervisor']).order('nome'),
     supabase.from('ebaps').select('id,codigo,nome,nome_curto,status').is('deleted_at', null).order('nome')
   ]);
 

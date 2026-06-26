@@ -49,8 +49,8 @@ export default function Manutencao() {
   const canManage = podeGerenciarManutencao(user?.perfil);
 
   useEffect(() => {
-    carregarTudo();
-  }, [carregarTudo]);
+    carregarTudo(user);
+  }, [carregarTudo, user]);
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -130,7 +130,7 @@ export default function Manutencao() {
         leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><Settings2 size={24} /></span>}
         actions={
           <>
-            <button className="secondary-button" type="button" onClick={carregarTudo} disabled={loading}>
+            <button className="secondary-button" type="button" onClick={() => carregarTudo(user)} disabled={loading}>
               <RefreshCcw size={17} />
               Atualizar
             </button>
@@ -168,7 +168,7 @@ export default function Manutencao() {
         <>
           {activeTab === 'dashboard' && <ManutencaoDashboard dashboard={dashboard} />}
           {activeTab === 'planos' && <PlanosManutencaoTable planos={planos} canManage={canManage} onEdit={openEdit} onExecute={openExec} />}
-          {activeTab === 'calendario' && <ManutencaoCalendario planos={planos} execucoes={execucoes} />}
+          {activeTab === 'calendario' && <ManutencaoCalendario osItems={osManutencao} ebaps={ebaps} user={user} />}
           {activeTab === 'historico' && <ManutencaoHistorico execucoes={execucoes} />}
           {activeTab === 'integracoes' && <Integracoes osManutencao={osManutencao} execucoes={execucoes} />}
         </>
@@ -176,7 +176,7 @@ export default function Manutencao() {
 
       <Modal open={modal === 'plano'} title={form.id ? 'Editar plano de manutencao' : 'Novo plano de manutencao'} onClose={closeModal}>
         {localError && <ErrorBox message={localError} />}
-        <PlanoManutencaoForm form={form} ebaps={ebaps} equipamentos={equipamentos} responsaveis={responsaveis} saving={saving} onChange={updateForm} onSubmit={handleSavePlano} onCancel={closeModal} />
+        <PlanoManutencaoForm form={form} ebaps={ebaps} equipamentos={equipamentos} saving={saving} onChange={updateForm} onSubmit={handleSavePlano} onCancel={closeModal} />
       </Modal>
 
       <Modal open={modal === 'execucao'} title="Registrar execucao de manutencao" onClose={closeModal}>

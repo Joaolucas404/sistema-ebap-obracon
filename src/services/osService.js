@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { alterarStatusAtivo, ATIVO_STATUS_VALUES } from './ativosService.js';
+import { EQUIPES_TECNICAS, equipeTecnicaLabel } from './usuariosService.js';
 
 export const OS_STATUS = [
   { value: 'pendente_cco', label: 'Pendente CCO', tone: 'orange', perfil: 'CCO' },
@@ -85,9 +86,18 @@ export function podeAtribuirOS(perfil) {
   return ['supervisor'].includes(perfil);
 }
 
-export function podeExecutarOS(perfil, os, userId) {
+export function podeExecutarOS(perfil, os, user) {
   if (!os || OS_FINAL_STATUSES.includes(os.status)) return false;
-  return ['tecnico', 'supervisor'].includes(perfil) && (!userId || !os.responsavel_id || os.responsavel_id === userId || perfil !== 'tecnico');
+  if (perfil === 'supervisor') return true;
+  if (perfil !== 'tecnico') return false;
+
+  const userId = typeof user === 'string' ? user : user?.id;
+  const userEquipe = typeof user === 'object' ? user?.equipe : '';
+  const osEquipe = os.equipe_responsavel || os.equipe;
+  const isLegacyDirect = userId && (os.responsavel_id === userId || os.tecnico_responsavel === userId);
+  const isTeamAssigned = userEquipe && osEquipe && osEquipe === userEquipe;
+
+  return Boolean(isLegacyDirect || isTeamAssigned || (!os.responsavel_id && !os.tecnico_responsavel && !osEquipe));
 }
 
 export function podeEncerrarOS(perfil) {
@@ -192,10 +202,30 @@ export async function listarEquipamentosPorEbap(ebapId) {
   return data || [];
 }
 
+export function listarEquipesTecnicas() {
+  return EQUIPES_TECNICAS;
+}
+
+export { equipeTecnicaLabel };
+
+export async function listarTecnicosPorEquipe(equipe) {
+  if (!equipe) return [];
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id,nome,usuario,perfil,setor,area_operacional,equipe,ativo')
+    .eq('perfil', 'tecnico')
+    .eq('equipe', equipe)
+    .eq('ativo', true)
+    .is('deleted_at', null)
+    .order('nome');
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 export async function listarResponsaveis() {
   const { data, error } = await supabase
     .from('usuarios')
-    .select('id,nome,usuario,perfil,setor,area_operacional,ativo')
+    .select('id,nome,usuario,perfil,setor,area_operacional,equipe,ativo')
     .in('perfil', ['tecnico', 'supervisor'])
     .eq('ativo', true)
     .is('deleted_at', null)
@@ -229,13 +259,14 @@ export async function criarOS(payload, user) {
     titulo: payload.titulo,
     descricao: payload.descricao,
     area: payload.area,
+    equipe_responsavel: payload.equipe_responsavel || payload.equipe || user?.equipe || null,
     tipo_manutencao: payload.tipo_manutencao || 'corretiva',
     prioridade: payload.prioridade || 'media',
     status: payload.status || (origem === 'operacao' ? 'pendente_cco' : 'solicitada_prefeitura'),
     supervisor_responsavel: supervisorArea?.supervisor_id || null,
     status_supervisor: 'aguardando_supervisor',
-    equipe: payload.equipe || payload.equipe_responsavel || user?.equipe || null,
-    tecnico_responsavel: payload.tecnico_responsavel || payload.responsavel_id || (user?.perfil === 'tecnico' ? user.id : null),
+    equipe: payload.equipe_responsavel || payload.equipe || user?.equipe || null,
+    tecnico_responsavel: payload.tecnico_responsavel || payload.responsavel_id || null,
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
@@ -259,6 +290,7 @@ export async function criarOS(payload, user) {
       tipo_manutencao: payload.tipo_manutencao || 'corretiva',
       tecnico_solicitante: user?.perfil === 'tecnico' ? user.nome || user.usuario : null,
       equipe_solicitante: user?.perfil === 'tecnico' ? user.equipe || null : null,
+      equipe_executora: payload.equipe_responsavel || payload.equipe || user?.equipe || null,
       roteamento_base: 'area'
     }
   };
@@ -337,7 +369,8 @@ export async function atualizarOS(id, payload, user) {
     tipo_manutencao: payload.tipo_manutencao || atual.tipo_manutencao || 'corretiva',
     prioridade: payload.prioridade || 'media',
     status: payload.status || atual.status,
-    equipe_responsavel: payload.equipe_responsavel || null,
+    equipe: payload.equipe_responsavel || payload.equipe || null,
+    equipe_responsavel: payload.equipe_responsavel || payload.equipe || null,
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
@@ -363,7 +396,8 @@ export async function atribuirProgramarOS(id, payload, user) {
   const atual = await buscarOS(id);
   const updatePayload = {
     responsavel_id: payload.responsavel_id || null,
-    equipe_responsavel: payload.equipe_responsavel || null,
+    equipe: payload.equipe_responsavel || payload.equipe || null,
+    equipe_responsavel: payload.equipe_responsavel || payload.equipe || null,
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
@@ -401,7 +435,11 @@ export async function registrarExecucaoOS(id, payload, user) {
     fim_execucao: payload.concluir ? payload.fim_execucao || new Date().toISOString() : atual.fim_execucao,
     relatorio_tecnico: payload.relatorio_tecnico || atual.relatorio_tecnico || null,
     materiais_utilizados: payload.materiais_utilizados || atual.materiais_utilizados || null,
-    pendencias: payload.pendencias || atual.pendencias || null
+    pendencias: payload.pendencias || atual.pendencias || null,
+    payload: {
+      ...(atual.payload || {}),
+      tecnicos_participantes_ultima_execucao: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : ((atual.payload || {}).tecnicos_participantes_ultima_execucao || [])
+    }
   };
 
   const { data, error } = await supabase.from('ordens_servico').update(updatePayload).eq('id', id).select(OS_SELECT).single();
@@ -413,7 +451,7 @@ export async function registrarExecucaoOS(id, payload, user) {
     status_anterior: atual.status,
     status_novo: status,
     descricao: payload.concluir ? 'Técnico concluiu a execução e enviou para validação do Supervisor.' : 'Execução técnica registrada.',
-    metadata: { ...updatePayload, etapa: status }
+    metadata: { ...updatePayload, etapa: status, tecnicos_participantes: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : [] }
   });
 
   if (payload.concluir) {
@@ -526,7 +564,7 @@ export async function movimentarOS(id, payload, user) {
   };
 
   if (selected.to === 'em_execucao') updatePayload.inicio_execucao = atual.inicio_execucao || now;
-  if (selected.to === 'em_execucao' && user?.perfil === 'tecnico' && !atual.responsavel_id) updatePayload.responsavel_id = user.id;
+  if (selected.to === 'em_execucao' && user?.perfil === 'tecnico' && !atual.responsavel_id && !atual.tecnico_responsavel && !(atual.equipe_responsavel || atual.equipe)) updatePayload.responsavel_id = user.id;
   if (selected.to === 'concluida_tecnicos' || selected.to === 'concluida_arquivada') updatePayload.fim_execucao = atual.fim_execucao || now;
   if (selected.to === 'nao_conforme') updatePayload.motivo_cancelamento = payload.motivo;
 
@@ -745,7 +783,7 @@ async function notificarMovimentacaoOS(os, actionConfig, user, motivo = '') {
   const map = {
     analise_supervisor: { perfil_destino: 'supervisor', titulo: 'OS em análise' },
     programada: { perfil_destino: 'supervisor', titulo: 'OS programada' },
-    encaminhada_tecnicos: { usuario_id: os.responsavel_id || null, perfil_destino: os.responsavel_id ? null : 'tecnico', titulo: 'OS encaminhada para execução' },
+    encaminhada_tecnicos: { usuario_id: os.responsavel_id || null, perfil_destino: os.responsavel_id ? null : 'tecnico', titulo: `OS encaminhada para ${equipeTecnicaLabel(os.equipe_responsavel || os.equipe)}` },
     em_execucao: { perfil_destino: 'supervisor', titulo: 'Execução iniciada' },
     concluida_tecnicos: { perfil_destino: 'supervisor', titulo: 'Execução técnica concluída' },
     validacao_supervisor: { perfil_destino: 'supervisor', titulo: 'OS em validação' },
@@ -845,7 +883,7 @@ function startOfToday() {
 }
 
 function diffMetadata(before, after) {
-  const keys = ['titulo', 'descricao', 'prioridade', 'status', 'responsavel_id', 'data_programada', 'hora_programada', 'turno'];
+  const keys = ['titulo', 'descricao', 'prioridade', 'status', 'responsavel_id', 'equipe', 'equipe_responsavel', 'data_programada', 'hora_programada', 'turno'];
   return keys.reduce((acc, key) => {
     if (before?.[key] !== after?.[key]) acc[key] = { antes: before?.[key] || null, depois: after?.[key] || null };
     return acc;

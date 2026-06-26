@@ -119,11 +119,11 @@ export async function solicitarAcessoTecnico(payload) {
   const area = areaFromEquipe(equipe);
 
   if (!nome || !usuario || !senha || !confirmarSenha || !equipe) {
-    throw new Error('Nome, login, senha, confirmaÃ§Ã£o e equipe sÃ£o obrigatÃ³rios.');
+    throw new Error('Nome, login, senha, confirmação e equipe são obrigatórios.');
   }
   if (!area) throw new Error('Selecione uma equipe oficial.');
   if (senha.length < 6) throw new Error('A senha deve ter pelo menos 6 caracteres.');
-  if (senha !== confirmarSenha) throw new Error('As senhas nÃ£o conferem.');
+  if (senha !== confirmarSenha) throw new Error('As senhas não conferem.');
 
   const senha_hash = await bcrypt.hash(senha, 10);
   const { data, error } = await supabase
@@ -144,14 +144,14 @@ export async function solicitarAcessoTecnico(payload) {
     .single();
 
   if (error) {
-    if (error.code === '23505') throw new Error('Este login jÃ¡ estÃ¡ em uso.');
+    if (error.code === '23505') throw new Error('Este login já está em uso.');
     throw new Error(error.message);
   }
 
   await registrarAuditoriaUsuarios({
     acao: 'auto_cadastro_tecnico',
     usuario_alvo_id: data.id,
-    descricao: `SolicitaÃ§Ã£o de acesso tÃ©cnico criada para ${data.nome}.`,
+    descricao: `Solicitação de acesso técnico criada para ${data.nome}.`,
     metadata: { equipe, area_operacional: area }
   });
 
@@ -203,7 +203,7 @@ export async function aprovarAcessoTecnico(id, currentUser) {
     acao: 'aprovacao_acesso_tecnico',
     usuario_alvo_id: id,
     responsavel_id: currentUser?.id,
-    descricao: `Acesso tÃ©cnico aprovado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
+    descricao: `Acesso técnico aprovado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
     metadata: { equipe: data.equipe, area_operacional: data.area_operacional }
   });
   return data;
@@ -211,7 +211,7 @@ export async function aprovarAcessoTecnico(id, currentUser) {
 
 export async function rejeitarAcessoTecnico(id, currentUser, motivo) {
   const cleanMotivo = String(motivo || '').trim();
-  if (!cleanMotivo) throw new Error('Informe o motivo da rejeiÃ§Ã£o.');
+  if (!cleanMotivo) throw new Error('Informe o motivo da rejeição.');
   await garantirPodeAprovar(id, currentUser);
 
   const now = new Date().toISOString();
@@ -234,7 +234,7 @@ export async function rejeitarAcessoTecnico(id, currentUser, motivo) {
     acao: 'rejeicao_acesso_tecnico',
     usuario_alvo_id: id,
     responsavel_id: currentUser?.id,
-    descricao: `Acesso tÃ©cnico rejeitado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
+    descricao: `Acesso técnico rejeitado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
     metadata: { equipe: data.equipe, area_operacional: data.area_operacional, motivo: cleanMotivo }
   });
   return data;
@@ -342,15 +342,15 @@ async function buscarUsuario(id) {
 }
 
 async function garantirPodeAprovar(id, currentUser) {
-  if (!podeAprovarTecnicos(currentUser)) throw new Error('Perfil sem permissÃ£o para aprovar tÃ©cnicos.');
+  if (!podeAprovarTecnicos(currentUser)) throw new Error('Perfil sem permissão para aprovar técnicos.');
   const alvo = await buscarUsuario(id);
   if (alvo.perfil !== 'tecnico' || alvo.status_aprovacao !== 'pendente') {
-    throw new Error('SolicitaÃ§Ã£o de acesso invÃ¡lida ou jÃ¡ processada.');
+    throw new Error('Solicitação de acesso inválida ou já processada.');
   }
   if (currentUser?.perfil === 'supervisor') {
     const area = currentUser.area_supervisao || currentUser.area_operacional;
     if (!area || alvo.area_operacional !== area) {
-      throw new Error('Supervisor sÃ³ pode aprovar tÃ©cnicos da prÃ³pria Ã¡rea.');
+      throw new Error('Supervisor só pode aprovar técnicos da própria área.');
     }
   }
   return alvo;
@@ -367,7 +367,7 @@ async function registrarAuditoriaUsuarios({ acao, usuario_alvo_id, responsavel_i
   });
 
   if (error && error.code !== '42P01') {
-    console.warn('Falha ao registrar auditoria de usuÃ¡rios:', error.message);
+    console.warn('Falha ao registrar auditoria de usuários:', error.message);
   }
 }
 

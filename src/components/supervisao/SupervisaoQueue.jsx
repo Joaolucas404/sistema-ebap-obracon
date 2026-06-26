@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
-import { areaLabel, prioridadeLabel, statusSupervisorLabel, statusSupervisorTone } from '../../services/supervisaoService.js';
+import { areaLabel, equipeTecnicaLabel, prioridadeLabel, statusSupervisorLabel, statusSupervisorTone } from '../../services/supervisaoService.js';
 
 function formatDate(value) {
   if (!value) return '-';
@@ -18,7 +18,7 @@ export default function SupervisaoQueue({ items, loading, onAction }) {
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h3 className="text-xl font-black text-white">Fila de trabalho</h3>
-          <p className="text-sm text-slate-300">OS roteadas por área, com programação, técnico e status da supervisão.</p>
+          <p className="text-sm text-slate-300">OS roteadas por área, com programação, equipe executora e status da supervisão.</p>
         </div>
         <StatusBadge tone="cyan">{items.length} OS nesta página</StatusBadge>
       </div>
@@ -33,7 +33,7 @@ export default function SupervisaoQueue({ items, loading, onAction }) {
               <th className="px-3">Prioridade</th>
               <th className="px-3">Fila</th>
               <th className="px-3">Programação</th>
-              <th className="px-3">Equipe / técnico</th>
+              <th className="px-3">Equipe executora</th>
               <th className="px-3">Ações</th>
             </tr>
           </thead>

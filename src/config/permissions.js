@@ -37,14 +37,15 @@ export const ROUTE_KEYS = {
   administrativo: '/administrativo',
   orientacoes: '/orientacoes',
   config: '/config',
-  usuarios: '/usuarios'
+  usuarios: '/usuarios',
+  modelosRelatorio: '/administrativo/modelos-relatorio'
 };
 
 export const ROLE_PERMISSIONS = {
   operador: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes'],
   tecnico: ['os', 'relatorio', 'perfil'],
   cco: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'supervisao', 'orientacoes'],
-  supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes', 'usuarios'],
+  supervisor: ['dashboard', 'notificacoes', 'localizacaoEbaps', 'ativos', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes', 'usuarios', 'modelosRelatorio'],
   gerencia: [
     'dashboard',
     'notificacoes',

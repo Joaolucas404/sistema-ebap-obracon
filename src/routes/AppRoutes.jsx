@@ -19,6 +19,7 @@ const FinanceiroContratos = lazy(() => import('../pages/FinanceiroContratos.jsx'
 const LocalizacaoEbaps = lazy(() => import('../pages/LocalizacaoEbaps.jsx'));
 const Login = lazy(() => import('../pages/Login.jsx'));
 const Manutencao = lazy(() => import('../pages/Manutencao.jsx'));
+const ModelosRelatorioAdmin = lazy(() => import('../pages/ModelosRelatorioAdmin.jsx'));
 const MeuPerfil = lazy(() => import('../pages/MeuPerfil.jsx'));
 const Notificacoes = lazy(() => import('../pages/Notificacoes.jsx'));
 const OrdensServico = lazy(() => import('../pages/OrdensServico.jsx'));
@@ -245,6 +246,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="financeiroContrato" />}>
         <Route element={<AppLayout />}>
           <Route path="/financeiro-contrato" element={<FinanceiroContratos />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="modelosRelatorio" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/administrativo/modelos-relatorio" element={<ModelosRelatorioAdmin />} />
         </Route>
       </Route>
 
