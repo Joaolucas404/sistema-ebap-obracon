@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getTurnoAtual } from '../../services/relatorioService.js';
 
+const CLIMA_OPTIONS = [
+  { value: 'sem_chuva', label: 'Sem chuva', icon: '☀️' },
+  { value: 'chuva_fraca', label: 'Chuva fraca', icon: '🌦️' },
+  { value: 'chuva_moderada', label: 'Chuva moderada', icon: '🌧️' },
+  { value: 'chuva_intensa', label: 'Chuva intensa', icon: '⛈️' }
+];
+
 export default function RelatorioOperacao({ data, onChange }) {
   const [now, setNow] = useState(() => new Date());
   const turnoAtual = useMemo(() => getTurnoAtual(now), [now]);
@@ -29,15 +36,21 @@ export default function RelatorioOperacao({ data, onChange }) {
           Turno
           <input className="form-control cursor-not-allowed bg-navy-950/70 text-white" value={turnoLabel} readOnly />
         </label>
-        <label className="field-label">
-          Condicao climatica
-          <select className="form-control" value={data.clima || ''} onChange={(event) => setField('clima', event.target.value)}>
-            <option value="">Selecione...</option>
-            <option value="normal">Normal</option>
-            <option value="chuva">Chuva</option>
-            <option value="chuva_intensa">Chuva intensa</option>
-            <option value="alerta">Alerta operacional</option>
-          </select>
+        <label className="field-label md:col-span-2">
+          Condição climática
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {CLIMA_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className={data.clima === option.value ? 'primary-button' : 'secondary-button'}
+                type="button"
+                onClick={() => setField('clima', option.value)}
+              >
+                <span aria-hidden="true">{option.icon}</span>
+                {option.label}
+              </button>
+            ))}
+          </div>
         </label>
         <label className="field-label">
           Nivel geral

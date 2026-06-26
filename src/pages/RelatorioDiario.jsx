@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Download, Eye, RefreshCcw, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Download, Eye, RefreshCcw, Save } from 'lucide-react';
 import PdfTemplate from '../components/pdf/PdfTemplate.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
@@ -91,9 +91,9 @@ export default function RelatorioDiario() {
     return done;
   }, [payload, fotos.length]);
 
-  const progress = Math.round(
-    (completedSteps.length / RELATORIO_STEPS.length) * 100
-  );
+  const currentStepNumber = Math.max(1, currentIndex + 1);
+  const progress = RELATORIO_STEPS.length ? Math.round((currentStepNumber / RELATORIO_STEPS.length) * 100) : 0;
+  const operationalSummary = useMemo(() => buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps), [payload, fotos, equipamentos, relatorio, ebaps]);
 
   async function loadInitial() {
     setLoading(true);
@@ -332,53 +332,13 @@ export default function RelatorioDiario() {
           </div>
         </div>
       </section>
+      <OperationalSummary summary={operationalSummary} />
 
-      
-<section className="glass-card rounded-3xl p-5">
-  <div className="grid gap-4 md:grid-cols-4">
-    <div className="rounded-2xl bg-navy-950/50 p-4">
-      <div className="text-xs text-slate-400">EQUIPAMENTOS</div>
-      <div className="text-3xl font-black text-white">{equipamentos.length}</div>
-    </div>
-    <div className="rounded-2xl bg-navy-950/50 p-4">
-      <div className="text-xs text-slate-400">FOTOS</div>
-      <div className="text-3xl font-black text-cyan-300">{fotos.length}</div>
-    </div>
-    <div className="rounded-2xl bg-navy-950/50 p-4">
-      <div className="text-xs text-slate-400">PROGRESSO</div>
-      <div className="text-3xl font-black text-green-300">{progress}%</div>
-    </div>
-    <div className="rounded-2xl bg-navy-950/50 p-4">
-      <div className="text-xs text-slate-400">ETAPAS</div>
-      <div className="text-3xl font-black text-white">{completedSteps.length}/{RELATORIO_STEPS.length}</div>
-    </div>
-  </div>
-</section>
-
-{relatorio?.id ? (
+      {relatorio?.id ? (
         <>
           <RelatorioStepper steps={RELATORIO_STEPS} currentStep={currentStep} completedSteps={completedSteps} onStepClick={setCurrentStep} />
           {renderStep()}
-
-          <div className="mt-6 flex justify-between">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={goPrevious}
-              disabled={currentIndex === 0}
-            >
-              ← Etapa anterior
-            </button>
-
-            <button
-              type="button"
-              className="primary-button"
-              onClick={goNext}
-              disabled={currentIndex === RELATORIO_STEPS.length - 1}
-            >
-              Próxima etapa →
-            </button>
-          </div>
+          <WizardNavigation currentIndex={currentIndex} total={RELATORIO_STEPS.length} onPrevious={goPrevious} onNext={goNext} />
         </>
       ) : (
         <div className="glass-card rounded-3xl p-8 text-center text-slate-300">
@@ -421,5 +381,75 @@ export default function RelatorioDiario() {
         <div ref={pdfRef}>{pdfData && <PdfTemplate {...pdfData} />}</div>
       </div>
     </div>
+  );
+}
+
+
+function buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps) {
+  const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
+  const items = sections.flatMap((section) => payload?.[section]?.items || []);
+  const preenchidos = items.filter((item) => item.status && (!['atencao', 'parado', 'em_manutencao'].includes(item.status) || String(item.observacao || '').trim())).length;
+  const total = items.length || equipamentos.length;
+  const ebap = ebaps.find((row) => row.id === relatorio?.ebap_id);
+  return {
+    ebap: ebap?.nome || relatorio?.ebap?.nome || 'EBAP não selecionada',
+    totalEquipamentos: total,
+    preenchidos,
+    pendentes: Math.max(0, total - preenchidos),
+    fotos: fotos.length
+  };
+}
+
+function OperationalSummary({ summary }) {
+  return (
+    <section className="sticky top-2 z-20 glass-card rounded-3xl p-4 shadow-xl shadow-navy-950/30">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,0.8fr))]">
+        <SummaryInfo label="EBAP" value={summary.ebap} />
+        <SummaryInfo label="Equipamentos" value={summary.totalEquipamentos} />
+        <SummaryInfo label="Preenchidos" value={summary.preenchidos} tone="text-emerald-200" />
+        <SummaryInfo label="Pendentes" value={summary.pendentes} tone={summary.pendentes ? 'text-amber-200' : 'text-emerald-200'} />
+        <SummaryInfo label="Fotos" value={summary.fotos} tone="text-cyan-200" />
+      </div>
+    </section>
+  );
+}
+
+function SummaryInfo({ label, value, tone = 'text-white' }) {
+  return (
+    <div className="rounded-2xl border border-cyan-300/10 bg-navy-950/50 p-3">
+      <small className="block text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</small>
+      <strong className={['mt-1 block truncate text-lg font-black', tone].join(' ')}>{value}</strong>
+    </div>
+  );
+}
+
+function WizardNavigation({ currentIndex, total, onPrevious, onNext }) {
+  const isFirst = currentIndex <= 0;
+  const isLast = currentIndex >= total - 1;
+  return (
+    <>
+      <div className="mt-6 hidden justify-between gap-3 pb-2 sm:flex">
+        <button type="button" className="secondary-button" onClick={onPrevious} disabled={isFirst}>
+          <ArrowLeft size={17} />
+          Anterior
+        </button>
+        <button type="button" className="primary-button" onClick={onNext} disabled={isLast}>
+          Próximo
+          <ArrowRight size={17} />
+        </button>
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-cyan-300/15 bg-navy-950/95 p-3 shadow-2xl sm:hidden">
+        <div className="grid grid-cols-[0.85fr_1.15fr] gap-2">
+          <button type="button" className="secondary-button justify-center" onClick={onPrevious} disabled={isFirst}>
+            <ArrowLeft size={17} />
+            Anterior
+          </button>
+          <button type="button" className="primary-button justify-center" onClick={onNext} disabled={isLast}>
+            Próximo
+            <ArrowRight size={17} />
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
