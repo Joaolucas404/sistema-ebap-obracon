@@ -15,7 +15,6 @@ import RelatorioCCO from '../components/relatorio/RelatorioCCO.jsx';
 import RelatorioOcorrencias from '../components/relatorio/RelatorioOcorrencias.jsx';
 import RelatorioFotos from '../components/relatorio/RelatorioFotos.jsx';
 import RelatorioResumo from '../components/relatorio/RelatorioResumo.jsx';
-import RelatorioChecklistSection from '../components/relatorio/RelatorioChecklistSection.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import {
   blankPayload,
@@ -32,7 +31,8 @@ import {
   prepararPayloadEquipamentos,
   RELATORIO_STEPS,
   salvarRascunhoRelatorio,
-  uploadFotoRelatorio
+  uploadFotoRelatorio,
+  validarRdoOperacional
 } from '../services/relatorioService.js';
 import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
@@ -65,10 +65,24 @@ export default function RelatorioDiario() {
   const pdfRef = useRef(null);
   const [pdfData, setPdfData] = useState(null);
 
+  const currentIndex = RELATORIO_STEPS.findIndex((step) => step.id === currentStep);
+
+  const goNext = () => {
+    if (currentIndex < RELATORIO_STEPS.length - 1) {
+      setCurrentStep(RELATORIO_STEPS[currentIndex + 1].id);
+    }
+  };
+
+  const goPrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentStep(RELATORIO_STEPS[currentIndex - 1].id);
+    }
+  };
+
   const completedSteps = useMemo(() => {
     const done = [];
     if (payload?.dados?.turno) done.push('dados');
-    ['operacao', 'bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'].forEach((key) => {
+    ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'].forEach((key) => {
       if (payload?.[key]?.items?.length) done.push(key);
     });
     if (payload?.cco?.comunicacao) done.push('cco');
@@ -76,6 +90,10 @@ export default function RelatorioDiario() {
     if (fotos.length || payload?.fotos?.observacao) done.push('fotos');
     return done;
   }, [payload, fotos.length]);
+
+  const progress = Math.round(
+    (completedSteps.length / RELATORIO_STEPS.length) * 100
+  );
 
   async function loadInitial() {
     setLoading(true);
@@ -170,11 +188,12 @@ export default function RelatorioDiario() {
     }
   }
 
-  async function handleUploadFoto(file, legenda) {
+  async function handleUploadFoto(file, legenda, categoria) {
     if (!relatorio?.id) throw new Error('Inicie um relatório antes de enviar fotos.');
-    await uploadFotoRelatorio(relatorio.id, file, user, legenda);
+    const foto = await uploadFotoRelatorio(relatorio.id, file, user, legenda, categoria);
     setFotos(await listarFotosRelatorio(relatorio.id));
     setToast({ message: 'Foto enviada.', tone: 'green' });
+    return foto;
   }
 
   async function handleFinalizar() {
@@ -182,7 +201,9 @@ export default function RelatorioDiario() {
     setSaving(true);
     setError('');
     try {
-      const finalizado = await finalizarRelatorio(relatorio.id, payload);
+      const pendencias = validarRdoOperacional(payload, fotos);
+      if (pendencias.length) throw new Error(pendencias.join(' '));
+      const finalizado = await finalizarRelatorio(relatorio.id, payload, fotos);
       setRelatorio(finalizado);
       setToast({ message: 'Relatório finalizado e enviado para validação CCO.', tone: 'green' });
       const history = await listarRelatoriosAnteriores({ perfil: user?.perfil, userId: user?.id });
@@ -239,7 +260,6 @@ export default function RelatorioDiario() {
 
   function renderStep() {
     if (currentStep === 'dados') return <RelatorioOperacao data={payload.dados} onChange={(data) => updateSection('dados', data)} />;
-    if (currentStep === 'operacao') return <RelatorioChecklistSection title="Operação" description="Visão geral de todos os equipamentos da EBAP." data={payload.operacao} onChange={(data) => updateSection('operacao', data)} />;
     if (currentStep === 'bombas') return <RelatorioBombas data={payload.bombas} onChange={(data) => updateSection('bombas', data)} />;
     if (currentStep === 'rastelos') return <RelatorioRastelos data={payload.rastelos} onChange={(data) => updateSection('rastelos', data)} />;
     if (currentStep === 'comportas') return <RelatorioComportas data={payload.comportas} onChange={(data) => updateSection('comportas', data)} />;
@@ -247,7 +267,7 @@ export default function RelatorioDiario() {
     if (currentStep === 'geradores') return <RelatorioGeradores data={payload.geradores} onChange={(data) => updateSection('geradores', data)} />;
     if (currentStep === 'cco') return <RelatorioCCO data={payload.cco} onChange={(data) => updateSection('cco', data)} />;
     if (currentStep === 'ocorrencias') return <RelatorioOcorrencias data={payload.ocorrencias} onChange={(data) => updateSection('ocorrencias', data)} />;
-    if (currentStep === 'fotos') return <RelatorioFotos fotos={fotos} data={payload.fotos} onChange={(data) => updateSection('fotos', data)} onUpload={handleUploadFoto} disabled={!canEdit || !relatorio?.id || !isEditableReport(relatorio?.status)} />;
+    if (currentStep === 'fotos') return <RelatorioFotos fotos={fotos} data={payload.fotos} payload={payload} onChange={(data) => updateSection('fotos', data)} onUpload={handleUploadFoto} disabled={!canEdit || !relatorio?.id || !isEditableReport(relatorio?.status)} />;
     return <RelatorioResumo relatorio={relatorio} payload={payload} fotos={fotos} />;
   }
 
@@ -313,10 +333,52 @@ export default function RelatorioDiario() {
         </div>
       </section>
 
-      {relatorio?.id ? (
+      
+<section className="glass-card rounded-3xl p-5">
+  <div className="grid gap-4 md:grid-cols-4">
+    <div className="rounded-2xl bg-navy-950/50 p-4">
+      <div className="text-xs text-slate-400">EQUIPAMENTOS</div>
+      <div className="text-3xl font-black text-white">{equipamentos.length}</div>
+    </div>
+    <div className="rounded-2xl bg-navy-950/50 p-4">
+      <div className="text-xs text-slate-400">FOTOS</div>
+      <div className="text-3xl font-black text-cyan-300">{fotos.length}</div>
+    </div>
+    <div className="rounded-2xl bg-navy-950/50 p-4">
+      <div className="text-xs text-slate-400">PROGRESSO</div>
+      <div className="text-3xl font-black text-green-300">{progress}%</div>
+    </div>
+    <div className="rounded-2xl bg-navy-950/50 p-4">
+      <div className="text-xs text-slate-400">ETAPAS</div>
+      <div className="text-3xl font-black text-white">{completedSteps.length}/{RELATORIO_STEPS.length}</div>
+    </div>
+  </div>
+</section>
+
+{relatorio?.id ? (
         <>
           <RelatorioStepper steps={RELATORIO_STEPS} currentStep={currentStep} completedSteps={completedSteps} onStepClick={setCurrentStep} />
           {renderStep()}
+
+          <div className="mt-6 flex justify-between">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={goPrevious}
+              disabled={currentIndex === 0}
+            >
+              ← Etapa anterior
+            </button>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={goNext}
+              disabled={currentIndex === RELATORIO_STEPS.length - 1}
+            >
+              Próxima etapa →
+            </button>
+          </div>
         </>
       ) : (
         <div className="glass-card rounded-3xl p-8 text-center text-slate-300">

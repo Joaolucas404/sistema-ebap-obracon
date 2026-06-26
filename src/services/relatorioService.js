@@ -2,7 +2,6 @@ import { supabase } from '../lib/supabase.js';
 
 export const RELATORIO_STEPS = [
   { id: 'dados', title: 'Dados Gerais' },
-  { id: 'operacao', title: 'Operação' },
   { id: 'bombas', title: 'Bombas' },
   { id: 'rastelos', title: 'Rastelos' },
   { id: 'comportas', title: 'Comportas' },
@@ -15,12 +14,19 @@ export const RELATORIO_STEPS = [
 ];
 
 export const STATUS_OPTIONS = [
-  'operando',
-  'normal',
-  'parado',
-  'falha',
-  'manutencao',
-  'nao_aplicavel'
+  { value: 'operando', label: 'Operando', tone: 'green' },
+  { value: 'atencao', label: 'Atenção', tone: 'yellow' },
+  { value: 'parado', label: 'Parado', tone: 'red' },
+  { value: 'em_manutencao', label: 'Em Manutenção', tone: 'blue' }
+];
+
+export const STATUS_VALUES = STATUS_OPTIONS.map((status) => status.value);
+export const ALERT_STATUS_VALUES = ['atencao', 'parado', 'em_manutencao'];
+
+export const FOTO_CATEGORIAS_OBRIGATORIAS = [
+  { value: 'ebap_geral', label: 'Foto da EBAP', description: 'Foto geral da estação.' },
+  { value: 'bombas_geral', label: 'Foto das Bombas', description: 'Foto geral do conjunto de bombas.' },
+  { value: 'supervisorio', label: 'Foto do Supervisório', description: 'Foto da tela do supervisório.' }
 ];
 
 const RELATORIO_SELECT = `
@@ -38,11 +44,13 @@ export async function listarEbapsRelatorio() {
 export async function listarEquipamentosRelatorio(ebapId) {
   if (!ebapId) return [];
   const { data, error } = await supabase
-    .from('equipamentos')
-    .select('id,nome,tag,codigo,status_operacional,criticidade,tipo:equipamento_tipos(id,codigo,nome)')
+    .from('ativos')
+    .select('id,codigo,nome_operacional,tipo,status_operacional,area_responsavel')
     .eq('ebap_id', ebapId)
+    .eq('ativo', true)
     .is('deleted_at', null)
-    .order('nome');
+    .order('tipo', { ascending: true })
+    .order('nome_operacional', { ascending: true });
   if (error) throw new Error(error.message);
   return data || [];
 }
@@ -129,7 +137,10 @@ export async function alterarEbapRelatorio(relatorioId, ebapId) {
   return data;
 }
 
-export async function finalizarRelatorio(relatorioId, payload) {
+export async function finalizarRelatorio(relatorioId, payload, fotos = []) {
+  const pendencias = validarRdoOperacional(payload, fotos);
+  if (pendencias.length) throw new Error(pendencias.join(' '));
+
   await salvarRascunhoRelatorio(relatorioId, payload);
   await salvarItensRelatorio(relatorioId, payload);
 
@@ -151,14 +162,16 @@ export async function finalizarRelatorio(relatorioId, payload) {
   return data;
 }
 
-export async function uploadFotoRelatorio(relatorioId, file, user, legenda = '') {
+export async function uploadFotoRelatorio(relatorioId, file, user, legenda = '', categoria = 'foto_relatorio') {
   if (!file) throw new Error('Selecione uma foto.');
-  const safeName = file.name.replace(/[^\w.-]+/g, '-');
+  const optimizedFile = await otimizarImagemRelatorio(file);
+  const safeName = optimizedFile.name.replace(/[^\w.-]+/g, '-');
   const path = `${relatorioId}/${Date.now()}-${safeName}`;
 
-  const { error: uploadError } = await supabase.storage.from('report-photos').upload(path, file, {
+  const { error: uploadError } = await supabase.storage.from('report-photos').upload(path, optimizedFile, {
     cacheControl: '3600',
-    upsert: false
+    upsert: false,
+    contentType: optimizedFile.type || 'image/jpeg'
   });
   if (uploadError) throw new Error(uploadError.message);
 
@@ -169,11 +182,11 @@ export async function uploadFotoRelatorio(relatorioId, file, user, legenda = '')
       entidade_id: relatorioId,
       bucket: 'report-photos',
       path,
-      nome_original: file.name,
-      mime_type: file.type || null,
-      tamanho_bytes: file.size || null,
+      nome_original: optimizedFile.name,
+      mime_type: optimizedFile.type || null,
+      tamanho_bytes: optimizedFile.size || null,
       legenda,
-      categoria: 'foto_relatorio',
+      categoria,
       uploaded_by: user?.id || null
     })
     .select()
@@ -230,14 +243,14 @@ async function salvarSecoes(relatorioId, payload) {
 
 async function salvarItensRelatorio(relatorioId, payload) {
   const itemRows = [];
-  const sections = ['operacao', 'bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores', 'cco'];
+  const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
 
   sections.forEach((section) => {
     const records = payload?.[section]?.items || [];
     records.forEach((item) => {
       itemRows.push({
         relatorio_id: relatorioId,
-        equipamento_id: item.equipamento_id || null,
+        equipamento_id: null,
         tipo_item: section,
         descricao: item.nome || item.descricao || section,
         status: item.status || null,
@@ -257,12 +270,11 @@ async function salvarItensRelatorio(relatorioId, payload) {
 export function blankPayload() {
   return {
     dados: { turno: getTurnoAtual(), clima: '', nivel_geral: '', observacao: '' },
-    operacao: { items: [], observacao: '' },
     bombas: { quantidade: 0, items: [], observacao: '' },
     rastelos: { quantidade: 0, items: [], observacao: '' },
     comportas: { quantidade: 0, items: [], observacao: '' },
-    eletrocentro: { items: [], observacao: '' },
-    geradores: { quantidade: 0, items: [], observacao: '' },
+    eletrocentro: { sensores_possui: 'nao', sensores_quantidade: 0, climatizadores_possui: 'nao', climatizadores_quantidade: 0, items: [], observacao: '' },
+    geradores: { possui: 'nao', quantidade: 0, items: [], observacao: '' },
     cco: { comunicacao: '', supervisao: '', alarmes: '', observacao: '' },
     ocorrencias: { houve: 'nao', prioridade: 'baixa', descricao: '', conclusao: '' },
     fotos: { observacao: '' }
@@ -275,33 +287,99 @@ export function getTurnoAtual(date = new Date()) {
 }
 
 export function prepararPayloadEquipamentos(payload, equipamentos) {
-  const byType = {
-    eletrocentro: ['eletrocentro', 'sensor', 'cco'],
-    operacao: []
+  const next = structuredCloneSafe(payload || blankPayload());
+  const rows = equipamentos || [];
+  const bySection = {
+    bombas: rows.filter((eq) => eq.tipo === 'Bomba'),
+    rastelos: rows.filter((eq) => eq.tipo === 'Rastelo'),
+    comportas: rows.filter((eq) => ['Comporta', 'Comporta de Rastelo'].includes(eq.tipo)),
+    eletrocentro: rows.filter((eq) => ['CCM', 'Painel Elétrico', 'Sensor', 'Atuador'].includes(eq.tipo))
   };
 
-  const next = structuredCloneSafe(payload || blankPayload());
-  Object.keys(byType).forEach((section) => {
-    const wanted = byType[section];
-    const rows = section === 'operacao'
-      ? equipamentos
-      : equipamentos.filter((eq) => wanted.includes(eq.tipo?.codigo));
-
-    if (!next[section]?.items?.length) {
-      next[section] = {
-        ...(next[section] || {}),
-        items: rows.map((eq) => ({
-          equipamento_id: eq.id,
-          nome: eq.tag ? `${eq.tag} - ${eq.nome}` : eq.nome,
-          status: eq.status_operacional || 'operando',
-          observacao: '',
-          solicitar_os: false
-        }))
-      };
-    }
+  Object.entries(bySection).forEach(([section, sectionRows]) => {
+    const existingItems = next[section]?.items || [];
+    const mergedItems = mergeOperationalItems(existingItems, sectionRows);
+    const manualEletrocentro = section === 'eletrocentro'
+      ? existingItems.filter((item) => !item.ativo_id && ['Sensor', 'Climatizador'].includes(item.tipo))
+      : [];
+    next[section] = {
+      ...(next[section] || {}),
+      quantidade: sectionRows.length,
+      items: [...mergedItems, ...manualEletrocentro]
+    };
   });
 
   return next;
+}
+
+function mergeOperationalItems(existingItems, rows) {
+  const byAtivo = new Map((existingItems || []).map((item) => [item.ativo_id || item.equipamento_id || item.nome, item]));
+  return rows.map((eq) => {
+    const previous = byAtivo.get(eq.id) || byAtivo.get(eq.nome_operacional) || {};
+    return {
+      ...previous,
+      ativo_id: eq.id,
+      equipamento_id: null,
+      nome: eq.nome_operacional,
+      tipo: eq.tipo,
+      status: normalizeRdoStatus(previous.status || eq.status_operacional),
+      observacao: previous.observacao || '',
+      solicitar_os: Boolean(previous.solicitar_os)
+    };
+  });
+}
+
+export function normalizeRdoStatus(status) {
+  const value = String(status || '').trim().toLowerCase();
+  const map = { normal: 'operando', falha: 'parado', manutencao: 'em_manutencao', fora_operacao: 'parado', operando_restricao: 'atencao' };
+  return STATUS_VALUES.includes(map[value] || value) ? (map[value] || value) : 'operando';
+}
+
+export function validarRdoOperacional(payload, fotos = []) {
+  const pendencias = [];
+  const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
+  sections.forEach((section) => {
+    (payload?.[section]?.items || []).forEach((item) => {
+      const status = normalizeRdoStatus(item.status);
+      if (ALERT_STATUS_VALUES.includes(status) && !String(item.observacao || '').trim()) {
+        pendencias.push('Informe o motivo para ' + item.nome + ' em ' + statusLabel(status) + '.');
+      }
+      if (section === 'geradores' && payload?.geradores?.possui === 'sim') {
+        const diesel = Number(item.diesel);
+        if (!Number.isFinite(diesel) || diesel < 0 || diesel > 100) pendencias.push('Informe o nível de diesel (%) de ' + item.nome + '.');
+      }
+    });
+  });
+
+  const categorias = new Set((fotos || []).map((foto) => foto.categoria));
+  FOTO_CATEGORIAS_OBRIGATORIAS.forEach((categoria) => {
+    if (!categorias.has(categoria.value)) pendencias.push('Anexe: ' + categoria.label + '.');
+  });
+  if (payload?.geradores?.possui === 'sim') {
+    (payload.geradores.items || []).forEach((item, index) => {
+      if (!categorias.has('gerador_' + (index + 1))) pendencias.push('Anexe a foto do ' + (item.nome || ('Gerador ' + (index + 1))) + '.');
+    });
+  }
+  return pendencias;
+}
+
+export function statusLabel(status) {
+  return STATUS_OPTIONS.find((item) => item.value === normalizeRdoStatus(status))?.label || status || '-';
+}
+
+async function otimizarImagemRelatorio(file) {
+  if (typeof document === 'undefined' || !file?.type?.startsWith('image/')) return file;
+  const bitmap = await createImageBitmap(file);
+  const maxSide = 1600;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext('2d');
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.78));
+  if (!blob) return file;
+  return new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
 }
 
 function secaoCompleta(stepId, payload) {

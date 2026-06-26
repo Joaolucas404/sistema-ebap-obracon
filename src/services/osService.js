@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase.js';
-import { alterarStatusAtivo, IMPACTO_EQUIPAMENTO } from './ativosService.js';
+import { alterarStatusAtivo, ATIVO_STATUS_VALUES } from './ativosService.js';
 
 export const OS_STATUS = [
   { value: 'pendente_cco', label: 'Pendente CCO', tone: 'orange', perfil: 'CCO' },
@@ -431,10 +431,9 @@ export async function registrarExecucaoOS(id, payload, user) {
 export async function encerrarOS(id, payload, user) {
   const atual = await buscarOS(id);
   const status = payload.status === 'concluida' ? 'concluida_arquivada' : payload.status || 'concluida_arquivada';
-  const impacto = IMPACTO_EQUIPAMENTO.find((item) => item.value === payload.impacto_equipamento);
-  const exigeImpacto = atual.tipo_manutencao === 'corretiva' && atual.ativo_id && status === 'concluida_arquivada';
-  if (exigeImpacto && impacto?.status && !String(payload.motivo_impacto || '').trim()) {
-    throw new Error('Informe o motivo do impacto no equipamento.');
+  const exigeStatusAtivo = Boolean(atual.ativo_id && status === 'concluida_arquivada');
+  if (exigeStatusAtivo && !ATIVO_STATUS_VALUES.includes(payload.impacto_equipamento)) {
+    throw new Error('Informe o status atual do equipamento após a execução.');
   }
   const updatePayload = {
     status,
@@ -443,7 +442,7 @@ export async function encerrarOS(id, payload, user) {
     motivo_cancelamento: payload.motivo_cancelamento || null,
     payload: {
       ...(atual.payload || {}),
-      impacto_equipamento: payload.impacto_equipamento || 'sem_alteracao',
+      impacto_equipamento: payload.impacto_equipamento || null,
       motivo_impacto: payload.motivo_impacto || null
     }
   };
@@ -460,17 +459,17 @@ export async function encerrarOS(id, payload, user) {
     metadata: { ...updatePayload, etapa: status, impacto_equipamento: payload.impacto_equipamento || 'sem_alteracao' }
   });
 
-  if (exigeImpacto && impacto?.status && impacto.status !== atual.ativo?.status_operacional) {
+  if (exigeStatusAtivo) {
     await alterarStatusAtivo(
       atual.ativo_id,
       {
-        status_operacional: impacto.status,
-        motivo: payload.motivo_impacto,
+        status_operacional: payload.impacto_equipamento,
+        motivo: payload.motivo_impacto || payload.descricao || 'Status atualizado no encerramento da OS.',
         os_id: id,
         metadata: {
-          origem: 'encerramento_os_corretiva',
+          origem: 'encerramento_os',
           os_status_final: status,
-          impacto_equipamento: payload.impacto_equipamento
+          status_ativo_final: payload.impacto_equipamento
         }
       },
       user
@@ -506,6 +505,11 @@ export async function movimentarOS(id, payload, user) {
   }
 
   const now = new Date().toISOString();
+
+  if (atual.ativo_id && selected.to === 'concluida_arquivada' && !ATIVO_STATUS_VALUES.includes(payload.status_ativo_final)) {
+    throw new Error('Informe o status atual do equipamento após a execução.');
+  }
+
   const updatePayload = {
     status: selected.to,
     payload: {
@@ -571,6 +575,19 @@ export async function movimentarOS(id, payload, user) {
       })
       .eq('os_id', id)
       .eq('status', 'enviado_supervisor');
+  }
+
+  if (atual.ativo_id && selected.to === 'concluida_arquivada') {
+    await alterarStatusAtivo(
+      atual.ativo_id,
+      {
+        status_operacional: payload.status_ativo_final,
+        motivo: payload.motivo_impacto || payload.comentario || selected.descricao,
+        os_id: id,
+        metadata: { origem: 'workflow_os', os_status_final: selected.to }
+      },
+      user
+    );
   }
 
   await notificarMovimentacaoOS(data, selected, user, payload.motivo);

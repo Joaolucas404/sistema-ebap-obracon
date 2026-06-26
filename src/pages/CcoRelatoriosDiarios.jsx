@@ -4,6 +4,7 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import KpiCard from '../components/ui/KpiCard.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import Toast from '../components/ui/Toast.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CcoFilters from '../components/cco/CcoFilters.jsx';
 import CcoHistoryTimeline from '../components/cco/CcoHistoryTimeline.jsx';
 import CcoReportCard from '../components/cco/CcoReportCard.jsx';
@@ -243,7 +244,8 @@ function ReportDetail({ detail, canValidate, onValidate }) {
                   <p className="text-sm text-slate-300">{item.tipo_item} | {item.observacao || 'Sem observacao'}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <CcoStatusBadge status={item.status === 'falha' || item.status === 'parado' ? 'rejeitado_cco' : 'validado_cco'} />
+                  <StatusBadge tone={operationalStatusTone(item.status)} size="md">{operationalStatusLabel(item.status)}</StatusBadge>
+                  {item.dados?.comparacao_anterior && <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-1 text-xs font-black text-amber-100"><AlertTriangle size={13} /> Status alterado desde o último RDO</span>}
                   {item.solicitar_os && <span className="inline-flex items-center gap-1 rounded-full border border-orange-300/30 bg-orange-400/10 px-3 py-1 text-xs font-black text-orange-100"><AlertTriangle size={13} /> OS solicitada</span>}
                 </div>
               </div>
@@ -324,4 +326,15 @@ function Info({ label, value }) {
       <div className="mt-2 text-sm font-black text-white">{value}</div>
     </div>
   );
+}
+
+
+function operationalStatusLabel(status) {
+  const labels = { operando: 'Operando', atencao: 'Atenção', parado: 'Parado', em_manutencao: 'Em Manutenção', manutencao: 'Em Manutenção', falha: 'Parado', normal: 'Operando' };
+  return labels[status] || status || '-';
+}
+
+function operationalStatusTone(status) {
+  const tones = { operando: 'green', atencao: 'yellow', parado: 'red', em_manutencao: 'blue', manutencao: 'blue', falha: 'red', normal: 'green' };
+  return tones[status] || 'cyan';
 }

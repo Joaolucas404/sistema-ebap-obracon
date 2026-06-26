@@ -1,7 +1,7 @@
 import StatusBadge from '../ui/StatusBadge.jsx';
 
 export default function RelatorioResumo({ relatorio, payload, fotos = [] }) {
-  const sections = ['operacao', 'bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
+  const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
   const totalItems = sections.reduce((acc, section) => acc + (payload?.[section]?.items?.length || 0), 0);
   const alertas = sections.reduce(
     (acc, section) => acc + (payload?.[section]?.items || []).filter((item) => ['falha', 'parado', 'manutencao'].includes(item.status)).length,

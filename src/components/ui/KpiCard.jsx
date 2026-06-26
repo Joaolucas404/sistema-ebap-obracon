@@ -3,6 +3,7 @@ export default function KpiCard({ icon: Icon, label, value, helper, tone = 'cyan
     cyan: 'from-cyan-400/20 to-blue-500/10 text-cyan-100',
     green: 'from-green-400/20 to-emerald-600/10 text-green-100',
     orange: 'from-orange-400/20 to-yellow-500/10 text-orange-100',
+    yellow: 'from-yellow-300/25 to-amber-500/10 text-yellow-100',
     red: 'from-red-400/20 to-pink-600/10 text-red-100',
     blue: 'from-blue-400/20 to-cyan-500/10 text-blue-100'
   };

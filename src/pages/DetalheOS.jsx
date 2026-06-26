@@ -47,7 +47,7 @@ import {
   salvarRelatorioTecnicoOS,
   resumoRelatorioTecnico
 } from '../services/relatorioTecnicoService.js';
-import { ativoStatusLabel, IMPACTO_EQUIPAMENTO } from '../services/ativosService.js';
+import { ativoStatusLabel, ATIVO_STATUS, normalizeAtivoStatus } from '../services/ativosService.js';
 import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
 function formatDate(value) {
@@ -82,9 +82,9 @@ export default function DetalheOS() {
   const [form, setForm] = useState({});
   const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false });
   const [relatorioTecnico, setRelatorioTecnico] = useState({ modelo_id: '', respostas: {}, fotos: {}, observacoes: '' });
-  const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '', impacto_equipamento: 'sem_alteracao', motivo_impacto: '' });
+  const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '', impacto_equipamento: 'operando', motivo_impacto: '' });
   const [workflowAction, setWorkflowAction] = useState(null);
-  const [workflowForm, setWorkflowForm] = useState({ status: '', comentario: '', motivo: '' });
+  const [workflowForm, setWorkflowForm] = useState({ status: '', comentario: '', motivo: '', status_ativo_final: 'operando', motivo_impacto: '' });
   const [upload, setUpload] = useState({ file: null, legenda: '' });
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
@@ -174,7 +174,7 @@ export default function DetalheOS() {
 
   function openWorkflow(action) {
     setWorkflowAction(action);
-    setWorkflowForm({ status: action.to, comentario: '', motivo: '' });
+    setWorkflowForm({ status: action.to, comentario: '', motivo: '', status_ativo_final: 'operando', motivo_impacto: '' });
     setModal('workflow');
   }
 
@@ -277,7 +277,7 @@ export default function DetalheOS() {
       setToast({ message: 'Movimentação registrada com rastreabilidade.', tone: workflowAction?.requiresMotivo ? 'orange' : 'green' });
       setModal(null);
       setWorkflowAction(null);
-      setWorkflowForm({ status: '', comentario: '', motivo: '' });
+      setWorkflowForm({ status: '', comentario: '', motivo: '', status_ativo_final: 'operando', motivo_impacto: '' });
       await loadAll();
     } catch (err) {
       setError(err.message || 'Falha ao movimentar OS.');
@@ -406,7 +406,7 @@ export default function DetalheOS() {
   const canDelete = podeExcluirOS(user?.perfil);
   const workflowActions = getWorkflowActions(user?.perfil, os);
   const equipamentoFalha = os.payload?.equipamento_falha || os.ativo?.nome_operacional || os.equipamento?.nome || '-';
-  const isCorretivaComAtivo = os.tipo_manutencao === 'corretiva' && os.ativo_id;
+  const isFinalizacaoComAtivo = Boolean(os.ativo_id);
 
   return (
     <div className="grid gap-4">
@@ -672,13 +672,13 @@ export default function DetalheOS() {
               <textarea className="form-control min-h-24 py-3" value={encerramento.motivo_cancelamento} onChange={(event) => setEncerramento((current) => ({ ...current, motivo_cancelamento: event.target.value }))} required />
             </label>
           )}
-          {isCorretivaComAtivo && encerramento.status === 'concluida_arquivada' && (
+          {isFinalizacaoComAtivo && encerramento.status === 'concluida_arquivada' && (
             <div className="grid gap-4 rounded-2xl border border-cyan-300/15 bg-navy-950/50 p-4">
               <label className="field-label">
-                Impacto no Equipamento
+                Qual o status atual do equipamento após a execução?
                 <select className="form-control" value={encerramento.impacto_equipamento} onChange={(event) => setEncerramento((current) => ({ ...current, impacto_equipamento: event.target.value }))}>
-                  {IMPACTO_EQUIPAMENTO.map((impacto) => (
-                    <option key={impacto.value} value={impacto.value}>{impacto.label}</option>
+                  {ATIVO_STATUS.map((status) => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
                   ))}
                 </select>
               </label>
@@ -721,6 +721,33 @@ export default function DetalheOS() {
                 required
               />
             </label>
+          )}
+          {os?.ativo_id && workflowForm.status === 'concluida_arquivada' && (
+            <div className="grid gap-4 rounded-2xl border border-cyan-300/15 bg-navy-950/50 p-4">
+              <label className="field-label">
+                Qual o status atual do equipamento após a execução?
+                <select
+                  className="form-control"
+                  value={workflowForm.status_ativo_final}
+                  onChange={(event) => setWorkflowForm((current) => ({ ...current, status_ativo_final: event.target.value }))}
+                  required
+                >
+                  {ATIVO_STATUS.map((status) => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field-label">
+                Motivo da alteração do status do ativo
+                <textarea
+                  className="form-control min-h-24 py-3"
+                  value={workflowForm.motivo_impacto}
+                  onChange={(event) => setWorkflowForm((current) => ({ ...current, motivo_impacto: event.target.value }))}
+                  placeholder="Informe o resultado operacional observado após a execução."
+                  required
+                />
+              </label>
+            </div>
           )}
           <Actions saving={saving} onCancel={() => setModal(null)} label="Registrar movimentação" />
         </form>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '../lib/supabase.js';
 import { listarAtivos, obterDashboardAtivos } from '../services/ativosService.js';
 
 export const useAtivosStore = create((set, get) => ({
@@ -9,6 +10,7 @@ export const useAtivosStore = create((set, get) => ({
   pageSize: 30,
   loading: false,
   error: '',
+  realtimeChannel: null,
   filters: {
     search: '',
     status: '',
@@ -35,5 +37,25 @@ export const useAtivosStore = create((set, get) => ({
     } catch (error) {
       set({ error: error.message || 'Falha ao carregar ativos.', loading: false });
     }
+  },
+  subscribeRealtime: () => {
+    if (get().realtimeChannel) return () => {};
+
+    const channel = supabase
+      .channel('ativos-operacionais')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ativos' }, () => {
+        get().load();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ativo_status_historico' }, () => {
+        get().load();
+      })
+      .subscribe();
+
+    set({ realtimeChannel: channel });
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (get().realtimeChannel === channel) set({ realtimeChannel: null });
+    };
   }
 }));

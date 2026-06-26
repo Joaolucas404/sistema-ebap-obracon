@@ -2,19 +2,26 @@ import { supabase } from '../lib/supabase.js';
 
 export const ATIVO_STATUS = [
   { value: 'operando', label: 'Operando', tone: 'green' },
-  { value: 'operando_restricao', label: 'Operando com Restrição', tone: 'orange' },
-  { value: 'em_manutencao', label: 'Em Manutenção', tone: 'blue' },
-  { value: 'fora_operacao', label: 'Fora de Operação', tone: 'red' }
+  { value: 'atencao', label: 'Atenção', tone: 'yellow' },
+  { value: 'parado', label: 'Parado', tone: 'red' },
+  { value: 'em_manutencao', label: 'Em Manutenção', tone: 'blue' }
 ];
 
-export const ATIVO_TIPOS = ['Bomba', 'Gerador', 'Comporta', 'Rastelo', 'Painel Elétrico', 'Sensor', 'Atuador', 'Civil', 'Outros'];
+export const ATIVO_STATUS_VALUES = ATIVO_STATUS.map((status) => status.value);
+
+export const ATIVO_TIPOS = ['Bomba', 'CCM', 'Gerador', 'Comporta', 'Rastelo', 'Comporta de Rastelo', 'Painel Elétrico', 'Sensor', 'Atuador', 'Civil', 'Outros'];
+
+const LEGACY_STATUS_MAP = {
+  operando_restricao: 'atencao',
+  fora_operacao: 'parado',
+  manutencao: 'em_manutencao'
+};
 
 export const IMPACTO_EQUIPAMENTO = [
-  { value: 'sem_alteracao', label: 'Sem alteração', status: null },
   { value: 'operando', label: 'Operando', status: 'operando' },
-  { value: 'operando_restricao', label: 'Operando com Restrição', status: 'operando_restricao' },
-  { value: 'em_manutencao', label: 'Em Manutenção', status: 'em_manutencao' },
-  { value: 'fora_operacao', label: 'Fora de Operação', status: 'fora_operacao' }
+  { value: 'atencao', label: 'Atenção', status: 'atencao' },
+  { value: 'parado', label: 'Parado', status: 'parado' },
+  { value: 'em_manutencao', label: 'Em Manutenção', status: 'em_manutencao' }
 ];
 
 const ATIVO_SELECT = `
@@ -22,12 +29,19 @@ const ATIVO_SELECT = `
   ebap:ebaps(id,codigo,nome,nome_curto,status)
 `;
 
+export function normalizeAtivoStatus(status) {
+  const value = String(status || '').trim().toLowerCase();
+  return LEGACY_STATUS_MAP[value] || value || 'operando';
+}
+
 export function ativoStatusLabel(status) {
-  return ATIVO_STATUS.find((item) => item.value === status)?.label || status || '-';
+  const normalized = normalizeAtivoStatus(status);
+  return ATIVO_STATUS.find((item) => item.value === normalized)?.label || status || '-';
 }
 
 export function ativoStatusTone(status) {
-  return ATIVO_STATUS.find((item) => item.value === status)?.tone || 'cyan';
+  const normalized = normalizeAtivoStatus(status);
+  return ATIVO_STATUS.find((item) => item.value === normalized)?.tone || 'cyan';
 }
 
 export function podeGerenciarAtivo(perfil) {
@@ -36,6 +50,12 @@ export function podeGerenciarAtivo(perfil) {
 
 function normalizeText(value) {
   return String(value || '').trim();
+}
+
+function assertValidStatus(status) {
+  const normalized = normalizeAtivoStatus(status);
+  if (!ATIVO_STATUS_VALUES.includes(normalized)) throw new Error('Status operacional inválido.');
+  return normalized;
 }
 
 export async function listarAtivos(filters = {}) {
@@ -48,10 +68,15 @@ export async function listarAtivos(filters = {}) {
     .from('ativos')
     .select(ATIVO_SELECT, { count: 'exact' })
     .is('deleted_at', null)
+    .eq('ativo', true)
     .order('nome_operacional', { ascending: true });
 
   if (filters.ebapId) query = query.eq('ebap_id', filters.ebapId);
-  if (filters.status) query = query.eq('status_operacional', filters.status);
+  if (filters.status) {
+    const status = assertValidStatus(filters.status);
+    const legacy = status === 'atencao' ? ['atencao', 'operando_restricao'] : status === 'parado' ? ['parado', 'fora_operacao'] : [status];
+    query = query.in('status_operacional', legacy);
+  }
   if (filters.tipo) query = query.eq('tipo', filters.tipo);
   if (filters.area) query = query.eq('area_responsavel', filters.area);
   if (filters.search) {
@@ -89,16 +114,17 @@ export async function obterDashboardAtivos() {
   const rows = data || [];
   const byStatus = Object.fromEntries(ATIVO_STATUS.map((status) => [status.value, 0]));
   rows.forEach((row) => {
-    byStatus[row.status_operacional] = (byStatus[row.status_operacional] || 0) + 1;
+    const status = normalizeAtivoStatus(row.status_operacional);
+    byStatus[status] = (byStatus[status] || 0) + 1;
   });
 
   return {
     total: rows.length,
     byStatus,
-    foraOperacao: byStatus.fora_operacao || 0,
-    restricao: byStatus.operando_restricao || 0,
-    manutencao: byStatus.em_manutencao || 0,
-    operando: byStatus.operando || 0
+    operando: byStatus.operando || 0,
+    atencao: byStatus.atencao || 0,
+    parado: byStatus.parado || 0,
+    manutencao: byStatus.em_manutencao || 0
   };
 }
 
@@ -115,7 +141,7 @@ export async function criarAtivo(payload, user) {
     tipo: payload.tipo,
     ebap_id: payload.ebap_id,
     area_responsavel: payload.area_responsavel,
-    status_operacional: payload.status_operacional || 'operando',
+    status_operacional: assertValidStatus(payload.status_operacional || 'operando'),
     fabricante: normalizeText(payload.fabricante) || null,
     modelo: normalizeText(payload.modelo) || null,
     numero_serie: normalizeText(payload.numero_serie) || null,
@@ -127,6 +153,17 @@ export async function criarAtivo(payload, user) {
 
   const { data, error } = await supabase.from('ativos').insert(row).select(ATIVO_SELECT).single();
   if (error) throw new Error(error.message);
+
+  const { error: histError } = await supabase.from('ativo_status_historico').insert({
+    ativo_id: data.id,
+    status_anterior: null,
+    status_novo: data.status_operacional,
+    motivo: 'Ativo cadastrado no módulo operacional.',
+    usuario_id: user?.id || null,
+    metadata: { origem: 'cadastro_ativo' }
+  });
+  if (histError) throw new Error(histError.message);
+
   return data;
 }
 
@@ -161,8 +198,8 @@ export async function alterarStatusAtivo(id, payload, user) {
     .single();
   if (atualError) throw new Error(atualError.message);
 
-  const novoStatus = payload.status_operacional;
-  if (!ATIVO_STATUS.some((status) => status.value === novoStatus)) throw new Error('Status operacional inválido.');
+  const novoStatus = assertValidStatus(payload.status_operacional);
+  const statusAnterior = normalizeAtivoStatus(atual.status_operacional);
 
   const { data, error } = await supabase
     .from('ativos')
@@ -175,7 +212,7 @@ export async function alterarStatusAtivo(id, payload, user) {
   const { error: histError } = await supabase.from('ativo_status_historico').insert({
     ativo_id: id,
     os_id: payload.os_id || null,
-    status_anterior: atual.status_operacional,
+    status_anterior: statusAnterior,
     status_novo: novoStatus,
     motivo,
     usuario_id: user?.id || null,

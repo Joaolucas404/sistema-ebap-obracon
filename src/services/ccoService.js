@@ -102,7 +102,16 @@ export async function obterRelatorioCco(relatorioId) {
     listarAuditoria(relatorioId)
   ]);
 
-  return { report, secoes, itens, fotos, validacoes, auditoria };
+  const comparacoes = await compararComUltimoRdoAprovado(report);
+  const itensComComparacao = itens.map((item) => ({
+    ...item,
+    dados: {
+      ...(item.dados || {}),
+      comparacao_anterior: comparacoes[item.dados?.ativo_id] || null
+    }
+  }));
+
+  return { report, secoes, itens: itensComComparacao, fotos, validacoes, auditoria };
 }
 
 export async function obterUrlFotoCco(foto) {
@@ -251,4 +260,77 @@ async function gerarNotificacao(relatorio, titulo, mensagem) {
     entidade_id: relatorio.id
   });
   if (error) throw new Error(error.message);
+}
+
+
+async function compararComUltimoRdoAprovado(relatorio) {
+  if (!relatorio?.ebap_id || !relatorio?.data_operacao) return {};
+  const { data, error } = await supabase
+    .from('relatorios_diarios')
+    .select('id,payload,data_operacao,updated_at')
+    .eq('ebap_id', relatorio.ebap_id)
+    .eq('status', 'validado_cco')
+    .lt('data_operacao', relatorio.data_operacao)
+    .is('deleted_at', null)
+    .order('data_operacao', { ascending: false })
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data?.payload) return {};
+
+  const previous = Object.fromEntries(extrairItensRdo(data.payload).filter((item) => item.ativo_id).map((item) => [item.ativo_id, item]));
+  return Object.fromEntries(
+    extrairItensRdo(relatorio.payload || {})
+      .filter((item) => item.ativo_id && previous[item.ativo_id] && previous[item.ativo_id].status !== item.status)
+      .map((item) => [item.ativo_id, { status_anterior: previous[item.ativo_id].status, status_atual: item.status, data_anterior: data.data_operacao }])
+  );
+}
+
+async function atualizarAtivosPeloRdo(relatorio, payload, user) {
+  const items = extrairItensRdo(payload).filter((item) => item.ativo_id && item.status);
+  for (const item of items) {
+    const novoStatus = normalizeAtivoStatusRdo(item.status);
+    const { data: atual, error: atualError } = await supabase
+      .from('ativos')
+      .select('id,status_operacional')
+      .eq('id', item.ativo_id)
+      .maybeSingle();
+    if (atualError || !atual) continue;
+    const statusAnterior = normalizeAtivoStatusRdo(atual.status_operacional);
+    if (statusAnterior === novoStatus) continue;
+
+    const { error: updateError } = await supabase
+      .from('ativos')
+      .update({ status_operacional: novoStatus, updated_at: new Date().toISOString() })
+      .eq('id', item.ativo_id);
+    if (updateError) throw new Error(updateError.message);
+
+    const motivo = item.observacao || 'Status atualizado após aprovação do RDO pelo CCO.';
+    const { error: histError } = await supabase.from('ativo_status_historico').insert({
+      ativo_id: item.ativo_id,
+      status_anterior: statusAnterior,
+      status_novo: novoStatus,
+      motivo,
+      usuario_id: user?.id || null,
+      metadata: {
+        origem: 'aprovacao_rdo_cco',
+        relatorio_id: relatorio.id,
+        relatorio_codigo: relatorio.codigo,
+        equipamento: item.nome || null
+      }
+    });
+    if (histError) throw new Error(histError.message);
+  }
+}
+
+function extrairItensRdo(payload) {
+  const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
+  return sections.flatMap((section) => (payload?.[section]?.items || []).map((item) => ({ ...item, section, status: normalizeAtivoStatusRdo(item.status) })));
+}
+
+function normalizeAtivoStatusRdo(status) {
+  const value = String(status || '').trim().toLowerCase();
+  const map = { normal: 'operando', falha: 'parado', manutencao: 'em_manutencao', fora_operacao: 'parado', operando_restricao: 'atencao' };
+  const normalized = map[value] || value;
+  return ['operando', 'atencao', 'parado', 'em_manutencao'].includes(normalized) ? normalized : 'operando';
 }
