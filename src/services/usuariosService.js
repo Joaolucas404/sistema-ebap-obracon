@@ -212,32 +212,25 @@ export async function aprovarAcessoTecnico(id, currentUser) {
 export async function rejeitarAcessoTecnico(id, currentUser, motivo) {
   const cleanMotivo = String(motivo || '').trim();
   if (!cleanMotivo) throw new Error('Informe o motivo da rejeição.');
-  await garantirPodeAprovar(id, currentUser);
+  const alvo = await garantirPodeAprovar(id, currentUser);
 
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('usuarios')
-    .update({
-      ativo: false,
-      status_aprovacao: 'rejeitado',
-      rejeitado_por: currentUser?.id || null,
-      rejeitado_em: now,
-      motivo_rejeicao: cleanMotivo,
-      atualizado_em: now
-    })
-    .eq('id', id)
-    .select(SELECT_FIELDS)
-    .single();
-
-  if (error) throw new Error(error.message);
   await registrarAuditoriaUsuarios({
     acao: 'rejeicao_acesso_tecnico',
     usuario_alvo_id: id,
     responsavel_id: currentUser?.id,
-    descricao: `Acesso técnico rejeitado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}.`,
-    metadata: { equipe: data.equipe, area_operacional: data.area_operacional, motivo: cleanMotivo }
+    descricao: `Acesso técnico rejeitado por ${currentUser?.nome || currentUser?.usuario || 'sistema'}. Login ${alvo.usuario} liberado para novo cadastro.`,
+    metadata: { equipe: alvo.equipe, area_operacional: alvo.area_operacional, motivo: cleanMotivo, login_liberado: true }
   });
-  return data;
+
+  const { error } = await supabase
+    .from('usuarios')
+    .delete()
+    .eq('id', id)
+    .eq('perfil', 'tecnico')
+    .eq('status_aprovacao', 'pendente');
+
+  if (error) throw new Error(error.message);
+  return { ...alvo, status_aprovacao: 'rejeitado', motivo_rejeicao: cleanMotivo, login_liberado: true };
 }
 
 export async function criarUsuario(payload, currentUser) {
@@ -298,12 +291,23 @@ export async function reativarUsuario(id) {
 }
 
 export async function excluirUsuario(id, deletedBy) {
-  const { data, error } = await supabase.rpc('soft_delete_usuario_diretoria', {
-    p_usuario_alvo_id: id,
-    p_usuario_executor_id: deletedBy || null
+  const alvo = await buscarUsuario(id);
+
+  await registrarAuditoriaUsuarios({
+    acao: 'exclusao_usuario_permanente',
+    usuario_alvo_id: id,
+    responsavel_id: deletedBy || null,
+    descricao: `Usuário ${alvo.usuario} excluído permanentemente. Login liberado para reutilização.`,
+    metadata: { usuario: alvo.usuario, nome: alvo.nome, perfil: alvo.perfil, login_liberado: true }
   });
+
+  const { error } = await supabase
+    .from('usuarios')
+    .delete()
+    .eq('id', id);
+
   if (error) throw new Error(error.message);
-  return data?.[0] || null;
+  return { ...alvo, excluido_permanentemente: true, login_liberado: true };
 }
 
 async function atualizarStatusUsuario(id, ativo) {

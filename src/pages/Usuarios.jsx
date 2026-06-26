@@ -214,7 +214,7 @@ export default function Usuarios() {
 
     try {
       await excluirUsuario(modal.user.id, currentUser?.id);
-      setToast({ message: 'Usuário excluído.', tone: 'orange' });
+      setToast({ message: 'Usuário excluído permanentemente. Login liberado.', tone: 'orange' });
       await carregarUsuarios();
       closeModal();
     } catch (err) {
@@ -261,7 +261,7 @@ export default function Usuarios() {
     setError('');
     try {
       await rejeitarAcessoTecnico(modal.user.id, currentUser, motivoRejeicao);
-      setToast({ message: 'Acesso técnico rejeitado.', tone: 'orange' });
+      setToast({ message: 'Acesso técnico rejeitado. Login liberado para novo cadastro.', tone: 'orange' });
       await carregarUsuarios();
       closeModal();
     } catch (err) {
@@ -487,7 +487,7 @@ export default function Usuarios() {
 
       <Modal open={modal.type === 'delete'} title={`Excluir usuário - ${modal.user?.nome || ''}`} onClose={closeModal}>
         <div className="grid gap-4">
-          <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">Esta ação remove o usuário das listas e impede novo login, mantendo o histórico já registrado no sistema.</div>
+          <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">Esta ação exclui o usuário do banco e libera o mesmo login para novo cadastro. Históricos antigos permanecem vinculados quando o banco permitir referência nula.</div>
           {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
           <div className="flex justify-end gap-2">
             <button className="secondary-button" type="button" onClick={closeModal}>Cancelar</button>
