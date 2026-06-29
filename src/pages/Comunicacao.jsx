@@ -371,8 +371,8 @@ export default function Comunicacao() {
         </div>
       </section>
 
-      <section className="grid min-h-[680px] gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="grid gap-3 rounded-3xl border border-cyan-300/15 bg-navy-950/55 p-4">
+      <section className="grid min-h-[680px] gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+        <aside className="grid min-w-0 gap-3 rounded-3xl border border-cyan-300/15 bg-navy-950/55 p-4">
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -415,7 +415,7 @@ export default function Comunicacao() {
           )}
 
           {activeTab !== 'arquivos' ? (
-            <div className="grid max-h-[520px] gap-2 overflow-auto pr-1">
+            <div className="grid max-h-[520px] min-w-0 gap-2 overflow-y-auto overflow-x-hidden pr-2">
               {loading ? (
                 <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Carregando conversas...</div>
               ) : filteredConversas.length ? (
@@ -423,18 +423,18 @@ export default function Comunicacao() {
                   <button
                     key={conversa.id}
                     type="button"
-                    className={selected?.id === conversa.id ? 'rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
+                    className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
                     onClick={() => {
                       setSelectedId(conversa.id);
                       setActiveTab('conversas');
                     }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="min-w-0 flex-1">
                         <strong className="block truncate text-white">{conversa.nome}</strong>
                         <span className="mt-1 block truncate text-xs font-bold text-slate-400">{conversa.descricao || 'Grupo operacional'}</span>
                       </div>
-                      <span className="rounded-full bg-navy-950/70 px-2 py-1 text-[11px] font-black uppercase text-cyan-100">{conversa.tipo}</span>
+                      <span className="shrink-0 rounded-full bg-navy-950/70 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{conversa.tipo === 'grupo' ? 'Grupo' : 'Direta'}</span>
                     </div>
                   </button>
                 ))
@@ -484,22 +484,22 @@ export default function Comunicacao() {
 
               <form className="border-t border-cyan-300/10 p-4" onSubmit={handleSend}>
                 {audioUrl && <audio className="mb-3 w-full" src={audioUrl} controls />}
-                <div className="grid gap-2 md:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
+                <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
                   <label className="secondary-button min-h-12 cursor-pointer justify-center">
                     <Paperclip size={18} />
                     <input className="hidden" type="file" accept="image/*,video/*,audio/*,.pdf,.xls,.xlsx,.csv,.doc,.docx,.txt" onChange={handleFile} disabled={sending} />
                   </label>
-                  <button className={recording ? 'danger-button min-h-12 justify-center' : 'secondary-button min-h-12 justify-center'} type="button" onClick={recording ? stopRecording : startRecording} disabled={sending}>
-                    {recording ? <Square size={18} /> : <Mic size={18} />}
-                    {recording ? 'Parar' : 'Áudio'}
-                  </button>
                   <input
-                    className="form-control"
+                    className="form-control min-w-0"
                     value={message}
                     onChange={(event) => handleTyping(event.target.value)}
                     placeholder="Digite uma mensagem operacional..."
                     disabled={sending}
                   />
+                  <button className={recording ? 'danger-button min-h-12 justify-center' : 'secondary-button min-h-12 justify-center'} type="button" onClick={recording ? stopRecording : startRecording} disabled={sending}>
+                    {recording ? <Square size={18} /> : <Mic size={18} />}
+                    {recording ? 'Parar' : 'Áudio'}
+                  </button>
                   <button className="primary-button min-h-12 justify-center" type="submit" disabled={sending || !message.trim()}>
                     <Send size={18} />
                     Enviar

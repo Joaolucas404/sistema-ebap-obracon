@@ -213,6 +213,7 @@ export async function rejeitarAcessoTecnico(id, currentUser, motivo) {
   const cleanMotivo = String(motivo || '').trim();
   if (!cleanMotivo) throw new Error('Informe o motivo da rejeição.');
   const alvo = await garantirPodeAprovar(id, currentUser);
+  const now = new Date().toISOString();
 
   await registrarAuditoriaUsuarios({
     acao: 'rejeicao_acesso_tecnico',
@@ -222,14 +223,17 @@ export async function rejeitarAcessoTecnico(id, currentUser, motivo) {
     metadata: { equipe: alvo.equipe, area_operacional: alvo.area_operacional, motivo: cleanMotivo, login_liberado: true }
   });
 
-  const { error } = await supabase
-    .from('usuarios')
-    .delete()
-    .eq('id', id)
-    .eq('perfil', 'tecnico')
-    .eq('status_aprovacao', 'pendente');
+  await removerUsuarioOuMarcarExcluido(id, {
+    ativo: false,
+    status_aprovacao: 'rejeitado',
+    rejeitado_por: currentUser?.id || null,
+    rejeitado_em: now,
+    motivo_rejeicao: cleanMotivo,
+    atualizado_em: now,
+    deleted_at: now,
+    deleted_by: currentUser?.id || null
+  }, (query) => query.eq('perfil', 'tecnico').eq('status_aprovacao', 'pendente'));
 
-  if (error) throw new Error(error.message);
   return { ...alvo, status_aprovacao: 'rejeitado', motivo_rejeicao: cleanMotivo, login_liberado: true };
 }
 
@@ -254,7 +258,12 @@ export async function criarUsuario(payload, currentUser) {
     .select(SELECT_FIELDS)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === '23505' || error.status === 409) {
+      throw new Error('Este login já existe em um usuário ativo ou pendente. Exclua ou rejeite o cadastro existente antes de reutilizar o login.');
+    }
+    throw new Error(error.message);
+  }
   await sincronizarSupervisorArea(data);
   return data;
 }
@@ -292,6 +301,7 @@ export async function reativarUsuario(id) {
 
 export async function excluirUsuario(id, deletedBy) {
   const alvo = await buscarUsuario(id);
+  const now = new Date().toISOString();
 
   await registrarAuditoriaUsuarios({
     acao: 'exclusao_usuario_permanente',
@@ -301,12 +311,13 @@ export async function excluirUsuario(id, deletedBy) {
     metadata: { usuario: alvo.usuario, nome: alvo.nome, perfil: alvo.perfil, login_liberado: true }
   });
 
-  const { error } = await supabase
-    .from('usuarios')
-    .delete()
-    .eq('id', id);
+  await removerUsuarioOuMarcarExcluido(id, {
+    ativo: false,
+    atualizado_em: now,
+    deleted_at: now,
+    deleted_by: deletedBy || null
+  });
 
-  if (error) throw new Error(error.message);
   return { ...alvo, excluido_permanentemente: true, login_liberado: true };
 }
 
@@ -373,6 +384,24 @@ async function registrarAuditoriaUsuarios({ acao, usuario_alvo_id, responsavel_i
   if (error && error.code !== '42P01') {
     console.warn('Falha ao registrar auditoria de usuários:', error.message);
   }
+}
+
+async function removerUsuarioOuMarcarExcluido(id, softDeletePayload, applyDeleteFilters = (query) => query) {
+  const deleteQuery = applyDeleteFilters(supabase.from('usuarios').delete().eq('id', id));
+  const { error: deleteError } = await deleteQuery;
+
+  if (!deleteError) return;
+
+  if (deleteError.code !== '23503') {
+    throw new Error(deleteError.message);
+  }
+
+  const { error: updateError } = await supabase
+    .from('usuarios')
+    .update(softDeletePayload)
+    .eq('id', id);
+
+  if (updateError) throw new Error(updateError.message);
 }
 
 async function sincronizarSupervisorArea(usuario) {
