@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase.js';
-import { alterarStatusAtivo, ATIVO_STATUS_VALUES } from './ativosService.js';
+import { alterarStatusAtivo, ATIVO_STATUS_VALUES, obterAtivo } from './ativosService.js';
 import { EQUIPES_TECNICAS, equipeTecnicaLabel } from './usuariosService.js';
 
 export const OS_STATUS = [
@@ -71,6 +71,10 @@ export function prioridadeTone(prioridade) {
 
 export function areaLabel(area) {
   return OS_AREAS.find((item) => item.value === area)?.label || area || '-';
+}
+
+export function sugerirEquipePorArea(area) {
+  return EQUIPES_TECNICAS.find((equipe) => equipe.area === area)?.value || '';
 }
 
 export function podeCriarOS(perfil) {
@@ -235,12 +239,19 @@ export async function listarResponsaveis() {
 }
 
 export async function criarOS(payload, user) {
-  const equipamentoFalha = String(payload.equipamento_falha || '').trim();
+  const ativo = payload.ativo_id ? await obterAtivo(payload.ativo_id) : null;
+  if (payload.ativo_id && !ativo) throw new Error('Ativo selecionado não encontrado.');
+
+  const area = ativo?.area_responsavel || payload.area;
+  const ebapId = ativo?.ebap_id || payload.ebap_id || atual.ebap_id || null;
+  const equipamentoTipo = ativo?.tipo || payload.equipamento_tipo || null;
+  const equipeResponsavel = payload.equipe_responsavel || payload.equipe || sugerirEquipePorArea(area) || user?.equipe || null;
+  const equipamentoFalha = String(ativo?.nome_operacional || payload.equipamento_falha || '').trim();
   if (equipamentoFalha.length < 3 || equipamentoFalha.length > 150) {
     throw new Error('Informe o equipamento com falha com 3 a 150 caracteres.');
   }
 
-  if (!OS_AREAS.some((area) => area.value === payload.area)) {
+  if (!OS_AREAS.some((item) => item.value === area)) {
     throw new Error('Selecione a área de atuação da OS.');
   }
 
@@ -251,21 +262,21 @@ export async function criarOS(payload, user) {
   const insertPayload = {
     numero,
     origem,
-    ebap_id: payload.ebap_id || null,
-    equipamento_id: null,
-    ativo_id: payload.ativo_id || null,
+    ebap_id: ebapId,
+    equipamento_id: ativo ? null : payload.equipamento_id || atual.equipamento_id || null,
+    ativo_id: ativo?.id || payload.ativo_id || atual.ativo_id || null,
     solicitante_id: payload.solicitante_id || user?.id || null,
     responsavel_id: payload.responsavel_id || null,
     titulo: payload.titulo,
     descricao: payload.descricao,
-    area: payload.area,
-    equipe_responsavel: payload.equipe_responsavel || payload.equipe || user?.equipe || null,
+    area,
+    equipe_responsavel: equipeResponsavel,
     tipo_manutencao: payload.tipo_manutencao || 'corretiva',
     prioridade: payload.prioridade || 'media',
     status: payload.status || (origem === 'operacao' ? 'pendente_cco' : 'solicitada_prefeitura'),
     supervisor_responsavel: supervisorArea?.supervisor_id || null,
     status_supervisor: 'aguardando_supervisor',
-    equipe: payload.equipe_responsavel || payload.equipe || user?.equipe || null,
+    equipe: equipeResponsavel,
     tecnico_responsavel: payload.tecnico_responsavel || payload.responsavel_id || null,
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
@@ -286,11 +297,15 @@ export async function criarOS(payload, user) {
     payload: {
       ...(payload.payload || {}),
       equipamento_falha: equipamentoFalha,
-      ativo_id: payload.ativo_id || null,
+      ativo_id: ativo?.id || payload.ativo_id || atual.ativo_id || null,
+      ativo_nome: ativo?.nome_operacional || null,
+      ativo_tipo: equipamentoTipo,
+      ativo_area: area,
+      ativo_ebap_id: ebapId,
       tipo_manutencao: payload.tipo_manutencao || 'corretiva',
       tecnico_solicitante: user?.perfil === 'tecnico' ? user.nome || user.usuario : null,
       equipe_solicitante: user?.perfil === 'tecnico' ? user.equipe || null : null,
-      equipe_executora: payload.equipe_responsavel || payload.equipe || user?.equipe || null,
+      equipe_executora: equipeResponsavel,
       roteamento_base: 'area'
     }
   };
@@ -358,23 +373,40 @@ async function buscarSupervisorPorArea(area) {
 
 export async function atualizarOS(id, payload, user) {
   const atual = await buscarOS(id);
+  const ativo = payload.ativo_id ? await obterAtivo(payload.ativo_id) : null;
+  if (payload.ativo_id && !ativo) throw new Error('Ativo selecionado não encontrado.');
+  const area = ativo?.area_responsavel || payload.area || null;
+  const ebapId = ativo?.ebap_id || payload.ebap_id || null;
+  const equipamentoTipo = ativo?.tipo || payload.equipamento_tipo || atual.payload?.ativo_tipo || null;
+  const equipamentoFalha = ativo?.nome_operacional || payload.equipamento_falha || atual.payload?.equipamento_falha || null;
+  const equipeResponsavel = payload.equipe_responsavel || payload.equipe || sugerirEquipePorArea(area) || null;
   const updatePayload = {
-    ebap_id: payload.ebap_id || null,
-    equipamento_id: payload.equipamento_id || null,
-    ativo_id: payload.ativo_id || null,
+    ebap_id: ebapId,
+    equipamento_id: null,
+    ativo_id: ativo?.id || payload.ativo_id || null,
     responsavel_id: payload.responsavel_id || null,
     titulo: payload.titulo,
     descricao: payload.descricao,
-    area: payload.area || null,
+    area,
     tipo_manutencao: payload.tipo_manutencao || atual.tipo_manutencao || 'corretiva',
     prioridade: payload.prioridade || 'media',
     status: payload.status || atual.status,
-    equipe: payload.equipe_responsavel || payload.equipe || null,
-    equipe_responsavel: payload.equipe_responsavel || payload.equipe || null,
+    equipe: equipeResponsavel,
+    equipe_responsavel: equipeResponsavel,
     data_programada: payload.data_programada || null,
     hora_programada: payload.hora_programada || null,
     turno: payload.turno || null,
-    payload: { ...(atual.payload || {}), ...(payload.payload || {}) }
+    payload: {
+      ...(atual.payload || {}),
+      ...(payload.payload || {}),
+      equipamento_falha: equipamentoFalha,
+      ativo_id: ativo?.id || payload.ativo_id || null,
+      ativo_nome: ativo?.nome_operacional || atual.payload?.ativo_nome || null,
+      ativo_tipo: equipamentoTipo,
+      ativo_area: area,
+      ativo_ebap_id: ebapId,
+      equipe_executora: equipeResponsavel
+    }
   };
 
   const { data, error } = await supabase.from('ordens_servico').update(updatePayload).eq('id', id).select(OS_SELECT).single();

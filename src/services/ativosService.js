@@ -9,7 +9,7 @@ export const ATIVO_STATUS = [
 
 export const ATIVO_STATUS_VALUES = ATIVO_STATUS.map((status) => status.value);
 
-export const ATIVO_TIPOS = ['Bomba', 'CCM', 'Gerador', 'Comporta', 'Rastelo', 'Comporta de Rastelo', 'Painel Elétrico', 'Sensor', 'Atuador', 'Civil', 'Outros'];
+export const ATIVO_TIPOS = ['Bomba', 'Gerador', 'CCM', 'Eletrocentro', 'Monovia', 'Comporta', 'Rastelo', 'Outros'];
 
 const LEGACY_STATUS_MAP = {
   operando_restricao: 'atencao',
@@ -101,6 +101,19 @@ export async function listarAtivosPorEbap(ebapId) {
 
   if (error) throw new Error(error.message);
   return data || [];
+}
+
+export async function obterAtivo(id) {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('ativos')
+    .select(ATIVO_SELECT)
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data || null;
 }
 
 export async function obterDashboardAtivos() {

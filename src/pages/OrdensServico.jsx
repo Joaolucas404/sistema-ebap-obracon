@@ -19,7 +19,8 @@ import {
   OS_AREAS,
   OS_PRIORIDADES,
   podeCriarOS,
-  podeExcluirOS
+  podeExcluirOS,
+  sugerirEquipePorArea
 } from '../services/osService.js';
 import { ativoStatusLabel, listarAtivosPorEbap } from '../services/ativosService.js';
 
@@ -27,6 +28,7 @@ const emptyForm = {
   ebap_id: '',
   ativo_id: '',
   equipamento_falha: '',
+  equipamento_tipo: '',
   tipo_manutencao: 'corretiva',
   titulo: '',
   descricao: '',
@@ -57,6 +59,7 @@ export default function OrdensServico() {
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / filters.pageSize)), [count, filters.pageSize]);
+  const ativoSelecionado = useMemo(() => ativosEbap.find((item) => item.id === form.ativo_id) || null, [ativosEbap, form.ativo_id]);
   const canCreate = podeCriarOS(user?.perfil);
   const canDelete = podeExcluirOS(user?.perfil);
   const userAreaOperacional = user?.area_operacional || user?.area_supervisao || '';
@@ -123,7 +126,13 @@ export default function OrdensServico() {
   }, [searchParams, canCreate]);
 
   function updateForm(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const next = { ...current, [field]: value };
+      if (field === 'area' && value && !current.equipe_responsavel) {
+        next.equipe_responsavel = sugerirEquipePorArea(value);
+      }
+      return next;
+    });
   }
 
   function openCreate() {
@@ -139,12 +148,18 @@ export default function OrdensServico() {
       ...current,
       ativo_id: ativoId,
       equipamento_falha: ativo ? ativo.nome_operacional : current.equipamento_falha,
-      area: ativo?.area_responsavel || current.area
+      equipamento_tipo: ativo?.tipo || '',
+      area: ativo?.area_responsavel || current.area,
+      equipe_responsavel: ativo?.area_responsavel ? sugerirEquipePorArea(ativo.area_responsavel) || current.equipe_responsavel : current.equipe_responsavel
     }));
   }
 
   async function handleCreate(event) {
     event.preventDefault();
+    if (!form.ativo_id) {
+      setError('Selecione um ativo cadastrado como equipamento com falha.');
+      return;
+    }
     const equipamentoFalha = form.equipamento_falha.trim();
     if (equipamentoFalha.length < 3 || equipamentoFalha.length > 150) {
       setError('Informe o equipamento com falha com 3 a 150 caracteres.');
@@ -282,7 +297,7 @@ export default function OrdensServico() {
               <select
                 className="form-control"
                 value={form.ebap_id}
-                onChange={(event) => setForm((current) => ({ ...current, ebap_id: event.target.value, ativo_id: '', equipamento_falha: '' }))}
+                onChange={(event) => setForm((current) => ({ ...current, ebap_id: event.target.value, ativo_id: '', equipamento_falha: '', equipamento_tipo: '', area: '', equipe_responsavel: '' }))}
                 required
               >
                 <option value="">Selecione...</option>
@@ -295,7 +310,7 @@ export default function OrdensServico() {
             </label>
             <label className="field-label">
               Equipamento com falha
-              <select className="form-control mb-2" value={form.ativo_id} onChange={(event) => handleAtivoChange(event.target.value)}>
+              <select className="form-control mb-2" value={form.ativo_id} onChange={(event) => handleAtivoChange(event.target.value)} disabled={!form.ebap_id} required>
                 <option value="">Selecionar ativo cadastrado...</option>
                 {ativosEbap.map((ativo) => (
                   <option key={ativo.id} value={ativo.id}>
@@ -311,7 +326,12 @@ export default function OrdensServico() {
                 maxLength={150}
                 placeholder="Ex.: Bomba 02, painel elétrico, comporta norte..."
                 required
+                readOnly={Boolean(ativoSelecionado)}
               />
+            </label>
+            <label className="field-label">
+              Tipo de equipamento
+              <input className="form-control" value={form.equipamento_tipo || ativoSelecionado?.tipo || ''} readOnly placeholder="Preenchido pelo ativo selecionado" />
             </label>
             <label className="field-label">
               Tipo de manutenção
@@ -333,7 +353,7 @@ export default function OrdensServico() {
             </label>
             <label className="field-label">
               Área de atuação
-              <select className="form-control" value={form.area} onChange={(event) => updateForm('area', event.target.value)} required>
+              <select className="form-control" value={form.area} onChange={(event) => updateForm('area', event.target.value)} required disabled={Boolean(ativoSelecionado)}>
                 <option value="">Selecione...</option>
                 {OS_AREAS.map((area) => (
                   <option key={area.value} value={area.value}>

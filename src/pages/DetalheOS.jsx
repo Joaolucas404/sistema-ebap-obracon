@@ -142,7 +142,10 @@ export default function DetalheOS() {
   function openEdit() {
     setForm({
       ebap_id: os.ebap_id || '',
+      ativo_id: os.ativo_id || '',
       equipamento_id: os.equipamento_id || '',
+      equipamento_falha: os.ativo?.nome_operacional || os.payload?.equipamento_falha || '',
+      equipamento_tipo: os.ativo?.tipo || os.payload?.ativo_tipo || '',
       titulo: os.titulo || '',
       descricao: os.descricao || '',
       prioridade: os.prioridade || 'media',
@@ -557,7 +560,7 @@ export default function DetalheOS() {
       <Modal open={modal === 'edit'} title="Editar OS" onClose={() => setModal(null)}>
         <form className="grid gap-4" onSubmit={handleEdit}>
           <div className="grid gap-4 md:grid-cols-2">
-            <OSEquipmentSelector ebapId={form.ebap_id} equipamentoId={form.equipamento_id} onChange={(patch) => setForm((current) => ({ ...current, ...patch }))} />
+            <OSEquipmentSelector ebapId={form.ebap_id} ativoId={form.ativo_id} equipamentoId={form.equipamento_id} onChange={(patch) => setForm((current) => ({ ...current, ...patch }))} />
             <label className="field-label">
               Prioridade
               <select className="form-control" value={form.prioridade} onChange={(event) => updateForm('prioridade', event.target.value)}>

@@ -66,7 +66,7 @@ export async function listarModelosRelatorio({ area = '', tipoManutencao = '', e
 
   if (tipoManutencao) query = query.eq('tipo_manutencao', tipoManutencao);
   if (area) query = query.or(`area.eq.${area},area.is.null`);
-  if (equipamentoTipo) query = query.or(`equipamento_tipo.eq.${equipamentoTipo},equipamento_tipo.eq.Outros`);
+  if (equipamentoTipo) query = query.in('equipamento_tipo', [equipamentoTipo, 'Outros']);
   if (search) {
     const value = `%${search}%`;
     query = query.or(`titulo.ilike.${value},equipamento_tipo.ilike.${value},resumo.ilike.${value}`);

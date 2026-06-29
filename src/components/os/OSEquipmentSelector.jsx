@@ -1,24 +1,37 @@
 import { useEffect, useState } from 'react';
-import { listarEbaps, listarEquipamentosPorEbap } from '../../services/osService.js';
+import { listarEbaps } from '../../services/osService.js';
+import { ativoStatusLabel, listarAtivosPorEbap } from '../../services/ativosService.js';
 
-export default function OSEquipmentSelector({ ebapId, equipamentoId, onChange, disabled = false }) {
+export default function OSEquipmentSelector({ ebapId, ativoId, equipamentoId, onChange, disabled = false }) {
   const [ebaps, setEbaps] = useState([]);
-  const [equipamentos, setEquipamentos] = useState([]);
+  const [ativos, setAtivos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const selectedId = ativoId || equipamentoId || '';
 
   useEffect(() => {
     listarEbaps().then(setEbaps).catch(() => setEbaps([]));
   }, []);
 
   useEffect(() => {
-    setEquipamentos([]);
+    setAtivos([]);
     if (!ebapId) return;
     setLoading(true);
-    listarEquipamentosPorEbap(ebapId)
-      .then(setEquipamentos)
-      .catch(() => setEquipamentos([]))
+    listarAtivosPorEbap(ebapId)
+      .then(setAtivos)
+      .catch(() => setAtivos([]))
       .finally(() => setLoading(false));
   }, [ebapId]);
+
+  function handleAtivoChange(nextId) {
+    const ativo = ativos.find((item) => item.id === nextId);
+    onChange({
+      ativo_id: nextId,
+      equipamento_id: null,
+      equipamento_falha: ativo?.nome_operacional || '',
+      equipamento_tipo: ativo?.tipo || '',
+      area: ativo?.area_responsavel || ''
+    });
+  }
 
   return (
     <>
@@ -28,7 +41,7 @@ export default function OSEquipmentSelector({ ebapId, equipamentoId, onChange, d
           className="form-control"
           value={ebapId || ''}
           disabled={disabled}
-          onChange={(event) => onChange({ ebap_id: event.target.value, equipamento_id: '' })}
+          onChange={(event) => onChange({ ebap_id: event.target.value, ativo_id: '', equipamento_id: null, equipamento_falha: '', equipamento_tipo: '', area: '' })}
         >
           <option value="">Selecione...</option>
           {ebaps.map((ebap) => (
@@ -40,18 +53,17 @@ export default function OSEquipmentSelector({ ebapId, equipamentoId, onChange, d
       </label>
 
       <label className="field-label">
-        Equipamento
+        Equipamento com falha
         <select
           className="form-control"
-          value={equipamentoId || ''}
+          value={selectedId}
           disabled={disabled || !ebapId || loading}
-          onChange={(event) => onChange({ equipamento_id: event.target.value })}
+          onChange={(event) => handleAtivoChange(event.target.value)}
         >
-          <option value="">{loading ? 'Carregando...' : 'Selecione...'}</option>
-          {equipamentos.map((equipamento) => (
-            <option key={equipamento.id} value={equipamento.id}>
-              {equipamento.tag ? `${equipamento.tag} - ` : ''}
-              {equipamento.nome}
+          <option value="">{loading ? 'Carregando...' : 'Selecione um ativo cadastrado...'}</option>
+          {ativos.map((ativo) => (
+            <option key={ativo.id} value={ativo.id}>
+              {ativo.nome_operacional} - {ativo.tipo} - {ativoStatusLabel(ativo.status_operacional)}
             </option>
           ))}
         </select>

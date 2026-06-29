@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { normalizePerfil } from '../config/permissions.js';
+import { ATIVO_TIPOS } from './ativosService.js';
 
 const MODELO_SELECT = `
   *,
@@ -15,7 +16,7 @@ export const MODELO_AREAS = [
 ];
 
 export const MODELO_TIPOS_MANUTENCAO = ['preventiva', 'corretiva', 'preditiva'];
-export const MODELO_TIPOS_EQUIPAMENTO = ['Bomba', 'Gerador', 'CCM', 'Monovia', 'Eletrocentro', 'Comporta', 'Rastelo', 'Outros'];
+export const MODELO_TIPOS_EQUIPAMENTO = ATIVO_TIPOS;
 
 function orderCampos(campos = []) {
   return [...campos].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
