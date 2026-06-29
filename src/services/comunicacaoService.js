@@ -37,6 +37,8 @@ const MENSAGEM_SELECT = `
   leituras:comunicacao_leituras(*)
 `;
 
+const USUARIO_COMUNICACAO_SELECT = 'id,nome,usuario,perfil,setor,area_operacional,area_supervisao,equipe,ativo,status_aprovacao,deleted_at';
+
 function safeName(file) {
   return String(file?.name || 'arquivo').replace(/[^\w.\-]+/g, '_');
 }
@@ -116,6 +118,9 @@ export async function listarConversasComunicacao(user) {
 
   return (data || []).filter((conversa) => {
     if (['gerencia', 'diretoria'].includes(role)) return true;
+    if (conversa.tipo === 'direta') {
+      return (conversa.membros || []).some((membro) => membro.usuario_id === user?.id);
+    }
     if (!conversa.equipe && !conversa.area) return true;
     if (conversa.equipe && conversa.equipe === equipe) return true;
     if (conversa.area && [area, role].includes(conversa.area)) return true;
@@ -123,6 +128,103 @@ export async function listarConversasComunicacao(user) {
     if (conversa.nome === 'CCO' && ['cco', 'supervisor', 'gerencia', 'diretoria'].includes(role)) return true;
     return false;
   });
+}
+
+export async function buscarPessoasComunicacao(search = '', currentUser) {
+  const term = String(search || '').trim();
+  if (term.length < 2) return [];
+
+  const value = `%${term}%`;
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select(USUARIO_COMUNICACAO_SELECT)
+    .is('deleted_at', null)
+    .eq('ativo', true)
+    .or(`nome.ilike.${value},usuario.ilike.${value}`)
+    .order('nome', { ascending: true })
+    .limit(12);
+
+  if (error) throw new Error(error.message);
+  return (data || []).filter((usuario) => usuario.id !== currentUser?.id);
+}
+
+export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
+  if (!user?.id) throw new Error('Usuário não identificado.');
+  if (!outroUsuarioId) throw new Error('Selecione uma pessoa.');
+
+  const ids = [user.id, outroUsuarioId].sort();
+  const directKey = ids.join(':');
+
+  const { data: existente, error: existenteError } = await supabase
+    .from('comunicacao_conversas')
+    .select(CONVERSA_SELECT)
+    .eq('tipo', 'direta')
+    .eq('metadata->>direct_key', directKey)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (existenteError) throw new Error(existenteError.message);
+  if (existente) return existente;
+
+  const { data: outro, error: outroError } = await supabase
+    .from('usuarios')
+    .select(USUARIO_COMUNICACAO_SELECT)
+    .eq('id', outroUsuarioId)
+    .maybeSingle();
+  if (outroError) throw new Error(outroError.message);
+  if (!outro) throw new Error('Pessoa não encontrada.');
+
+  const nome = outro.nome || outro.usuario || 'Conversa direta';
+  const { data: conversa, error } = await supabase
+    .from('comunicacao_conversas')
+    .insert({
+      tipo: 'direta',
+      nome,
+      descricao: `Conversa direta com ${nome}`,
+      criado_por: user.id,
+      metadata: { direct_key: directKey, participantes: ids }
+    })
+    .select(CONVERSA_SELECT)
+    .single();
+  if (error) throw new Error(error.message);
+
+  const membros = [
+    {
+      conversa_id: conversa.id,
+      usuario_id: user.id,
+      perfil: user.perfil || null,
+      equipe: user.equipe || null,
+      area: user.area_operacional || user.area_supervisao || null,
+      papel: 'membro'
+    },
+    {
+      conversa_id: conversa.id,
+      usuario_id: outro.id,
+      perfil: outro.perfil || null,
+      equipe: outro.equipe || null,
+      area: outro.area_operacional || outro.area_supervisao || null,
+      papel: 'membro'
+    }
+  ];
+
+  const { error: membrosError } = await supabase.from('comunicacao_membros').upsert(membros, { onConflict: 'conversa_id,usuario_id' });
+  if (membrosError) throw new Error(membrosError.message);
+
+  return {
+    ...conversa,
+    membros: membros.map((membro) => ({
+      ...membro,
+      usuario: membro.usuario_id === outro.id ? outro : {
+        id: user.id,
+        nome: user.nome,
+        usuario: user.usuario,
+        perfil: user.perfil,
+        setor: user.setor,
+        area_operacional: user.area_operacional,
+        area_supervisao: user.area_supervisao,
+        equipe: user.equipe
+      }
+    }))
+  };
 }
 
 export async function listarMensagensComunicacao(conversaId, limit = 80) {

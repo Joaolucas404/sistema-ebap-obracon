@@ -20,6 +20,7 @@ import { useAuthStore } from '../store/authStore.js';
 import { supabase } from '../lib/supabase.js';
 import {
   broadcastDigitando,
+  buscarPessoasComunicacao,
   criarCanalDigitando,
   criarCanalPresenca,
   enviarArquivoComunicacao,
@@ -29,6 +30,7 @@ import {
   listarConversasComunicacao,
   listarMensagensComunicacao,
   marcarMensagensComoLidas,
+  obterOuCriarConversaDireta,
   obterUrlArquivoComunicacao,
   perfilComunicacao,
   salvarPerfilComunicacao,
@@ -81,6 +83,8 @@ export default function Comunicacao() {
   const [mensagens, setMensagens] = useState([]);
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
+  const [peopleResults, setPeopleResults] = useState([]);
+  const [searchingPeople, setSearchingPeople] = useState(false);
   const [presenceState, setPresenceState] = useState({});
   const [status, setStatus] = useState('online');
   const [typing, setTyping] = useState(null);
@@ -141,6 +145,34 @@ export default function Comunicacao() {
   useEffect(() => {
     if (selected?.id) loadMensagens(selected.id);
   }, [selected?.id]);
+
+  useEffect(() => {
+    const term = search.trim();
+    if (term.length < 2) {
+      setPeopleResults([]);
+      return undefined;
+    }
+
+    let alive = true;
+    setSearchingPeople(true);
+    const timer = window.setTimeout(() => {
+      buscarPessoasComunicacao(term, user)
+        .then((rows) => {
+          if (alive) setPeopleResults(rows);
+        })
+        .catch(() => {
+          if (alive) setPeopleResults([]);
+        })
+        .finally(() => {
+          if (alive) setSearchingPeople(false);
+        });
+    }, 250);
+
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [search, user?.id]);
 
   useEffect(() => {
     const channel = criarCanalPresenca(user, status, {
@@ -235,6 +267,22 @@ export default function Comunicacao() {
       setToast({ message: 'Foto de perfil atualizada.', tone: 'green' });
     } catch (err) {
       setToast({ message: err.message || 'Falha ao atualizar foto de perfil.', tone: 'red' });
+    }
+  }
+
+  async function openDirectConversation(person) {
+    try {
+      const conversa = await obterOuCriarConversaDireta(person.id, user);
+      setConversas((current) => {
+        const exists = current.some((item) => item.id === conversa.id);
+        return exists ? current.map((item) => (item.id === conversa.id ? conversa : item)) : [conversa, ...current];
+      });
+      setSelectedId(conversa.id);
+      setActiveTab('conversas');
+      setSearch('');
+      setPeopleResults([]);
+    } catch (err) {
+      setToast({ message: err.message || 'Falha ao abrir conversa direta.', tone: 'red' });
     }
   }
 
@@ -339,8 +387,32 @@ export default function Comunicacao() {
 
           <label className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan-200" size={18} />
-            <input className="form-control pl-10" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar conversa..." />
+            <input className="form-control pl-10" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar conversa, nome ou login..." />
           </label>
+
+          {search.trim().length >= 2 && (
+            <section className="rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-xs font-black uppercase tracking-wide text-cyan-100">Pessoas</h3>
+                {searchingPeople && <span className="text-[11px] font-black uppercase text-slate-400">Buscando...</span>}
+              </div>
+              <div className="grid max-h-56 gap-2 overflow-auto pr-1">
+                {peopleResults.length ? peopleResults.map((person) => (
+                  <button key={person.id} type="button" className="rounded-xl border border-cyan-300/10 bg-navy-950/55 p-3 text-left hover:border-cyan-300/25" onClick={() => openDirectConversation(person)}>
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-xs font-black text-cyan-50">{initials(person.nome || person.usuario)}</span>
+                      <span className="min-w-0">
+                        <strong className="block truncate text-sm text-white">{person.nome || person.usuario}</strong>
+                        <small className="block truncate text-xs font-bold text-slate-400">@{person.usuario} • {person.equipe || person.area_operacional || person.perfil || '-'}</small>
+                      </span>
+                    </div>
+                  </button>
+                )) : (
+                  <div className="rounded-xl bg-navy-950/55 p-3 text-sm font-bold text-slate-400">Nenhuma pessoa encontrada.</div>
+                )}
+              </div>
+            </section>
+          )}
 
           {activeTab !== 'arquivos' ? (
             <div className="grid max-h-[520px] gap-2 overflow-auto pr-1">
