@@ -10,6 +10,52 @@ function orderCampos(campos = []) {
   return [...campos].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 }
 
+function normalizeChecklistResposta(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return {
+      status: value.status || '',
+      observacao: value.observacao || '',
+      medicoes: value.medicoes || {}
+    };
+  }
+
+  if (value === true) return { status: 'conforme', observacao: '', medicoes: {} };
+  if (typeof value === 'string') return { status: value, observacao: '', medicoes: {} };
+  return { status: '', observacao: '', medicoes: {} };
+}
+
+function resumoChecklist(modelo, respostas = {}) {
+  const checklistCampos = (modelo.campos || []).filter((campo) => campo.grupo === 'checklist');
+  const resumo = {
+    total: checklistCampos.length,
+    conformes: 0,
+    atencao: 0,
+    nao_conformes: 0,
+    pendentes: 0
+  };
+  const normalized = { ...respostas };
+
+  checklistCampos.forEach((campo) => {
+    const resposta = normalizeChecklistResposta(respostas[campo.chave]);
+    normalized[campo.chave] = resposta;
+
+    if (campo.obrigatorio && !resposta.status) {
+      throw new Error(`Informe o status do item "${campo.label}".`);
+    }
+
+    if ((resposta.status === 'atencao' || resposta.status === 'nao_conforme') && !String(resposta.observacao || '').trim()) {
+      throw new Error(`Descreva a ocorrência do item "${campo.label}".`);
+    }
+
+    if (resposta.status === 'conforme') resumo.conformes += 1;
+    else if (resposta.status === 'atencao') resumo.atencao += 1;
+    else if (resposta.status === 'nao_conforme') resumo.nao_conformes += 1;
+    else resumo.pendentes += 1;
+  });
+
+  return { resumo, respostas: normalized };
+}
+
 export async function listarModelosRelatorio({ area = '', tipoManutencao = '', equipamentoTipo = '', search = '' } = {}) {
   let query = supabase
     .from('modelos_relatorio')
@@ -20,6 +66,7 @@ export async function listarModelosRelatorio({ area = '', tipoManutencao = '', e
 
   if (tipoManutencao) query = query.eq('tipo_manutencao', tipoManutencao);
   if (area) query = query.or(`area.eq.${area},area.is.null`);
+  if (equipamentoTipo) query = query.or(`equipamento_tipo.eq.${equipamentoTipo},equipamento_tipo.eq.Outros`);
   if (search) {
     const value = `%${search}%`;
     query = query.or(`titulo.ilike.${value},equipamento_tipo.ilike.${value},resumo.ilike.${value}`);
@@ -61,6 +108,7 @@ export async function salvarRelatorioTecnicoOS(osId, payload, user, status = 'ra
   if (!payload?.modelo_id) throw new Error('Selecione o modelo de relatório técnico.');
 
   const modelo = await obterModeloRelatorio(payload.modelo_id);
+  const checklist = resumoChecklist(modelo, payload.respostas || {});
   const fotoCampos = modelo.campos.filter((campo) => campo.tipo === 'foto');
   const fotosObrigatorias = fotoCampos.map((campo) => ({
     chave: campo.chave,
@@ -77,7 +125,10 @@ export async function salvarRelatorioTecnicoOS(osId, payload, user, status = 'ra
     ativo_nome: payload.ativo_nome || modelo.equipamento_tipo,
     tipo_manutencao: modelo.tipo_manutencao,
     status,
-    respostas: payload.respostas || {},
+    respostas: {
+      ...checklist.respostas,
+      _resumo_checklist: checklist.resumo
+    },
     fotos_obrigatorias: fotosObrigatorias,
     observacoes: payload.observacoes || null,
     enviado_por: user?.id || null,
@@ -104,6 +155,7 @@ export async function salvarRelatorioTecnicoOS(osId, payload, user, status = 'ra
       modelo_codigo: modelo.codigo,
       tipo_manutencao: modelo.tipo_manutencao,
       equipamento_tipo: modelo.equipamento_tipo,
+      resumo_checklist: checklist.resumo,
       status
     }
   });
@@ -129,5 +181,9 @@ export async function salvarRelatorioTecnicoOS(osId, payload, user, status = 'ra
 export function resumoRelatorioTecnico(resposta) {
   if (!resposta) return 'Nenhum relatório técnico vinculado.';
   const modelo = resposta.modelo?.titulo || resposta.ativo_nome || 'Relatório técnico';
+  const resumo = resposta.respostas?._resumo_checklist;
+  if (resumo?.total) {
+    return `${modelo} - ${resumo.conformes || 0} conformes, ${resumo.atencao || 0} em atenção, ${resumo.nao_conformes || 0} não conformes`;
+  }
   return `${modelo} - ${resposta.status?.replaceAll('_', ' ') || 'rascunho'}`;
 }

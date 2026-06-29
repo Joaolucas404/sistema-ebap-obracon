@@ -24,12 +24,13 @@ const labelMaps = {
     validacao_supervisor: 'Em validacao do Supervisor',
     enviada_prefeitura: 'Enviada para Prefeitura',
     aguardando_validacao_prefeitura: 'Aguardando validacao da Prefeitura',
-    nao_conforme: 'Nao conforme',
     concluida_arquivada: 'Concluida / Arquivada',
     operando: 'Operando',
     atencao: 'Atenção',
     parado: 'Parado',
-    em_manutencao: 'Em Manutenção'
+    em_manutencao: 'Em Manutenção',
+    conforme: 'Conforme',
+    nao_conforme: 'Não Conforme'
   },
   prioridade: {
     baixa: 'Baixa',
@@ -121,6 +122,35 @@ function groupedOsPhotos(photos = []) {
     durante: photos.filter((photo) => photoStage(photo) === 'durante'),
     depois: photos.filter((photo) => photoStage(photo) === 'depois')
   };
+}
+
+function technicalChecklistItems(relatorioTecnico, photos = []) {
+  const respostas = relatorioTecnico?.respostas || {};
+  return Object.entries(respostas)
+    .filter(([chave, resposta]) => !chave.startsWith('_') && resposta && typeof resposta === 'object' && resposta.status)
+    .map(([chave, resposta]) => {
+      const campo = relatorioTecnico?.modelo?.campos?.find?.((item) => item.chave === chave);
+      const label = campo?.label || chave.replaceAll('_', ' ');
+      const foto = photos.find((photo) => {
+        const text = `${photo.categoria || ''} ${photo.legenda || ''} ${photo.nome_original || ''}`.toLowerCase();
+        return text.includes('checklist') && (text.includes(label.toLowerCase()) || text.includes(chave.toLowerCase()));
+      });
+
+      return {
+        chave,
+        label,
+        status: resposta.status,
+        observacao: resposta.observacao || '',
+        medicoes: resposta.medicoes || {},
+        foto
+      };
+    });
+}
+
+function formatMedicoes(medicoes = {}) {
+  const entries = Object.entries(medicoes).filter(([, value]) => String(value || '').trim());
+  if (!entries.length) return '-';
+  return entries.map(([key, value]) => `${pretty(key)}: ${value}`).join('\n');
 }
 
 function Field({ label, value, wide = false }) {
@@ -510,6 +540,59 @@ function PdfStyles() {
           line-height: 1.35;
           white-space: pre-wrap;
         }
+        .pdf-checklist-result {
+          display: grid;
+          gap: 8px;
+        }
+        .pdf-checklist-result article {
+          border: 1px solid #dbe4f0;
+          border-radius: 10px;
+          background: #f8fbff;
+          padding: 9px;
+          page-break-inside: avoid;
+        }
+        .pdf-checklist-result header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 7px;
+        }
+        .pdf-checklist-result h3 {
+          margin: 0;
+          color: #0B2D6B;
+          font-size: 10px;
+          text-transform: none;
+        }
+        .pdf-checklist-result p {
+          margin: 4px 0;
+          color: #172033;
+          font-size: 10px;
+          line-height: 1.35;
+          white-space: pre-wrap;
+        }
+        .pdf-status-conforme,
+        .pdf-status-atencao,
+        .pdf-status-nao_conforme {
+          border-radius: 999px;
+          padding: 4px 7px;
+          font-size: 8px;
+          font-weight: 800;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .pdf-status-conforme {
+          background: #dcfce7;
+          color: #166534;
+        }
+        .pdf-status-atencao {
+          background: #fef3c7;
+          color: #92400e;
+        }
+        .pdf-status-nao_conforme {
+          background: #fee2e2;
+          color: #991b1b;
+        }
         .pdf-os-timeline {
           display: grid;
           gap: 7px;
@@ -663,6 +746,7 @@ function OsDocument({ data }) {
   const relatorioTecnico = data?.relatorioTecnico;
   const respostas = relatorioTecnico?.respostas || {};
   const fotos = groupedOsPhotos(data?.fotos || []);
+  const checklistItems = technicalChecklistItems(relatorioTecnico, data?.fotos || []);
   const tecnico = {
     diagnostico: respostas.diagnostico || respostas['diagnóstico'] || respostas.descricao_falha || os.payload?.equipamento_falha || os.descricao,
     servico: respostas.servico_executado || respostas['serviço_executado'] || respostas.execucao || os.relatorio_tecnico,
@@ -707,6 +791,26 @@ function OsDocument({ data }) {
           <div className="pdf-tech-card"><strong>Pendências</strong><p>{tecnico.pendencias || '-'}</p></div>
           <div className="pdf-tech-card"><strong>Status final do equipamento</strong><p>{tecnico.statusFinal || '-'}</p></div>
         </div>
+      </Section>
+
+      <Section title="Checklist técnico preenchido">
+        {checklistItems.length ? (
+          <div className="pdf-checklist-result">
+            {checklistItems.map((item) => (
+              <article key={item.chave}>
+                <header>
+                  <h3>{item.label}</h3>
+                  <span className={`pdf-status-${item.status}`}>{pretty(item.status, 'status')}</span>
+                </header>
+                <p><strong>Observação:</strong> {item.observacao || '-'}</p>
+                <p><strong>Medições:</strong>{'\n'}{formatMedicoes(item.medicoes)}</p>
+                <p><strong>Foto vinculada:</strong> {item.foto ? (item.foto.legenda || item.foto.nome_original || 'Sim') : 'Não'}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="pdf-muted">Nenhum item de checklist preenchido.</p>
+        )}
       </Section>
 
       <Section title="Técnicos participantes">

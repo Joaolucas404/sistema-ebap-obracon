@@ -231,7 +231,7 @@ export default function DetalheOS() {
 
         const fotos = Object.entries(relatorioTecnico.fotos || {}).filter(([, foto]) => foto?.file);
         for (const [chave, foto] of fotos) {
-          await uploadAnexoOS(id, foto.file, user, foto.legenda || foto.label || chave, 'relatorio_tecnico_foto');
+          await uploadAnexoOS(id, foto.file, user, foto.legenda || foto.label || chave, foto.categoria || 'relatorio_tecnico_foto');
         }
       }
 
