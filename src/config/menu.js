@@ -13,6 +13,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   MapPin,
+  MessageCircle,
   PackageCheck,
   Settings,
   ShieldCheck,
@@ -27,6 +28,7 @@ export const MENU_GROUPS = ['Operacao', 'Infraestrutura', 'Seguranca', 'Administ
 
 export const MENU_ITEMS = [
   { key: 'notificacoes', group: 'Operacao', label: 'Alertas', path: '/notificacoes', icon: BellRing, description: 'Central de notificacoes' },
+  { key: 'comunicacao', group: 'Operacao', label: 'Comunicação', path: '/comunicacao', icon: MessageCircle, description: 'Conversas, grupos e arquivos operacionais' },
   { key: 'dashboard', group: 'Operacao', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visao geral das EBAPs' },
   { key: 'dashboardOS', group: 'Operacao', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de servico' },
   { key: 'os', group: 'Operacao', label: 'Ordem de Servico', path: '/os', icon: Wrench, description: 'Abertura e acompanhamento' },

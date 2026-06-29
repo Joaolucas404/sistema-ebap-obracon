@@ -127,8 +127,12 @@ export default function Compras() {
   async function handleSaveCompra(event) {
     event.preventDefault();
     try {
-      await salvarSolicitacao(compraForm, user);
-      setToast({ message: 'Solicitacao de compra salva.', tone: 'green' });
+      const saved = await salvarSolicitacao(compraForm, user);
+      console.log('[Compras] solicitação salva e listagem recarregada', {
+        tabela: 'compras',
+        compra: saved
+      });
+      setToast({ message: saved?.numero ? `Solicitação de compra ${saved.numero} salva.` : 'Solicitação de compra salva.', tone: 'green' });
       closeModal();
       setActiveTab('solicitacoes');
     } catch (err) {

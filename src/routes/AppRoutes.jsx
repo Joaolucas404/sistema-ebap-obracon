@@ -12,6 +12,7 @@ const Ativos = lazy(() => import('../pages/Ativos.jsx'));
 const CcoAnaliseOS = lazy(() => import('../pages/CcoAnaliseOS.jsx'));
 const CcoRelatoriosDiarios = lazy(() => import('../pages/CcoRelatoriosDiarios.jsx'));
 const Config = lazy(() => import('../pages/Config.jsx'));
+const Comunicacao = lazy(() => import('../pages/Comunicacao.jsx'));
 const Compras = lazy(() => import('../pages/Compras.jsx'));
 const Dashboard = lazy(() => import('../pages/Dashboard.jsx'));
 const DetalheOS = lazy(() => import('../pages/DetalheOS.jsx'));
@@ -149,6 +150,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="notificacoes" />}>
         <Route element={<AppLayout />}>
           <Route path="/notificacoes" element={<Notificacoes />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="comunicacao" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/comunicacao" element={<Comunicacao />} />
         </Route>
       </Route>
 

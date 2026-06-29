@@ -38,8 +38,8 @@ export const useComprasStore = create((set, get) => ({
   setFilters: (patch) => set((state) => ({ filters: { ...state.filters, ...patch, page: patch.page || 1 } })),
   resetFilters: () => set({ filters: defaultFilters }),
 
-  carregarTudo: async () => {
-    const { filters } = get();
+  carregarTudo: async (overrideFilters = null) => {
+    const filters = overrideFilters || get().filters;
     set({ loading: true, error: '' });
     try {
       const [dashboard, comprasResult, fornecedores, ebaps, itensAlmox, historico] = await Promise.all([
@@ -59,6 +59,7 @@ export const useComprasStore = create((set, get) => ({
         ebaps,
         itensAlmox,
         historico,
+        ...(overrideFilters ? { filters: overrideFilters } : {}),
         loading: false
       });
     } catch (err) {
@@ -69,9 +70,11 @@ export const useComprasStore = create((set, get) => ({
   salvarSolicitacao: async (payload, user) => {
     set({ saving: true, error: '' });
     try {
-      await salvarSolicitacaoCompra(payload, user);
-      await get().carregarTudo();
+      const saved = await salvarSolicitacaoCompra(payload, user);
+      const filters = { ...defaultFilters };
+      await get().carregarTudo(filters);
       set({ saving: false });
+      return saved;
     } catch (err) {
       set({ error: err.message || 'Falha ao salvar solicitacao.', saving: false });
       throw err;

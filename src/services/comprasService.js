@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase.js';
 
 export const COMPRA_STATUS = [
+  { value: 'rascunho', label: 'Rascunho' },
+  { value: 'enviada', label: 'Enviada' },
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'em_cotacao', label: 'Em cotacao' },
   { value: 'aguardando_aprovacao', label: 'Aguardando aprovacao' },
@@ -128,6 +130,13 @@ export async function listarCompras(filters = {}) {
   }
 
   const { data, error, count } = await query;
+  console.log('[Compras] SELECT public.compras', {
+    tabela: 'compras',
+    filters,
+    count,
+    retornadas: data?.length || 0,
+    error
+  });
   if (error) throw error;
   return { data: data || [], count: count || 0 };
 }
@@ -191,7 +200,41 @@ export async function salvarSolicitacaoCompra(payload, user) {
     p_itens: itens
   });
 
+  console.log('[Compras] retorno RPC compras_salvar_solicitacao', {
+    tabelaDestino: 'compras',
+    payload: {
+      compra_id: payload.id || null,
+      area: payload.area,
+      ebap_id: emptyToNull(payload.ebap_id),
+      prioridade: payload.prioridade || 'normal',
+      itens: itens.length
+    },
+    data,
+    error
+  });
+
   if (error) throw error;
+
+  if (data?.id) {
+    const { data: compraConfirmada, error: selectError } = await supabase
+      .from('compras')
+      .select('id,numero,status,area,ebap_id,solicitante_id,deleted_at,created_at')
+      .eq('id', data.id)
+      .maybeSingle();
+
+    console.log('[Compras] confirmação SELECT após salvar', {
+      tabela: 'compras',
+      id: data.id,
+      data: compraConfirmada,
+      error: selectError
+    });
+
+    if (selectError) throw selectError;
+    if (!compraConfirmada) {
+      throw new Error('Solicitação salva, mas não liberada para leitura pela listagem. Verifique a política RLS de SELECT em compras.');
+    }
+  }
+
   return data;
 }
 
