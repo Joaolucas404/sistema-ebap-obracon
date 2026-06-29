@@ -21,6 +21,7 @@ import {
   getWorkflowActions,
   listarAnexosOS,
   listarComentariosOS,
+  listarEquipesTecnicas,
   listarHistoricoOS,
   listarResponsaveis,
   movimentarOS,
