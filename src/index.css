@@ -5,9 +5,10 @@
 :root {
   color-scheme: dark;
   font-family: Inter, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --brand-blue: #0B2D6B;
-  --brand-blue-secondary: #123D8A;
-  --brand-green: #17B33A;
+  --brand-blue: #0A1633;
+  --brand-blue-secondary: #10224D;
+  --brand-blue-tertiary: #16356B;
+  --brand-accent: #2563EB;
   --brand-white: #FFFFFF;
 }
 
@@ -36,7 +37,7 @@ button {
 }
 
 ::selection {
-  background: rgba(23, 179, 58, .38);
+  background: rgba(59, 130, 246, .38);
   color: #fff;
 }
 
@@ -50,17 +51,17 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(6, 27, 66, .7);
+  border: 2px solid rgba(10, 22, 51, .7);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(34, 211, 238, .7), rgba(23, 179, 58, .7));
+  background: #3B82F6;
 }
 
 @layer components {
   .app-bg {
     @apply min-h-screen relative overflow-hidden bg-navy-950;
     background:
-      linear-gradient(135deg, rgba(18, 61, 138, .96) 0%, rgba(11, 45, 107, .95) 38%, rgba(6, 27, 66, .98) 100%),
-      linear-gradient(90deg, rgba(23, 179, 58, .16), rgba(34, 211, 238, .08), transparent 72%);
+      linear-gradient(135deg, rgba(10, 22, 51, .99) 0%, rgba(16, 34, 77, .98) 42%, rgba(22, 53, 107, .96) 100%),
+      linear-gradient(90deg, rgba(37, 99, 235, .12), rgba(59, 130, 246, .08), transparent 72%);
   }
 
   .app-bg::before {
@@ -80,14 +81,14 @@ button {
   }
 
   .glass-card {
-    @apply border border-white/15 bg-[#092b66d9] shadow-glass backdrop-blur-xl transition duration-300;
+    @apply border border-white/10 bg-[#10224de6] shadow-glass backdrop-blur-xl transition duration-300;
     box-shadow:
       0 22px 58px rgba(0, 0, 0, .28),
       inset 0 1px 0 rgba(255, 255, 255, .08);
   }
 
   .glass-card:hover {
-    border-color: rgba(103, 232, 249, .25);
+    border-color: rgba(214, 228, 255, .25);
   }
 
   .page-surface {
@@ -95,21 +96,21 @@ button {
   }
 
   .premium-card {
-    @apply rounded-3xl border border-cyan-200/15 bg-[#0a2a62d9] shadow-card backdrop-blur-xl transition duration-300;
+    @apply rounded-2xl border border-blue-200/15 bg-[#10224de6] shadow-card backdrop-blur-xl transition duration-300;
   }
 
   .premium-card:hover {
-    @apply -translate-y-0.5 border-cyan-200/30;
+    @apply -translate-y-0.5 border-blue-200/30;
     box-shadow:
       0 26px 70px rgba(0, 0, 0, .34),
-      0 0 0 1px rgba(103, 232, 249, .08) inset;
+      0 0 0 1px rgba(59, 130, 246, .10) inset;
   }
 
   .metric-card {
-    @apply relative overflow-hidden rounded-3xl border border-cyan-200/15 bg-[#0c3274] p-3 shadow-card transition duration-300;
+    @apply relative overflow-hidden rounded-2xl border border-blue-200/15 bg-[#10224D] p-4 shadow-card transition duration-300;
     background:
-      linear-gradient(145deg, rgba(18, 61, 138, .96), rgba(8, 36, 90, .96) 68%),
-      linear-gradient(90deg, rgba(23, 179, 58, .16), transparent);
+      linear-gradient(145deg, rgba(16, 34, 77, .98), rgba(22, 53, 107, .94) 72%),
+      linear-gradient(90deg, rgba(59, 130, 246, .12), transparent);
   }
 
   .metric-card::after {
@@ -122,19 +123,19 @@ button {
   }
 
   .metric-card:hover {
-    @apply -translate-y-0.5 border-cyan-200/30;
+    @apply -translate-y-0.5 border-blue-200/30;
   }
 
   .nav-shell {
-    @apply glass-card rounded-3xl p-2;
+    @apply glass-card rounded-2xl p-2;
   }
 
   .nav-group {
-    @apply rounded-2xl border border-cyan-200/10 bg-navy-950/25 p-1;
+    @apply rounded-2xl border border-blue-200/10 bg-navy-950/20 p-1.5;
   }
 
   .nav-group-title {
-    @apply flex w-full items-center justify-between rounded-2xl px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100/80 transition hover:bg-white/10;
+    @apply flex w-full items-center justify-between rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#D6E4FF]/80 transition hover:bg-white/10;
   }
 
   .nav-item {
@@ -142,33 +143,33 @@ button {
   }
 
   .nav-item-active {
-    @apply border-cyan-200/60 bg-cyan-300/15 text-white shadow-lg shadow-cyan-950/25;
+    @apply border-blue-300/55 bg-blue-500/15 text-white shadow-lg shadow-blue-950/20;
   }
 
   .nav-item-inactive {
-    @apply border-transparent hover:-translate-y-0.5 hover:border-cyan-200/25 hover:bg-white/10;
+    @apply border-transparent hover:-translate-y-0.5 hover:border-blue-200/25 hover:bg-white/10;
   }
 
   .nav-icon {
-    @apply grid h-9 w-9 place-items-center rounded-xl border border-cyan-200/10 bg-navy-950/80 text-cyan-100 shadow-inner;
+    @apply grid h-9 w-9 place-items-center rounded-xl border border-blue-200/10 bg-navy-950/80 text-[#D6E4FF] shadow-inner;
   }
 
   .topbar-shell {
-    @apply glass-card mx-auto mb-3 grid max-w-[1680px] gap-2 rounded-3xl px-3 py-2 xl:grid-cols-[250px_minmax(320px,1fr)_auto] xl:items-center 2xl:grid-cols-[270px_minmax(360px,1fr)_auto];
+    @apply glass-card mx-auto mb-3 grid max-w-[1680px] gap-2 rounded-2xl px-3 py-2 xl:grid-cols-[230px_minmax(320px,1fr)_auto] xl:items-center 2xl:grid-cols-[250px_minmax(360px,1fr)_auto];
   }
 
   .status-chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-white/10 px-2.5 py-1.5 text-xs font-black text-cyan-50 shadow-sm;
+    @apply inline-flex items-center gap-2 rounded-full border border-blue-200/25 bg-white/10 px-2.5 py-1.5 text-xs font-black text-[#D6E4FF] shadow-sm;
   }
 
   .login-logo-frame {
     @apply overflow-hidden rounded-[34px] border border-white/20 p-0 shadow-2xl;
     background:
-      radial-gradient(circle at 50% 32%, rgba(18, 61, 138, .95), rgba(11, 45, 107, .98) 62%),
-      #0B2D6B;
+      radial-gradient(circle at 50% 32%, rgba(22, 53, 107, .95), rgba(10, 22, 51, .98) 62%),
+      #0A1633;
     box-shadow:
       0 22px 48px rgba(0, 0, 0, .28),
-      inset 0 0 0 1px rgba(23, 179, 58, .18);
+      inset 0 0 0 1px rgba(59, 130, 246, .18);
   }
 
   .field-label {
@@ -176,13 +177,12 @@ button {
   }
 
   .form-control {
-    @apply min-h-11 w-full rounded-2xl border border-slate-300/25 bg-navy-950/75 px-3 text-white outline-none transition placeholder:text-slate-400 focus:border-green-400/70 focus:ring-2 focus:ring-green-400/20;
+    @apply min-h-11 w-full rounded-xl border border-slate-300/25 bg-navy-950/75 px-3 text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400/70 focus:ring-2 focus:ring-blue-400/20;
   }
 
   .primary-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border-0 px-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
-    background: linear-gradient(90deg, #17B33A 0%, #123D8A 100%);
-    box-shadow: 0 16px 38px rgba(11, 45, 107, .35);
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-blue-300/20 bg-blue-600 px-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    box-shadow: 0 14px 30px rgba(29, 78, 216, .26);
   }
 
   .login-enter {
@@ -195,13 +195,13 @@ button {
 
   .login-title-shimmer {
     display: inline-block;
-    background: linear-gradient(100deg, #ffffff 0%, #67e8f9 34%, #17B33A 58%, #e8fff0 76%, #67e8f9 100%);
+    background: linear-gradient(100deg, #ffffff 0%, #D6E4FF 34%, #3B82F6 58%, #ffffff 76%, #D6E4FF 100%);
     background-size: 220% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     animation: loginShimmer 8s ease-in-out infinite;
-    text-shadow: 0 18px 46px rgba(23, 179, 58, .18);
+    text-shadow: 0 18px 46px rgba(59, 130, 246, .18);
   }
 
   .login-pulse {
@@ -211,7 +211,7 @@ button {
   .login-status-pill {
     animation: loginStatusGlow 2.8s ease-in-out infinite;
     box-shadow:
-      0 0 0 0 rgba(23, 179, 58, .22),
+      0 0 0 0 rgba(59, 130, 246, .22),
       0 14px 34px rgba(0, 0, 0, .16),
       inset 0 1px 0 rgba(255, 255, 255, .12);
   }
@@ -219,23 +219,23 @@ button {
   .login-submit {
     min-height: 3rem;
     box-shadow:
-      0 18px 42px rgba(23, 179, 58, .18),
+      0 18px 42px rgba(59, 130, 246, .18),
       0 14px 34px rgba(18, 61, 138, .34);
   }
 
   .login-submit:hover {
     transform: translateY(-2px);
     box-shadow:
-      0 24px 52px rgba(23, 179, 58, .24),
+      0 24px 52px rgba(59, 130, 246, .24),
       0 18px 42px rgba(18, 61, 138, .42);
   }
 
   .secondary-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3.5 font-extrabold text-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:border-green-300/60 hover:bg-green-300/10 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3.5 font-extrabold text-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300/60 hover:bg-blue-300/10 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
   }
 
   .danger-button {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-red-300/30 bg-red-500/15 px-4 font-extrabold text-red-100 transition hover:-translate-y-0.5 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-300/30 bg-red-500/15 px-4 font-extrabold text-red-100 transition hover:-translate-y-0.5 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
   }
 }
 
@@ -279,18 +279,18 @@ button {
 
 @keyframes loginStatusGlow {
   0%, 100% {
-    border-color: rgba(134, 239, 172, .25);
+    border-color: rgba(147, 197, 253, .25);
     box-shadow:
-      0 0 0 0 rgba(23, 179, 58, .18),
+      0 0 0 0 rgba(59, 130, 246, .18),
       0 14px 34px rgba(0, 0, 0, .16),
       inset 0 1px 0 rgba(255, 255, 255, .12);
     transform: translateZ(0) scale(1);
   }
   50% {
-    border-color: rgba(134, 239, 172, .55);
+    border-color: rgba(147, 197, 253, .55);
     box-shadow:
-      0 0 0 9px rgba(23, 179, 58, 0),
-      0 18px 42px rgba(23, 179, 58, .16),
+      0 0 0 9px rgba(59, 130, 246, 0),
+      0 18px 42px rgba(59, 130, 246, .16),
       inset 0 1px 0 rgba(255, 255, 255, .18);
     transform: translateZ(0) scale(1.018);
   }

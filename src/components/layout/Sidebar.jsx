@@ -48,18 +48,18 @@ export default function Sidebar({ onNavigate }) {
 
   if (perfil === 'tecnico') {
     return (
-      <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-86px)] lg:overflow-auto">
-        <div className="grid justify-items-center gap-1.5 px-2 pb-3 pt-1 text-center">
-          <div className="login-logo-frame w-20 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-24">
+      <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-76px)] lg:overflow-auto">
+        <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
+          <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
             <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
           </div>
           <div>
             <strong className="block text-xs font-black leading-tight text-white drop-shadow">Área Técnica</strong>
-            <span className="block text-[11px] font-extrabold text-[#17B33A]">{user?.equipe || user?.area_operacional || 'Equipe'}</span>
+            <span className="block text-[11px] font-extrabold text-[#D6E4FF]">{user?.equipe || user?.area_operacional || 'Equipe'}</span>
           </div>
         </div>
 
-        <nav className="grid gap-1">
+        <nav className="grid gap-1.5">
           {TECH_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -85,18 +85,18 @@ export default function Sidebar({ onNavigate }) {
   }
 
   return (
-    <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-86px)] lg:overflow-auto">
-      <div className="grid justify-items-center gap-1.5 px-2 pb-3 pt-1 text-center">
-        <div className="login-logo-frame w-20 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-24">
+    <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-76px)] lg:overflow-auto">
+      <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
+        <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
           <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
         </div>
         <div>
           <strong className="block text-xs font-black leading-tight text-white drop-shadow">{BRAND.systemName}</strong>
-          <span className="block text-[11px] font-extrabold text-[#17B33A]">{BRAND.consortiumName}</span>
+          <span className="block text-[11px] font-extrabold text-[#D6E4FF]">{BRAND.consortiumName}</span>
         </div>
       </div>
 
-      <nav className="grid gap-2">
+      <nav className="grid gap-3">
         {groups.map(({ group, items }) => (
           <section key={group} className="nav-group">
             <button
@@ -106,7 +106,7 @@ export default function Sidebar({ onNavigate }) {
             >
               <span>{group}</span>
               <span className="inline-flex items-center gap-2">
-                <span className="rounded-full border border-cyan-200/20 bg-white/10 px-2 py-0.5 text-[10px] text-cyan-50">{items.length}</span>
+                <span className="rounded-full border border-blue-200/20 bg-white/10 px-2 py-0.5 text-[10px] text-blue-50">{items.length}</span>
                 <ChevronDown size={16} className={`transition-transform ${openGroups[group] ? 'rotate-0' : '-rotate-90'}`} />
               </span>
             </button>

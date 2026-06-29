@@ -129,7 +129,7 @@ function ChartCard({ title, children }) {
 function MiniMetric({ icon: Icon, label, value, tone = 'cyan' }) {
   const toneClass = {
     cyan: 'border-cyan-300/20 text-cyan-100',
-    green: 'border-green-300/20 text-green-100',
+    green: 'border-blue-300/20 text-blue-100',
     orange: 'border-yellow-300/20 text-yellow-100',
     red: 'border-red-300/20 text-red-100'
   };
@@ -230,7 +230,7 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
   function barClass(ebap) {
     if (ebap.criticidade?.nivel === 'critico') return 'h-full bg-red-400';
     if (ebap.criticidade?.nivel === 'atencao') return 'h-full bg-yellow-300';
-    return 'h-full bg-green-400';
+    return 'h-full bg-blue-400';
   }
 
   return (

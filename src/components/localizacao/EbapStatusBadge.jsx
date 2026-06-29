@@ -1,5 +1,5 @@
 const tones = {
-  OPERANDO: 'border-green-300/40 bg-green-500/15 text-green-100',
+  OPERANDO: 'border-blue-300/40 bg-blue-500/15 text-blue-100',
   ATENCAO: 'border-yellow-300/40 bg-yellow-500/15 text-yellow-100',
   CRITICA: 'border-red-300/40 bg-red-500/15 text-red-100'
 };

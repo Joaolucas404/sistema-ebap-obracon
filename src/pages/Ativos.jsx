@@ -69,7 +69,7 @@ const TIPO_VISUAL = {
     Icon: DoorClosed,
     label: 'Comporta',
     plural: 'Comportas',
-    className: 'border-emerald-300/20 bg-emerald-400/10 text-emerald-200'
+    className: 'border-blue-300/20 bg-blue-400/10 text-blue-200'
   },
   Rastelo: {
     Icon: Construction,
@@ -81,7 +81,7 @@ const TIPO_VISUAL = {
     Icon: DoorClosed,
     label: 'Comporta de Rastelo',
     plural: 'Comportas de Rastelo',
-    className: 'border-emerald-300/20 bg-emerald-400/10 text-emerald-200'
+    className: 'border-blue-300/20 bg-blue-400/10 text-blue-200'
   },
   'Painel Elétrico': {
     Icon: Zap,
@@ -203,11 +203,11 @@ function getEbapCardClass(group) {
   if ((group.counts.parado || 0) > 0) return 'border-red-300/35 bg-red-500/10 shadow-red-950/20';
   if ((group.counts.atencao || 0) > 0) return 'border-amber-300/30 bg-amber-400/10 shadow-amber-950/20';
   if ((group.counts.em_manutencao || 0) > 0) return 'border-sky-300/30 bg-sky-400/10 shadow-sky-950/20';
-  return 'border-emerald-300/20 bg-emerald-400/5 shadow-navy-950/20';
+  return 'border-blue-300/20 bg-blue-400/5 shadow-navy-950/20';
 }
 
 function getHealthTone(health) {
-  if (health >= 90) return 'bg-emerald-300';
+  if (health >= 90) return 'bg-blue-300';
   if (health >= 70) return 'bg-amber-300';
   return 'bg-red-300';
 }
@@ -535,7 +535,7 @@ export default function Ativos() {
 
                 <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                   <OperationalMetric label="Total" value={group.total} className="border-cyan-300/15 bg-white/5 text-cyan-100" />
-                  <OperationalMetric label="Operando" value={group.counts.operando || 0} className="border-emerald-300/20 bg-emerald-400/10 text-emerald-100" />
+                  <OperationalMetric label="Operando" value={group.counts.operando || 0} className="border-blue-300/20 bg-blue-400/10 text-blue-100" />
                   <OperationalMetric label="Atenção" value={group.counts.atencao || 0} className={(group.counts.atencao || 0) > 0 ? 'border-amber-300/35 bg-amber-400/15 text-amber-100' : 'border-slate-300/10 bg-white/5 text-slate-300'} />
                   <OperationalMetric label="Parado" value={group.counts.parado || 0} className={(group.counts.parado || 0) > 0 ? 'border-red-300/35 bg-red-400/15 text-red-100' : 'border-slate-300/10 bg-white/5 text-slate-300'} />
                   <OperationalMetric label="Manutenção" value={group.counts.em_manutencao || 0} className={(group.counts.em_manutencao || 0) > 0 ? 'border-sky-300/35 bg-sky-400/15 text-sky-100' : 'border-slate-300/10 bg-white/5 text-slate-300'} />

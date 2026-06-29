@@ -5,24 +5,24 @@ export default {
     extend: {
       colors: {
         navy: {
-          950: '#061B42',
-          900: '#0B2D6B',
-          800: '#123D8A',
-          700: '#164AA8'
+          950: '#0A1633',
+          900: '#10224D',
+          800: '#16356B',
+          700: '#1D4ED8'
         },
         ebap: {
           cyan: '#FFFFFF',
-          blue: '#0B2D6B',
-          green: '#17B33A',
+          blue: '#2563EB',
           red: '#ef4444',
-          orange: '#f97316',
-          yellow: '#eab308'
+          orange: '#f59e0b',
+          yellow: '#f59e0b',
+          indigo: '#6366F1'
         }
       },
       boxShadow: {
-        glass: '0 24px 70px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.08)',
-        card: '0 18px 46px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.08)',
-        glow: '0 0 0 1px rgba(103,232,249,.16), 0 18px 55px rgba(34,211,238,.12)'
+        glass: '0 22px 58px rgba(10,22,51,.34), inset 0 1px rgba(255,255,255,.08)',
+        card: '0 16px 38px rgba(10,22,51,.24), inset 0 1px rgba(255,255,255,.08)',
+        glow: '0 0 0 1px rgba(59,130,246,.18), 0 18px 45px rgba(37,99,235,.12)'
       },
       keyframes: {
         softIn: {

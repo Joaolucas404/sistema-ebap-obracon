@@ -48,6 +48,7 @@ import {
   salvarRelatorioTecnicoOS,
   resumoRelatorioTecnico
 } from '../services/relatorioTecnicoService.js';
+import { melhorarTextoTecnicoOS } from '../services/iaTecnicaService.js';
 import { ativoStatusLabel, ATIVO_STATUS, normalizeAtivoStatus } from '../services/ativosService.js';
 import { baixarBlobComoArquivo, gerarNumeroDocumento, gerarPdfDeElemento, gerarQrCodeDocumento, salvarPdfArquivo } from '../services/pdfService.js';
 
@@ -183,6 +184,7 @@ export default function DetalheOS() {
   const [upload, setUpload] = useState({ file: null, legenda: '' });
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
+  const [aiLoading, setAiLoading] = useState(false);
   const pdfRef = useRef(null);
   const [pdfData, setPdfData] = useState(null);
 
@@ -282,14 +284,38 @@ export default function DetalheOS() {
     setToast({ message: 'Conclusão automática gerada com base no checklist.', tone: 'green' });
   }
 
-  function melhorarConclusaoTecnica() {
-    setExecucao((current) => ({
-      ...current,
-      relatorio_tecnico: melhorarTextoTecnico(current.relatorio_tecnico, 'execução'),
-      materiais_utilizados: current.materiais_utilizados ? melhorarTextoTecnico(current.materiais_utilizados, 'materiais utilizados') : current.materiais_utilizados,
-      pendencias: current.pendencias ? melhorarTextoTecnico(current.pendencias, 'pendências') : current.pendencias
-    }));
-    setToast({ message: 'Texto técnico padronizado.', tone: 'green' });
+  async function melhorarConclusaoTecnica() {
+    const textoOriginal = String(execucao.relatorio_tecnico || '').trim();
+    if (!textoOriginal) {
+      setToast({ message: 'Escreva o texto da execução antes de usar a IA.', tone: 'orange' });
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const textoMelhorado = await melhorarTextoTecnicoOS({
+        texto: textoOriginal,
+        contexto: {
+          os_numero: os?.numero,
+          titulo: os?.titulo,
+          ebap: os?.ebap?.nome,
+          area: os?.area,
+          equipamento: os?.ativo?.nome_operacional || os?.payload?.equipamento_falha || os?.equipamento?.nome,
+          status_final: execucao.status_final
+        }
+      });
+
+      setExecucao((current) => ({ ...current, relatorio_tecnico: textoMelhorado }));
+      setToast({ message: 'Texto melhorado com IA.', tone: 'green' });
+    } catch (err) {
+      setExecucao((current) => ({
+        ...current,
+        relatorio_tecnico: melhorarTextoTecnico(current.relatorio_tecnico, 'execução')
+      }));
+      setToast({ message: 'IA indisponível. Apliquei uma padronização local temporária.', tone: 'orange' });
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   function openWorkflow(action) {
@@ -756,9 +782,9 @@ export default function DetalheOS() {
                 <p className="text-sm text-slate-300">Preencha apenas o fechamento técnico da atividade. O checklist acima concentra as etapas, fotos e medições.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button className="secondary-button min-h-10 px-3" type="button" onClick={melhorarConclusaoTecnica} disabled={saving || !execucao.relatorio_tecnico.trim()}>
+                <button className="secondary-button min-h-10 px-3" type="button" onClick={melhorarConclusaoTecnica} disabled={saving || aiLoading || !execucao.relatorio_tecnico.trim()}>
                   <Sparkles size={16} />
-                  Melhorar texto técnico
+                  {aiLoading ? 'Melhorando...' : 'Melhorar com IA'}
                 </button>
                 <button className="primary-button min-h-10 px-3" type="button" onClick={gerarConclusaoAutomatica} disabled={saving}>
                   <Sparkles size={16} />

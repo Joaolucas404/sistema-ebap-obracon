@@ -3,9 +3,9 @@ export default function Toast({ message, tone = 'cyan', onClose }) {
 
   const tones = {
     cyan: 'border-cyan-300/30 bg-cyan-500/15 text-cyan-50',
-    green: 'border-green-300/30 bg-green-500/15 text-green-50',
+    green: 'border-blue-300/30 bg-blue-500/15 text-blue-50',
     red: 'border-red-300/30 bg-red-500/15 text-red-50',
-    orange: 'border-orange-300/30 bg-orange-500/15 text-orange-50'
+    orange: 'border-amber-300/30 bg-amber-500/15 text-amber-50'
   };
 
   return (
