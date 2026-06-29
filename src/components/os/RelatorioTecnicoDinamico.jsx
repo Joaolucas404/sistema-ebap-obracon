@@ -116,7 +116,7 @@ export default function RelatorioTecnicoDinamico({
   if (!modelos.length) {
     return (
       <div className="rounded-2xl border border-orange-300/30 bg-orange-500/10 p-4 text-sm font-bold text-orange-100">
-        Nenhum modelo técnico dinâmico encontrado para esta OS. O relatório textual continua disponível.
+        Nenhum modelo técnico dinâmico encontrado para esta OS. A conclusão da execução continua disponível.
       </div>
     );
   }
@@ -128,9 +128,9 @@ export default function RelatorioTecnicoDinamico({
           <Wrench size={20} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-black text-white">Modelo técnico dinâmico</h3>
+          <h3 className="text-lg font-black text-white">Checklist técnico</h3>
           <p className="text-sm text-slate-300">
-            Checklist interativo, medições e fotos por item carregados do modelo de manutenção.
+            Itens de verificação, medições e fotos vinculadas diretamente às etapas do modelo.
           </p>
         </div>
       </div>
@@ -167,17 +167,6 @@ export default function RelatorioTecnicoDinamico({
           <ResumoCard label="Pendentes" value={resumo.pendentes} tone="slate" />
         </div>
       )}
-
-      <CampoGrupo title="Dados e medições gerais" icon={<ClipboardCheck size={18} />} campos={grupos.dados}>
-        {(campo) => (
-          <CampoInput
-            campo={campo}
-            value={(value.respostas || {})[campo.chave] || ''}
-            onChange={(nextValue) => setResposta(campo.chave, nextValue)}
-            disabled={disabled}
-          />
-        )}
-      </CampoGrupo>
 
       <CampoGrupo title="Checklist técnico" icon={<ClipboardCheck size={18} />} campos={checklistCampos} columns="single">
         {(campo) => (
@@ -227,17 +216,6 @@ export default function RelatorioTecnicoDinamico({
             </div>
           );
         }}
-      </CampoGrupo>
-
-      <CampoGrupo title="Finalização" icon={<ClipboardCheck size={18} />} campos={grupos.finalizacao}>
-        {(campo) => (
-          <CampoInput
-            campo={campo}
-            value={(value.respostas || {})[campo.chave] || ''}
-            onChange={(nextValue) => setResposta(campo.chave, nextValue)}
-            disabled={disabled}
-          />
-        )}
       </CampoGrupo>
     </section>
   );

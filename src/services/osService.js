@@ -470,6 +470,7 @@ export async function registrarExecucaoOS(id, payload, user) {
     pendencias: payload.pendencias || atual.pendencias || null,
     payload: {
       ...(atual.payload || {}),
+      status_final_execucao: payload.status_final || (atual.payload || {}).status_final_execucao || null,
       tecnicos_participantes_ultima_execucao: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : ((atual.payload || {}).tecnicos_participantes_ultima_execucao || [])
     }
   };
@@ -483,7 +484,7 @@ export async function registrarExecucaoOS(id, payload, user) {
     status_anterior: atual.status,
     status_novo: status,
     descricao: payload.concluir ? 'Técnico concluiu a execução e enviou para validação do Supervisor.' : 'Execução técnica registrada.',
-    metadata: { ...updatePayload, etapa: status, tecnicos_participantes: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : [] }
+    metadata: { ...updatePayload, etapa: status, status_final: payload.status_final || null, tecnicos_participantes: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : [] }
   });
 
   if (payload.concluir) {

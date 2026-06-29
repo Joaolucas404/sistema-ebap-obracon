@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, CalendarClock, CheckCircle2, Download, Paperclip, Pencil, Play, Trash2, Upload, UserPlus, XCircle } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Download, Paperclip, Pencil, Play, Sparkles, Trash2, Upload, UserPlus, XCircle } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Modal from '../components/ui/Modal.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -65,6 +65,100 @@ function timeInput(value) {
   return value ? String(value).slice(0, 5) : '';
 }
 
+const STATUS_FINAL_EXECUCAO = [
+  { value: 'operando', label: 'Operando' },
+  { value: 'atencao', label: 'Atenção' },
+  { value: 'parado', label: 'Parado' },
+  { value: 'em_manutencao', label: 'Em manutenção' }
+];
+
+function getModeloSelecionado(modelos, modeloId) {
+  return modelos.find((modelo) => modelo.id === modeloId) || modelos[0] || null;
+}
+
+function normalizeChecklistRespostaLocal(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return {
+      status: value.status || '',
+      observacao: value.observacao || '',
+      medicoes: value.medicoes || {}
+    };
+  }
+  if (value === true) return { status: 'conforme', observacao: '', medicoes: {} };
+  if (typeof value === 'string') return { status: value, observacao: '', medicoes: {} };
+  return { status: '', observacao: '', medicoes: {} };
+}
+
+function statusChecklistLabel(status) {
+  const labels = {
+    conforme: 'conforme',
+    atencao: 'em atenção',
+    nao_conforme: 'não conforme'
+  };
+  return labels[status] || 'pendente';
+}
+
+function analisarChecklist(modelo, respostas = {}, fotos = {}) {
+  const campos = (modelo?.campos || []).filter((campo) => campo.grupo === 'checklist');
+  const itens = campos.map((campo) => ({
+    campo,
+    resposta: normalizeChecklistRespostaLocal(respostas[campo.chave]),
+    foto: fotos[`checklist_${campo.chave}`]
+  }));
+
+  return {
+    itens,
+    conformes: itens.filter((item) => item.resposta.status === 'conforme'),
+    atencao: itens.filter((item) => item.resposta.status === 'atencao'),
+    naoConformes: itens.filter((item) => item.resposta.status === 'nao_conforme'),
+    pendentes: itens.filter((item) => !item.resposta.status)
+  };
+}
+
+function formatarMedicoes(medicoes = {}) {
+  return Object.entries(medicoes)
+    .filter(([, value]) => String(value || '').trim())
+    .map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`)
+    .join('; ');
+}
+
+function gerarConclusaoTecnica({ os, modelo, relatorioTecnico, execucao }) {
+  const analise = analisarChecklist(modelo, relatorioTecnico.respostas, relatorioTecnico.fotos);
+  const pontosCriticos = [...analise.atencao, ...analise.naoConformes];
+  const fotos = Object.values(relatorioTecnico.fotos || {}).filter((foto) => foto?.file).length;
+  const statusFinal = STATUS_FINAL_EXECUCAO.find((status) => status.value === execucao.status_final)?.label || 'Operando';
+  const equipamento = os?.ativo?.nome_operacional || os?.payload?.equipamento_falha || os?.equipamento?.nome || os?.titulo || 'equipamento';
+  const resumoChecklist = `Foram verificados ${analise.itens.length} item(ns) do checklist técnico: ${analise.conformes.length} conforme(s), ${analise.atencao.length} em atenção, ${analise.naoConformes.length} não conforme(s) e ${analise.pendentes.length} pendente(s).`;
+  const detalhes = pontosCriticos.length
+    ? `Pontos que exigem acompanhamento: ${pontosCriticos.map((item) => `${item.campo.label} (${statusChecklistLabel(item.resposta.status)}${item.resposta.observacao ? ` - ${item.resposta.observacao}` : ''})`).join('; ')}.`
+    : 'Não foram identificadas não conformidades durante a execução.';
+  const medicoes = analise.itens
+    .map((item) => {
+      const texto = formatarMedicoes(item.resposta.medicoes);
+      return texto ? `${item.campo.label}: ${texto}` : '';
+    })
+    .filter(Boolean);
+
+  return {
+    relatorio_tecnico: [
+      `Executada intervenção técnica na OS ${os?.numero || ''} referente ao ${equipamento}.`,
+      resumoChecklist,
+      detalhes,
+      medicoes.length ? `Medições registradas: ${medicoes.join(' | ')}.` : '',
+      fotos ? `Foram anexada(s) ${fotos} evidência(s) fotográfica(s) vinculada(s) ao checklist.` : '',
+      `Status final informado: ${statusFinal}.`
+    ].filter(Boolean).join('\n\n'),
+    materiais_utilizados: execucao.materiais_utilizados || 'Sem materiais adicionais informados.',
+    pendencias: execucao.pendencias || (pontosCriticos.length ? 'Acompanhar os itens sinalizados em atenção ou não conformidade.' : 'Sem pendências registradas.')
+  };
+}
+
+function melhorarTextoTecnico(texto, tipo = 'execução') {
+  const clean = String(texto || '').trim();
+  if (!clean) return '';
+  return `Relato técnico de ${tipo}: ${clean.replace(/\s+/g, ' ')}. Registro padronizado para rastreabilidade operacional e validação da supervisão.`;
+}
+
 export default function DetalheOS() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -81,7 +175,7 @@ export default function DetalheOS() {
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
-  const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false, tecnicos_participantes: [] });
+  const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', status_final: 'operando', concluir: false, tecnicos_participantes: [] });
   const [relatorioTecnico, setRelatorioTecnico] = useState({ modelo_id: '', respostas: {}, fotos: {}, observacoes: '' });
   const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '', impacto_equipamento: 'operando', motivo_impacto: '' });
   const [workflowAction, setWorkflowAction] = useState(null);
@@ -176,6 +270,28 @@ export default function DetalheOS() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function gerarConclusaoAutomatica() {
+    const modelo = getModeloSelecionado(modelosRelatorio, relatorioTecnico.modelo_id);
+    const conclusao = gerarConclusaoTecnica({ os, modelo, relatorioTecnico, execucao });
+    setExecucao((current) => ({
+      ...current,
+      relatorio_tecnico: conclusao.relatorio_tecnico,
+      materiais_utilizados: current.materiais_utilizados || conclusao.materiais_utilizados,
+      pendencias: current.pendencias || conclusao.pendencias
+    }));
+    setToast({ message: 'Conclusão automática gerada com base no checklist.', tone: 'green' });
+  }
+
+  function melhorarConclusaoTecnica() {
+    setExecucao((current) => ({
+      ...current,
+      relatorio_tecnico: melhorarTextoTecnico(current.relatorio_tecnico, 'execução'),
+      materiais_utilizados: current.materiais_utilizados ? melhorarTextoTecnico(current.materiais_utilizados, 'materiais utilizados') : current.materiais_utilizados,
+      pendencias: current.pendencias ? melhorarTextoTecnico(current.pendencias, 'pendências') : current.pendencias
+    }));
+    setToast({ message: 'Texto técnico padronizado.', tone: 'green' });
+  }
+
   function openWorkflow(action) {
     setWorkflowAction(action);
     setWorkflowForm({ status: action.to, comentario: '', motivo: '', status_ativo_final: 'operando', motivo_impacto: '' });
@@ -246,7 +362,7 @@ export default function DetalheOS() {
           : (execucao.concluir ? 'Execução concluída e enviada para aprovação.' : 'Execução registrada.'),
         tone: 'green'
       });
-      setExecucao({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', concluir: false, tecnicos_participantes: [] });
+      setExecucao({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', status_final: 'operando', concluir: false, tecnicos_participantes: [] });
       setModal(null);
       await loadAll();
     } catch (err) {
@@ -633,18 +749,54 @@ export default function DetalheOS() {
             onChange={setRelatorioTecnico}
             disabled={saving}
           />
-          <label className="field-label">
-            Observação geral da execução
-            <textarea className="form-control min-h-28 py-3" value={execucao.relatorio_tecnico} onChange={(event) => setExecucao((current) => ({ ...current, relatorio_tecnico: event.target.value }))} required={!relatorioTecnico.modelo_id} />
-          </label>
-          <label className="field-label">
-            Materiais utilizados
-            <textarea className="form-control min-h-24 py-3" value={execucao.materiais_utilizados} onChange={(event) => setExecucao((current) => ({ ...current, materiais_utilizados: event.target.value }))} />
-          </label>
-          <label className="field-label">
-            Pendências
-            <textarea className="form-control min-h-24 py-3" value={execucao.pendencias} onChange={(event) => setExecucao((current) => ({ ...current, pendencias: event.target.value }))} />
-          </label>
+          <section className="grid gap-4 rounded-3xl border border-cyan-300/15 bg-navy-950/45 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-lg font-black text-white">Conclusão da execução</h3>
+                <p className="text-sm text-slate-300">Preencha apenas o fechamento técnico da atividade. O checklist acima concentra as etapas, fotos e medições.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button className="secondary-button min-h-10 px-3" type="button" onClick={melhorarConclusaoTecnica} disabled={saving || !execucao.relatorio_tecnico.trim()}>
+                  <Sparkles size={16} />
+                  Melhorar texto técnico
+                </button>
+                <button className="primary-button min-h-10 px-3" type="button" onClick={gerarConclusaoAutomatica} disabled={saving}>
+                  <Sparkles size={16} />
+                  Gerar conclusão automática
+                </button>
+              </div>
+            </div>
+
+            <label className="field-label">
+              O que foi feito
+              <textarea
+                className="form-control min-h-32 py-3"
+                value={execucao.relatorio_tecnico}
+                onChange={(event) => setExecucao((current) => ({ ...current, relatorio_tecnico: event.target.value }))}
+                required={!relatorioTecnico.modelo_id || execucao.concluir}
+              />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="field-label">
+                Materiais utilizados
+                <textarea className="form-control min-h-24 py-3" value={execucao.materiais_utilizados} onChange={(event) => setExecucao((current) => ({ ...current, materiais_utilizados: event.target.value }))} />
+              </label>
+              <label className="field-label">
+                Pendências
+                <textarea className="form-control min-h-24 py-3" value={execucao.pendencias} onChange={(event) => setExecucao((current) => ({ ...current, pendencias: event.target.value }))} />
+              </label>
+            </div>
+
+            <label className="field-label">
+              Status final
+              <select className="form-control" value={execucao.status_final} onChange={(event) => setExecucao((current) => ({ ...current, status_final: event.target.value }))} required>
+                {STATUS_FINAL_EXECUCAO.map((status) => (
+                  <option key={status.value} value={status.value}>{status.label}</option>
+                ))}
+              </select>
+            </label>
+          </section>
           <label className="flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 text-sm font-bold text-slate-200">
             <input type="checkbox" checked={execucao.concluir} onChange={(event) => setExecucao((current) => ({ ...current, concluir: event.target.checked }))} />
             Concluir atividade e enviar para aprovação do Supervisor
