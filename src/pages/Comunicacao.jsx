@@ -372,7 +372,7 @@ export default function Comunicacao() {
       </section>
 
       <section className="grid min-h-[680px] gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
-        <aside className="grid min-w-0 gap-3 rounded-3xl border border-cyan-300/15 bg-navy-950/55 p-4">
+        <aside className="grid min-h-[680px] min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3 overflow-hidden rounded-3xl border border-cyan-300/15 bg-navy-950/55 p-4">
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -390,61 +390,65 @@ export default function Comunicacao() {
             <input className="form-control pl-10" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar conversa, nome ou login..." />
           </label>
 
-          {search.trim().length >= 2 && (
-            <section className="rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="text-xs font-black uppercase tracking-wide text-cyan-100">Pessoas</h3>
-                {searchingPeople && <span className="text-[11px] font-black uppercase text-slate-400">Buscando...</span>}
-              </div>
-              <div className="grid max-h-56 gap-2 overflow-auto pr-1">
-                {peopleResults.length ? peopleResults.map((person) => (
-                  <button key={person.id} type="button" className="rounded-xl border border-cyan-300/10 bg-navy-950/55 p-3 text-left hover:border-cyan-300/25" onClick={() => openDirectConversation(person)}>
-                    <div className="flex items-center gap-3">
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-xs font-black text-cyan-50">{initials(person.nome || person.usuario)}</span>
-                      <span className="min-w-0">
-                        <strong className="block truncate text-sm text-white">{person.nome || person.usuario}</strong>
-                        <small className="block truncate text-xs font-bold text-slate-400">@{person.usuario} • {person.equipe || person.area_operacional || person.perfil || '-'}</small>
-                      </span>
-                    </div>
-                  </button>
-                )) : (
-                  <div className="rounded-xl bg-navy-950/55 p-3 text-sm font-bold text-slate-400">Nenhuma pessoa encontrada.</div>
+          <div className="grid min-h-0 gap-3 overflow-hidden">
+            {search.trim().length >= 2 && (
+              <section className="min-h-0 rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="text-xs font-black uppercase tracking-wide text-cyan-100">Pessoas</h3>
+                  {searchingPeople && <span className="text-[11px] font-black uppercase text-slate-400">Buscando...</span>}
+                </div>
+                <div className="grid max-h-44 gap-2 overflow-y-auto overflow-x-hidden pr-1">
+                  {peopleResults.length ? peopleResults.map((person) => (
+                    <button key={person.id} type="button" className="rounded-xl border border-cyan-300/10 bg-navy-950/55 p-3 text-left hover:border-cyan-300/25" onClick={() => openDirectConversation(person)}>
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-xs font-black text-cyan-50">{initials(person.nome || person.usuario)}</span>
+                        <span className="min-w-0">
+                          <strong className="block truncate text-sm text-white">{person.nome || person.usuario}</strong>
+                          <small className="block truncate text-xs font-bold text-slate-400">@{person.usuario} • {person.equipe || person.area_operacional || person.perfil || '-'}</small>
+                        </span>
+                      </div>
+                    </button>
+                  )) : (
+                    <div className="rounded-xl bg-navy-950/55 p-3 text-sm font-bold text-slate-400">Nenhuma pessoa encontrada.</div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {activeTab !== 'arquivos' ? (
+              <div className="grid min-h-0 min-w-0 content-start gap-2 overflow-y-auto overflow-x-hidden pr-2">
+                {loading ? (
+                  <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Carregando conversas...</div>
+                ) : filteredConversas.length ? (
+                  filteredConversas.map((conversa) => (
+                    <button
+                      key={conversa.id}
+                      type="button"
+                      className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
+                      onClick={() => {
+                        setSelectedId(conversa.id);
+                        setActiveTab('conversas');
+                      }}
+                    >
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <strong className="block truncate text-white">{conversa.nome}</strong>
+                          <span className="mt-1 block truncate text-xs font-bold text-slate-400">{conversa.descricao || 'Grupo operacional'}</span>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-navy-950/70 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{conversa.tipo === 'grupo' ? 'Grupo' : 'Direta'}</span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Nenhuma conversa encontrada.</div>
                 )}
               </div>
-            </section>
-          )}
-
-          {activeTab !== 'arquivos' ? (
-            <div className="grid max-h-[520px] min-w-0 gap-2 overflow-y-auto overflow-x-hidden pr-2">
-              {loading ? (
-                <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Carregando conversas...</div>
-              ) : filteredConversas.length ? (
-                filteredConversas.map((conversa) => (
-                  <button
-                    key={conversa.id}
-                    type="button"
-                    className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
-                    onClick={() => {
-                      setSelectedId(conversa.id);
-                      setActiveTab('conversas');
-                    }}
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <strong className="block truncate text-white">{conversa.nome}</strong>
-                        <span className="mt-1 block truncate text-xs font-bold text-slate-400">{conversa.descricao || 'Grupo operacional'}</span>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-navy-950/70 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{conversa.tipo === 'grupo' ? 'Grupo' : 'Direta'}</span>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Nenhuma conversa encontrada.</div>
-              )}
-            </div>
-          ) : (
-            <ArquivosPanel arquivos={arquivos} signedUrls={signedUrls} />
-          )}
+            ) : (
+              <div className="min-h-0 overflow-y-auto overflow-x-hidden pr-2">
+                <ArquivosPanel arquivos={arquivos} signedUrls={signedUrls} />
+              </div>
+            )}
+          </div>
 
           <div className="rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3">
             <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-cyan-100">Presença</h3>
