@@ -127,7 +127,7 @@ export async function listarConversasComunicacao(user) {
     if (conversa.nome === 'Supervisão' && role === 'supervisor') return true;
     if (conversa.nome === 'CCO' && role === 'cco') return true;
     return false;
-  });
+  }).map((conversa) => formatarConversaParaUsuario(conversa, user));
 }
 
 export async function buscarPessoasComunicacao(search = '', currentUser) {
@@ -148,22 +148,78 @@ export async function buscarPessoasComunicacao(search = '', currentUser) {
   return (data || []).filter((usuario) => usuario.id !== currentUser?.id);
 }
 
-export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
-  if (!user?.id) throw new Error('Usuário não identificado.');
-  if (!outroUsuarioId) throw new Error('Selecione uma pessoa.');
-
-  const ids = [user.id, outroUsuarioId].sort();
-  const directKey = ids.join(':');
-
-  const { data: existente, error: existenteError } = await supabase
+async function buscarConversaDiretaExistente({ directKey, user, outro }) {
+  const { data: porChave, error: chaveError } = await supabase
     .from('comunicacao_conversas')
     .select(CONVERSA_SELECT)
     .eq('tipo', 'direta')
     .eq('metadata->>direct_key', directKey)
     .is('deleted_at', null)
     .maybeSingle();
-  if (existenteError) throw new Error(existenteError.message);
-  if (existente) return existente;
+  if (chaveError) throw new Error(chaveError.message);
+  if (porChave) return porChave;
+
+  const nome = outro?.nome || outro?.usuario || '';
+  if (!nome) return null;
+
+  const { data: porNome, error: nomeError } = await supabase
+    .from('comunicacao_conversas')
+    .select(CONVERSA_SELECT)
+    .eq('tipo', 'direta')
+    .eq('nome', nome)
+    .is('deleted_at', null)
+    .limit(5);
+  if (nomeError) throw new Error(nomeError.message);
+  return (porNome || []).find((conversa) => {
+    const membros = conversa.membros || [];
+    return membros.some((membro) => membro.usuario_id === user?.id) && membros.some((membro) => membro.usuario_id === outro?.id);
+  }) || null;
+}
+
+function formatarConversaParaUsuario(conversa, user) {
+  if (!conversa || conversa.tipo !== 'direta') return conversa;
+  const outroMembro = (conversa.membros || []).find((membro) => membro.usuario_id !== user?.id);
+  const outro = outroMembro?.usuario;
+  const nome = outro?.nome || outro?.usuario || conversa.metadata?.display_name || conversa.nome || 'Conversa direta';
+  return {
+    ...conversa,
+    nome_sistema: conversa.nome,
+    nome,
+    descricao: `Conversa direta com ${nome}`
+  };
+}
+
+async function garantirMembrosConversaDireta(conversaId, user, outro) {
+  const membros = [
+    {
+      conversa_id: conversaId,
+      usuario_id: user.id,
+      perfil: user.perfil || null,
+      equipe: user.equipe || null,
+      area: user.area_operacional || user.area_supervisao || null,
+      papel: 'membro'
+    },
+    {
+      conversa_id: conversaId,
+      usuario_id: outro.id,
+      perfil: outro.perfil || null,
+      equipe: outro.equipe || null,
+      area: outro.area_operacional || outro.area_supervisao || null,
+      papel: 'membro'
+    }
+  ];
+
+  const { error } = await supabase.from('comunicacao_membros').upsert(membros, { onConflict: 'conversa_id,usuario_id' });
+  if (error) throw new Error(error.message);
+  return membros;
+}
+
+export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
+  if (!user?.id) throw new Error('Usuário não identificado.');
+  if (!outroUsuarioId) throw new Error('Selecione uma pessoa.');
+
+  const ids = [user.id, outroUsuarioId].sort();
+  const directKey = ids.join(':');
 
   const { data: outro, error: outroError } = await supabase
     .from('usuarios')
@@ -174,42 +230,50 @@ export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
   if (!outro) throw new Error('Pessoa não encontrada.');
 
   const nome = outro.nome || outro.usuario || 'Conversa direta';
+  const existente = await buscarConversaDiretaExistente({ directKey, user, outro });
+  if (existente) {
+    const membros = await garantirMembrosConversaDireta(existente.id, user, outro);
+    return formatarConversaParaUsuario({
+      ...existente,
+      membros: existente.membros?.length ? existente.membros : membros.map((membro) => ({
+        ...membro,
+        usuario: membro.usuario_id === user.id ? user : outro
+      }))
+    }, user);
+  }
+
+  const nomeInterno = `Direta:${directKey}`;
   const { data: conversa, error } = await supabase
     .from('comunicacao_conversas')
     .insert({
       tipo: 'direta',
-      nome,
+      nome: nomeInterno,
       descricao: `Conversa direta com ${nome}`,
       criado_por: user.id,
-      metadata: { direct_key: directKey, participantes: ids }
+      metadata: { direct_key: directKey, participantes: ids, display_name: nome }
     })
     .select(CONVERSA_SELECT)
     .single();
-  if (error) throw new Error(error.message);
-
-  const membros = [
-    {
-      conversa_id: conversa.id,
-      usuario_id: user.id,
-      perfil: user.perfil || null,
-      equipe: user.equipe || null,
-      area: user.area_operacional || user.area_supervisao || null,
-      papel: 'membro'
-    },
-    {
-      conversa_id: conversa.id,
-      usuario_id: outro.id,
-      perfil: outro.perfil || null,
-      equipe: outro.equipe || null,
-      area: outro.area_operacional || outro.area_supervisao || null,
-      papel: 'membro'
+  if (error) {
+    if (error.code === '23505') {
+      const fallback = await buscarConversaDiretaExistente({ directKey, user, outro });
+      if (fallback) {
+        const membros = await garantirMembrosConversaDireta(fallback.id, user, outro);
+        return formatarConversaParaUsuario({
+          ...fallback,
+          membros: fallback.membros?.length ? fallback.membros : membros.map((membro) => ({
+            ...membro,
+            usuario: membro.usuario_id === user.id ? user : outro
+          }))
+        }, user);
+      }
     }
-  ];
+    throw new Error(error.message);
+  }
 
-  const { error: membrosError } = await supabase.from('comunicacao_membros').upsert(membros, { onConflict: 'conversa_id,usuario_id' });
-  if (membrosError) throw new Error(membrosError.message);
+  const membros = await garantirMembrosConversaDireta(conversa.id, user, outro);
 
-  return {
+  return formatarConversaParaUsuario({
     ...conversa,
     membros: membros.map((membro) => ({
       ...membro,
@@ -224,7 +288,7 @@ export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
         equipe: user.equipe
       }
     }))
-  };
+  }, user);
 }
 
 export async function listarMensagensComunicacao(conversaId, limit = 80) {
