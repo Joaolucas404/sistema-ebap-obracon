@@ -4,7 +4,7 @@ import {
   ArrowLeft,
   Camera,
   Download,
-  File,
+  File as FileIcon,
   FileText,
   Image,
   MessageCircle,
@@ -83,7 +83,7 @@ function presenceList(state = {}) {
 function fileIcon(tipo) {
   if (tipo === 'imagem') return Image;
   if (tipo === 'audio') return Mic;
-  return File;
+  return FileIcon;
 }
 
 export default function Comunicacao() {
@@ -373,7 +373,7 @@ export default function Comunicacao() {
         analyserRef.current = null;
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         if (!blob.size) return;
-        const file = new File([blob], `audio-${Date.now()}.webm`, { type: 'audio/webm' });
+        const file = new window.File([blob], `audio-${Date.now()}.webm`, { type: 'audio/webm' });
         const duration = recordingStartedAtRef.current ? Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000)) : recordingSeconds;
         setPendingAudio({ file, url: URL.createObjectURL(blob), duration });
       };
