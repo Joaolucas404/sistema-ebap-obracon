@@ -207,7 +207,7 @@ export default function Topbar() {
           <input ref={profilePhotoInputRef} className="hidden" type="file" accept="image/*" onChange={handleProfilePhoto} />
 
           {profileMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 overflow-hidden rounded-3xl border border-blue-200/20 bg-[#10224D] p-2 shadow-2xl shadow-black/35">
+            <div className="absolute right-0 top-[calc(100%+10px)] z-[999] w-72 overflow-hidden rounded-3xl border border-blue-200/20 bg-[#10224D] p-2 shadow-2xl shadow-black/35">
               <div className="flex items-center gap-3 border-b border-blue-200/10 p-3">
                 <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-blue-500/20 text-sm font-black text-white ring-1 ring-blue-200/20">
                   {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
