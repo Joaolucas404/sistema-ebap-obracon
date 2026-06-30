@@ -80,6 +80,14 @@ button {
     @apply relative z-10 min-h-screen p-2 text-slate-100 md:p-3 xl:p-4;
   }
 
+  .desktop-content-layer {
+    @apply p-0;
+  }
+
+  .desktop-content-layer .topbar-shell {
+    @apply mb-4 rounded-xl border-blue-200/10 bg-[#10224D]/45 shadow-none;
+  }
+
   .glass-card {
     @apply border border-white/10 bg-[#10224de6] shadow-glass backdrop-blur-xl transition duration-300;
     box-shadow:
@@ -127,15 +135,16 @@ button {
   }
 
   .nav-shell {
-    @apply glass-card rounded-2xl p-2;
+    @apply border-r border-blue-200/10 p-3 shadow-xl shadow-black/20;
+    background: rgba(10, 22, 51, .96);
   }
 
   .nav-group {
-    @apply rounded-2xl border border-blue-200/10 bg-navy-950/20 p-1.5;
+    @apply border-t border-blue-200/10 py-3 first:border-t-0;
   }
 
   .nav-group-title {
-    @apply flex w-full items-center justify-between rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#D6E4FF]/80 transition hover:bg-white/10;
+    @apply flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#D6E4FF]/80 transition hover:bg-white/5;
   }
 
   .nav-item {
@@ -143,11 +152,11 @@ button {
   }
 
   .nav-item-active {
-    @apply border-blue-300/55 bg-blue-500/15 text-white shadow-lg shadow-blue-950/20;
+    @apply border-blue-300/35 bg-blue-500/15 text-white shadow-md shadow-blue-950/20;
   }
 
   .nav-item-inactive {
-    @apply border-transparent hover:-translate-y-0.5 hover:border-blue-200/25 hover:bg-white/10;
+    @apply border-transparent hover:border-blue-200/15 hover:bg-white/5;
   }
 
   .nav-icon {

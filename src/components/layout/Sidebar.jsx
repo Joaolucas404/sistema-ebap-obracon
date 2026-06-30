@@ -48,7 +48,7 @@ export default function Sidebar({ onNavigate }) {
 
   if (perfil === 'tecnico') {
     return (
-      <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-76px)] lg:overflow-auto">
+      <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
         <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
           <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
             <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
@@ -85,7 +85,7 @@ export default function Sidebar({ onNavigate }) {
   }
 
   return (
-    <aside className="nav-shell lg:sticky lg:top-3 lg:h-[calc(100vh-76px)] lg:overflow-auto">
+    <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
       <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
         <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
           <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />

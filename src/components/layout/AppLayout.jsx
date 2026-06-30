@@ -337,15 +337,15 @@ export default function AppLayout() {
 
   return (
     <div className="app-bg">
-      <div className="content-layer">
-        <Topbar />
-        <div className="desktop-shell grid w-full max-w-none gap-3 lg:grid-cols-[82px_minmax(0,1fr)] xl:grid-cols-[218px_minmax(0,1fr)] 2xl:grid-cols-[232px_minmax(0,1fr)]">
-          <div className="min-w-0">
-            <Sidebar />
-          </div>
-          <main className="min-w-0">
+      <div className="content-layer desktop-content-layer">
+        <div className="desktop-shell grid min-h-screen w-full max-w-none gap-0 lg:grid-cols-[82px_minmax(0,1fr)] xl:grid-cols-[218px_minmax(0,1fr)] 2xl:grid-cols-[232px_minmax(0,1fr)]">
+          <Sidebar />
+          <div className="min-w-0 px-3 py-3 xl:px-4">
+            <Topbar />
+          <main className="min-w-0 pb-6">
             <Outlet />
           </main>
+          </div>
         </div>
       </div>
     </div>
