@@ -148,19 +148,24 @@ button {
   }
 
   .sidebar-nav {
-    @apply min-h-0 flex-1 overflow-hidden;
+    @apply min-h-0 flex-1 overflow-y-auto pr-1;
+    scrollbar-width: none;
+  }
+
+  .sidebar-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .nav-group {
-    @apply border-t border-blue-200/10 py-2 first:border-t-0;
+    @apply border-t border-blue-200/10 py-1.5 first:border-t-0;
   }
 
   .nav-group-title {
-    @apply px-2 pb-1.5 pt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#D6E4FF]/65;
+    @apply px-2 pb-1 pt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#D6E4FF]/65;
   }
 
   .nav-item {
-    @apply relative grid min-h-10 grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2 py-1 text-slate-100 transition duration-200;
+    @apply relative grid min-h-[38px] grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2 py-1 text-slate-100 transition duration-200;
   }
 
   .nav-item-active {
@@ -172,11 +177,11 @@ button {
   }
 
   .nav-icon {
-    @apply grid h-8 w-8 place-items-center rounded-lg border border-blue-200/10 bg-navy-950/70 text-[#D6E4FF] shadow-inner;
+    @apply grid h-7 w-7 place-items-center rounded-lg border border-blue-200/10 bg-navy-950/70 text-[#D6E4FF] shadow-inner;
   }
 
   .sidebar-profile {
-    @apply mt-3 border-t border-blue-200/10 pt-3;
+    @apply mt-2 border-t border-blue-200/10 pt-2;
   }
 
   .sidebar-profile-main {

@@ -73,7 +73,7 @@ export default function EbapsMap({ ebaps, onSelect, compact = false, surface = t
   const validEbaps = useMemo(() => ebaps.filter((ebap) => ebap.latitude && ebap.longitude), [ebaps]);
   const shellClass = surface
     ? `glass-card relative overflow-hidden rounded-3xl p-2 ${compact ? 'min-h-[260px]' : 'min-h-[520px]'}`
-    : `relative overflow-hidden rounded-2xl border border-blue-200/10 bg-[#0A1633]/70 ${compact ? 'min-h-[260px]' : 'min-h-[620px]'}`;
+    : `relative overflow-hidden rounded-2xl bg-[#0A1633]/70 ${compact ? 'min-h-[260px]' : 'min-h-[620px]'}`;
 
   return (
     <section className={shellClass}>

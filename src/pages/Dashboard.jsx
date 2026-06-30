@@ -119,10 +119,35 @@ function EmptyPanel({ text = 'Nenhum dado disponivel ainda.' }) {
 
 function ChartCard({ title, children }) {
   return (
-    <section className="rounded-2xl bg-[#10224D]/45 p-4">
+    <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
       <h3 className="mb-3 text-base font-black text-white">{title}</h3>
       <div className="h-56">{children}</div>
     </section>
+  );
+}
+
+function ExecutiveKpi({ icon: Icon, label, value, helper, tone = 'blue' }) {
+  const toneClass = {
+    blue: 'bg-blue-500/20 text-blue-100 ring-blue-300/25',
+    cyan: 'bg-sky-500/18 text-sky-100 ring-sky-300/25',
+    orange: 'bg-amber-500/16 text-amber-100 ring-amber-300/25',
+    red: 'bg-red-500/16 text-red-100 ring-red-300/25',
+    indigo: 'bg-indigo-500/18 text-indigo-100 ring-indigo-300/25'
+  };
+
+  return (
+    <article className="rounded-2xl border border-blue-200/12 bg-[#10224D]/76 p-4 shadow-xl shadow-black/14">
+      <div className="flex items-start gap-3">
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${toneClass[tone] || toneClass.blue}`}>
+          {Icon && <Icon size={22} />}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[11px] font-black uppercase tracking-[0.12em] text-slate-300">{label}</span>
+          <strong className="mt-1 block text-3xl font-black leading-none text-white">{value}</strong>
+          {helper && <small className="mt-2 block truncate text-xs font-bold text-slate-400">{helper}</small>}
+        </span>
+      </div>
+    </article>
   );
 }
 
@@ -235,8 +260,8 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
   }
 
   return (
-    <section className="rounded-2xl bg-[#10224D]/45 p-4 shadow-xl shadow-black/10">
-      <div className="mb-4 flex items-center justify-between gap-3 border-b border-blue-200/10 pb-3">
+    <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
+      <div className="mb-4 flex items-center justify-between gap-3 border-b border-blue-200/10 pb-4">
         <div>
           <h3 className="text-base font-black text-white">{title}</h3>
           <p className="text-xs font-semibold text-slate-400">Ordenadas por criticidade</p>
@@ -301,8 +326,8 @@ function TabButton({ active, children, onClick }) {
 
 function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
   return (
-    <section className="rounded-2xl bg-[#10224D]/35 p-4 shadow-xl shadow-black/10">
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-blue-200/10 pb-4">
+    <section className="grid gap-4">
+      <div className="flex flex-wrap gap-2">
         {TABS.map((tab) => (
           <TabButton key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
             {tab}
@@ -339,7 +364,7 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
               </ResponsiveContainer>
             ) : <EmptyPanel />}
           </ChartCard>
-          <section className="premium-card p-4">
+          <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
             <h3 className="mb-3 text-base font-black text-white">Ultimas movimentacoes</h3>
             <MovimentoList items={data?.ultimasMovimentacoes || []} navigate={navigate} />
           </section>
@@ -362,7 +387,7 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
               </ResponsiveContainer>
             ) : <EmptyPanel />}
           </ChartCard>
-          <section className="premium-card p-4">
+          <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
             <h3 className="mb-3 text-base font-black text-white">Movimentacoes SST</h3>
             <MovimentoList items={(data?.ultimasMovimentacoes || []).filter((item) => ['APR', 'SST'].includes(item.tipo))} navigate={navigate} />
           </section>
@@ -372,7 +397,7 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
       {activeTab === 'Almoxarifado' && (
         <div className="grid gap-4 md:grid-cols-2">
           <KpiCard icon={PackageX} label="Estoque critico" value={loading ? '...' : data?.kpis.estoqueCritico ?? 0} helper="Itens zerados ou abaixo do minimo" tone="red" />
-          <section className="premium-card p-4">
+          <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
             <h3 className="mb-3 text-base font-black text-white">Leitura executiva</h3>
             <p className="text-sm leading-6 text-slate-300">O indicador mostra itens em estoque critico vindos do Supabase. A lista detalhada permanece no modulo Almoxarifado para evitar excesso de informacao na home executiva.</p>
           </section>
@@ -394,7 +419,7 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
               </ResponsiveContainer>
             ) : <EmptyPanel />}
           </ChartCard>
-          <section className="premium-card p-4">
+          <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
             <h3 className="mb-3 text-base font-black text-white">Ultimas compras</h3>
             <MovimentoList items={(data?.ultimasMovimentacoes || []).filter((item) => item.tipo === 'Compra')} navigate={navigate} />
           </section>
@@ -569,23 +594,23 @@ export default function Dashboard() {
         onSelectEbap={setSelectedEbap}
         navigate={navigate}
       />
-      <div className="hidden gap-6 md:grid">
-      <section className="px-1 py-2">
-        <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.65fr)_auto] xl:items-center">
+      <div className="hidden gap-7 md:grid">
+      <section className="px-1 pt-2">
+        <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.75fr)_minmax(0,1.9fr)_auto] xl:items-end">
           <div className="min-w-0">
             <span className="text-xs font-black uppercase tracking-[0.16em] text-blue-200/70">Dashboard operacional</span>
             <h2 className="mt-1 truncate text-2xl font-black leading-tight text-white">{greeting}, {user?.nome || 'Operacao'}</h2>
             <p className="mt-1 text-sm font-semibold text-slate-300">{new Date().toLocaleString('pt-BR')}</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
-            <MiniMetric icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} tone="cyan" />
-            <MiniMetric icon={ShieldAlert} label="OS criticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} tone="red" />
-            <MiniMetric icon={Clock3} label="Supervisor" value={loading ? '...' : data?.kpis.osAguardandoSupervisor ?? 0} tone="orange" />
-            <MiniMetric icon={FileText} label="RDO pend." value={loading ? '...' : data?.kpis.roPendentes ?? 0} tone="orange" />
-            <MiniMetric icon={Factory} label="EBAPs crit." value={loading ? '...' : criticidade.criticas} tone="red" />
-            <MiniMetric icon={CheckCircle2} label="Concl. hoje" value={loading ? '...' : data?.kpis.osConcluidasHoje ?? 0} tone="blue" />
+          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-6">
+            <ExecutiveKpi icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} helper="hoje" tone="blue" />
+            <ExecutiveKpi icon={ShieldAlert} label="OS criticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} helper="prioridade alta" tone="red" />
+            <ExecutiveKpi icon={Clock3} label="Supervisor" value={loading ? '...' : data?.kpis.osAguardandoSupervisor ?? 0} helper="em análise" tone="orange" />
+            <ExecutiveKpi icon={FileText} label="RDO pend." value={loading ? '...' : data?.kpis.roPendentes ?? 0} helper="validação" tone="indigo" />
+            <ExecutiveKpi icon={Factory} label="EBAPs crit." value={loading ? '...' : criticidade.criticas} helper="atenção" tone="red" />
+            <ExecutiveKpi icon={CheckCircle2} label="Concl. hoje" value={loading ? '...' : data?.kpis.osConcluidasHoje ?? 0} helper="execução" tone="cyan" />
           </div>
-          <button type="button" className="secondary-button min-h-12 justify-center px-5" onClick={loadDashboard} disabled={loading}>
+          <button type="button" className="primary-button min-h-12 justify-center px-5" onClick={loadDashboard} disabled={loading}>
             <RefreshCcw size={17} className={loading ? 'animate-spin' : ''} />
             Atualizar
           </button>
@@ -594,9 +619,9 @@ export default function Dashboard() {
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,3.2fr)_minmax(300px,0.95fr)]">
-        <section className="rounded-2xl bg-[#10224D]/42 p-4 shadow-xl shadow-black/10">
-          <div className="mb-4 flex flex-col gap-2 border-b border-blue-200/10 pb-3 md:flex-row md:items-center md:justify-between">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,3.15fr)_minmax(320px,1fr)]">
+        <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/72 p-5 shadow-xl shadow-black/15">
+          <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-lg font-black text-white">Mapa operacional</h3>
               <p className="text-sm font-semibold text-slate-300">Visao georreferenciada das EBAPs cadastradas.</p>
