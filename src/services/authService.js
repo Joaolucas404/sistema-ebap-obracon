@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { supabase } from '../lib/supabase.js';
 import { normalizePerfil } from '../config/permissions.js';
 
-const PUBLIC_USER_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, status_aprovacao, ativo, ultimo_login, criado_em';
+const PUBLIC_USER_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, ebap_id, status_aprovacao, ativo, ultimo_login, criado_em';
 
 export async function loginWithUsuarioSenha(usuario, senha) {
   const cleanUsuario = String(usuario || '').trim();
@@ -61,6 +61,7 @@ export async function loginWithUsuarioSenha(usuario, senha) {
     area_operacional: data.area_operacional,
     area_supervisao: data.area_supervisao,
     equipe: data.equipe,
+    ebap_id: data.ebap_id,
     foto_url: perfilComunicacao?.foto_url || '',
     cargo: perfilComunicacao?.cargo || data.setor || data.perfil,
     status_aprovacao: data.status_aprovacao,
