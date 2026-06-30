@@ -44,7 +44,7 @@ const STATUS_COLORS = {
   aguardando_material: '#fb923c'
 };
 
-const AREA_COLORS = ['#38bdf8', '#3B82F6', '#f59e0b', '#ef4444', '#a78bfa', '#6366F1', '#f97316', '#60a5fa'];
+const AREA_COLORS = ['#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#6366f1', '#818cf8', '#bfdbfe'];
 const TABS = ['Operacao', 'SST', 'Almoxarifado', 'Compras', 'Financeiro'];
 
 function formatDate(value) {
@@ -114,12 +114,12 @@ function calcularDisponibilidadeGerencial(gerencial) {
 }
 
 function EmptyPanel({ text = 'Nenhum dado disponivel ainda.' }) {
-  return <div className="grid min-h-36 place-items-center rounded-2xl border border-cyan-300/15 bg-navy-950/45 px-4 text-center text-sm font-bold text-slate-300">{text}</div>;
+  return <div className="grid min-h-36 place-items-center rounded-xl bg-[#0A1633]/45 px-4 text-center text-sm font-bold text-slate-300">{text}</div>;
 }
 
 function ChartCard({ title, children }) {
   return (
-    <section className="premium-card p-4">
+    <section className="rounded-2xl bg-[#10224D]/45 p-4">
       <h3 className="mb-3 text-base font-black text-white">{title}</h3>
       <div className="h-56">{children}</div>
     </section>
@@ -128,14 +128,15 @@ function ChartCard({ title, children }) {
 
 function MiniMetric({ icon: Icon, label, value, tone = 'cyan' }) {
   const toneClass = {
-    cyan: 'border-cyan-300/20 text-cyan-100',
-    green: 'border-blue-300/20 text-blue-100',
-    orange: 'border-yellow-300/20 text-yellow-100',
-    red: 'border-red-300/20 text-red-100'
+    cyan: 'text-blue-100',
+    green: 'text-blue-100',
+    orange: 'text-blue-100',
+    red: 'text-blue-100',
+    blue: 'text-blue-100'
   };
 
   return (
-    <div className={`rounded-2xl border bg-navy-950/45 p-3 shadow-inner ${toneClass[tone] || toneClass.cyan}`}>
+    <div className={`rounded-2xl bg-[#10224D]/55 p-3 shadow-inner shadow-blue-950/20 ${toneClass[tone] || toneClass.cyan}`}>
       <div className="flex items-center gap-2">
         {Icon && <Icon size={17} />}
         <span className="truncate text-[11px] font-black uppercase tracking-wide text-slate-300">{label}</span>
@@ -150,12 +151,12 @@ function EquipmentRatio({ label, value }) {
   const percentage = value && value !== '-' && total ? Math.round((Number(available) / Number(total)) * 100) : null;
 
   return (
-    <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
+    <div className="rounded-2xl bg-[#0A1633]/45 p-4">
       <span className="text-xs font-black uppercase text-slate-400">{label}</span>
       <strong className="mt-1 block text-2xl text-white">{value || '-'}</strong>
       {percentage !== null && (
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-navy-950">
-          <div className="h-full rounded-full bg-cyan-300" style={{ width: `${percentage}%` }} />
+          <div className="h-full rounded-full bg-blue-400" style={{ width: `${percentage}%` }} />
         </div>
       )}
     </div>
@@ -234,8 +235,8 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
   }
 
   return (
-    <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/55 p-4 shadow-xl shadow-black/15">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="rounded-2xl bg-[#10224D]/45 p-4 shadow-xl shadow-black/10">
+      <div className="mb-4 flex items-center justify-between gap-3 border-b border-blue-200/10 pb-3">
         <div>
           <h3 className="text-base font-black text-white">{title}</h3>
           <p className="text-xs font-semibold text-slate-400">Ordenadas por criticidade</p>
@@ -247,7 +248,7 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
           <button
             key={ebap.id}
             type="button"
-            className="rounded-2xl border border-blue-200/10 bg-[#0A1633]/65 p-3 text-left transition hover:border-blue-300/35 hover:bg-[#16356B]/55"
+            className="rounded-xl border border-transparent bg-transparent p-3 text-left transition hover:bg-blue-500/10"
             onClick={() => onSelect(ebap)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -264,8 +265,8 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
               <strong className="text-xs font-black text-white">{ebap.criticidade?.score || 0}%</strong>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black text-slate-200">
-              <span className="rounded-xl bg-white/5 px-2 py-1.5">OS: {ebap.ordensAbertas || 0}</span>
-              <span className="rounded-xl bg-white/5 px-2 py-1.5">RDO: {ebap.roPendentes || 0}</span>
+              <span className="rounded-lg bg-blue-950/45 px-2 py-1.5">OS: {ebap.ordensAbertas || 0}</span>
+              <span className="rounded-lg bg-blue-950/45 px-2 py-1.5">RDO: {ebap.roPendentes || 0}</span>
             </div>
           </button>
         )) : (
@@ -280,8 +281,8 @@ function MovimentoList({ items = [], navigate }) {
   return (
     <div className="grid gap-2">
       {items.length ? items.slice(0, 8).map((item, index) => (
-        <button key={`${item.tipo}-${item.titulo}-${index}`} type="button" className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 px-3 py-2 text-left transition hover:border-cyan-200/60" onClick={() => navigate(item.path)}>
-          <span className="text-[11px] font-black uppercase text-cyan-100">{item.tipo}</span>
+        <button key={`${item.tipo}-${item.titulo}-${index}`} type="button" className="rounded-xl border border-transparent bg-[#0A1633]/30 px-3 py-2 text-left transition hover:bg-blue-500/10" onClick={() => navigate(item.path)}>
+          <span className="text-[11px] font-black uppercase text-blue-100">{item.tipo}</span>
           <strong className="block truncate text-sm text-white">{item.titulo}</strong>
           <small className="block truncate text-slate-400">{item.descricao || '-'} - {formatDate(item.data)}</small>
         </button>
@@ -300,8 +301,8 @@ function TabButton({ active, children, onClick }) {
 
 function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
   return (
-    <section className="premium-card p-4">
-      <div className="mb-4 flex flex-wrap gap-2">
+    <section className="rounded-2xl bg-[#10224D]/35 p-4 shadow-xl shadow-black/10">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-blue-200/10 pb-4">
         {TABS.map((tab) => (
           <TabButton key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
             {tab}
@@ -568,8 +569,8 @@ export default function Dashboard() {
         onSelectEbap={setSelectedEbap}
         navigate={navigate}
       />
-      <div className="hidden gap-5 md:grid">
-      <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/60 p-5 shadow-xl shadow-black/15">
+      <div className="hidden gap-6 md:grid">
+      <section className="px-1 py-2">
         <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.65fr)_auto] xl:items-center">
           <div className="min-w-0">
             <span className="text-xs font-black uppercase tracking-[0.16em] text-blue-200/70">Dashboard operacional</span>
@@ -593,9 +594,9 @@ export default function Dashboard() {
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,2.85fr)_minmax(320px,1fr)]">
-        <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/55 p-4 shadow-xl shadow-black/15">
-          <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,3.2fr)_minmax(300px,0.95fr)]">
+        <section className="rounded-2xl bg-[#10224D]/42 p-4 shadow-xl shadow-black/10">
+          <div className="mb-4 flex flex-col gap-2 border-b border-blue-200/10 pb-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-lg font-black text-white">Mapa operacional</h3>
               <p className="text-sm font-semibold text-slate-300">Visao georreferenciada das EBAPs cadastradas.</p>
