@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, Camera, Image, Info, Lock, LogOut, Settings, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -6,7 +6,7 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Toast from '../components/ui/Toast.jsx';
 import ProfilePhotoCropModal from '../components/perfil/ProfilePhotoCropModal.jsx';
 import { useAuthStore } from '../store/authStore.js';
-import { enviarFotoPerfilComunicacao } from '../services/comunicacaoService.js';
+import { enviarFotoPerfilComunicacao, resolverUrlFotoPerfil } from '../services/comunicacaoService.js';
 import { areaOperacionalLabel, equipeTecnicaLabel } from '../services/usuariosService.js';
 
 function formatDate(value) {
@@ -52,11 +52,28 @@ export default function MeuPerfil() {
   const galleryInputRef = useRef(null);
   const [savingPhoto, setSavingPhoto] = useState(false);
   const [photoCropFile, setPhotoCropFile] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
 
   const area = areaOperacionalLabel(user?.area_operacional || user?.area_supervisao);
   const equipe = equipeTecnicaLabel(user?.equipe);
   const cargo = user?.cargo || user?.setor || perfilLabel(user?.perfil);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadPhoto() {
+      try {
+        const resolved = await resolverUrlFotoPerfil(user?.foto_url);
+        if (alive) setPhotoUrl(resolved);
+      } catch {
+        if (alive) setPhotoUrl('');
+      }
+    }
+    loadPhoto();
+    return () => {
+      alive = false;
+    };
+  }, [user?.foto_url]);
 
   function handlePhoto(event) {
     const file = event.target.files?.[0];
@@ -70,6 +87,7 @@ export default function MeuPerfil() {
     try {
       const row = await enviarFotoPerfilComunicacao(file, user);
       updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || cargo });
+      setPhotoUrl(row?.foto_url ? await resolverUrlFotoPerfil(row.foto_url) : '');
       setPhotoCropFile(null);
       setToast({ message: 'Foto de perfil atualizada.', tone: 'green' });
     } catch (err) {
@@ -98,7 +116,7 @@ export default function MeuPerfil() {
         <div className="bg-gradient-to-br from-blue-600/30 to-[#0A1633] p-5">
           <div className="flex items-center gap-4">
             <span className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-[28px] border border-blue-200/20 bg-blue-500/15 text-3xl font-black text-white shadow-inner shadow-white/5">
-              {user?.foto_url ? <img className="h-full w-full object-cover" src={user.foto_url} alt={user?.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
+              {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user?.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
             </span>
             <div className="min-w-0">
               <h2 className="truncate text-2xl font-black text-white">{user?.nome || '-'}</h2>

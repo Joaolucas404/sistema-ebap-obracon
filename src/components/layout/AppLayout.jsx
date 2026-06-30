@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { canAccess, normalizePerfil } from '../../config/permissions.js';
-import { supabase } from '../../lib/supabase.js';
 import { useAuthStore } from '../../store/authStore.js';
+import { resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
 
@@ -119,21 +119,6 @@ function isFiscalOperacional(user) {
   return normalizePerfil(user?.perfil) === 'fiscal_operacional';
 }
 
-function extractSignedStoragePath(url) {
-  try {
-    const parsed = new URL(url);
-    const marker = '/storage/v1/object/sign/';
-    const index = parsed.pathname.indexOf(marker);
-    if (index < 0) return null;
-    const rest = parsed.pathname.slice(index + marker.length);
-    const [bucket, ...pathParts] = rest.split('/');
-    const path = decodeURIComponent(pathParts.join('/'));
-    return bucket && path ? { bucket, path } : null;
-  } catch {
-    return null;
-  }
-}
-
 function MobileHeader({ user }) {
   const initials = (user?.nome || user?.usuario || 'U').slice(0, 2).toUpperCase();
   const [photoUrl, setPhotoUrl] = useState('');
@@ -147,15 +132,12 @@ function MobileHeader({ user }) {
         return;
       }
 
-      const signed = extractSignedStoragePath(source);
-      if (!signed) {
-        setPhotoUrl(source);
-        return;
+      try {
+        const resolved = await resolverUrlFotoPerfil(source);
+        if (alive) setPhotoUrl(resolved);
+      } catch {
+        if (alive) setPhotoUrl('');
       }
-
-      const { data, error } = await supabase.storage.from(signed.bucket).createSignedUrl(signed.path, 60 * 60 * 24 * 7);
-      if (!alive) return;
-      setPhotoUrl(error ? '' : data?.signedUrl || '');
     }
 
     resolvePhotoUrl();

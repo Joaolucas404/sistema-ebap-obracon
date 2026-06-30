@@ -5,10 +5,9 @@ import { MENU_ITEMS } from '../../config/menu.js';
 import NotificationBadgeButton from '../notificacoes/NotificationBadgeButton.jsx';
 import NotificationsPanel from '../notificacoes/NotificationsPanel.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
-import { supabase } from '../../lib/supabase.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
-import { enviarFotoPerfilComunicacao } from '../../services/comunicacaoService.js';
+import { enviarFotoPerfilComunicacao, resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
 import ProfilePhotoCropModal from '../perfil/ProfilePhotoCropModal.jsx';
 
 function prettyRole(role) {
@@ -37,21 +36,6 @@ function initials(name = '') {
     .map((part) => part[0])
     .join('')
     .toUpperCase();
-}
-
-function extractSignedStoragePath(url) {
-  try {
-    const parsed = new URL(url);
-    const marker = '/storage/v1/object/sign/';
-    const index = parsed.pathname.indexOf(marker);
-    if (index < 0) return null;
-    const rest = parsed.pathname.slice(index + marker.length);
-    const [bucket, ...pathParts] = rest.split('/');
-    const path = decodeURIComponent(pathParts.join('/'));
-    return bucket && path ? { bucket, path } : null;
-  } catch {
-    return null;
-  }
 }
 
 export default function Topbar() {
@@ -99,15 +83,13 @@ export default function Topbar() {
         return;
       }
 
-      const signed = extractSignedStoragePath(source);
-      if (!signed) {
-        setPhotoUrl(source);
-        return;
+      try {
+        const resolved = await resolverUrlFotoPerfil(source);
+        if (!alive) return;
+        setPhotoUrl(resolved);
+      } catch {
+        if (alive) setPhotoUrl('');
       }
-
-      const { data, error } = await supabase.storage.from(signed.bucket).createSignedUrl(signed.path, 60 * 60 * 24 * 7);
-      if (!alive) return;
-      setPhotoUrl(error ? '' : data?.signedUrl || '');
     }
 
     resolvePhotoUrl();
@@ -151,7 +133,7 @@ export default function Topbar() {
     try {
       const row = await enviarFotoPerfilComunicacao(file, user);
       updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || user?.cargo });
-      setPhotoUrl(row?.foto_url || '');
+      setPhotoUrl(row?.foto_url ? await resolverUrlFotoPerfil(row.foto_url) : '');
       setPhotoCropFile(null);
       setProfileMenuOpen(false);
     } catch (err) {

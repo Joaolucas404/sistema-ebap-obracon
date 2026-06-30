@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 
 export const COMUNICACAO_BUCKET = 'communication-files';
+const FOTO_PERFIL_EXPIRES_IN = 60 * 60 * 24 * 7;
 
 export const STATUS_PRESENCA = [
   { value: 'online', label: 'Online', tone: 'green' },
@@ -41,6 +42,35 @@ const USUARIO_COMUNICACAO_SELECT = 'id,nome,usuario,perfil,setor,area_operaciona
 
 function safeName(file) {
   return String(file?.name || 'arquivo').replace(/[^\w.\-]+/g, '_');
+}
+
+function extractSignedStoragePath(url) {
+  try {
+    const parsed = new URL(url);
+    const marker = '/storage/v1/object/sign/';
+    const index = parsed.pathname.indexOf(marker);
+    if (index < 0) return null;
+    const rest = parsed.pathname.slice(index + marker.length);
+    const [bucket, ...pathParts] = rest.split('/');
+    const path = decodeURIComponent(pathParts.join('/'));
+    return bucket && path ? { bucket, path } : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function resolverUrlFotoPerfil(fotoUrl, expiresIn = FOTO_PERFIL_EXPIRES_IN) {
+  const source = String(fotoUrl || '').trim();
+  if (!source) return '';
+
+  const signed = extractSignedStoragePath(source);
+  const bucket = signed?.bucket || COMUNICACAO_BUCKET;
+  const path = signed?.path || (!/^https?:\/\//i.test(source) ? source : '');
+  if (!path) return source;
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
+  if (error) throw new Error(error.message);
+  return data?.signedUrl || '';
 }
 
 function fileKind(file) {
@@ -97,9 +127,7 @@ export async function enviarFotoPerfilComunicacao(file, user) {
     contentType: file.type || 'image/jpeg'
   });
   if (uploadError) throw new Error(uploadError.message);
-  const { data, error } = await supabase.storage.from(COMUNICACAO_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 7);
-  if (error) throw new Error(error.message);
-  return salvarPerfilComunicacao(user, { foto_url: data?.signedUrl || '' });
+  return salvarPerfilComunicacao(user, { foto_url: path });
 }
 
 export async function listarConversasComunicacao(user) {

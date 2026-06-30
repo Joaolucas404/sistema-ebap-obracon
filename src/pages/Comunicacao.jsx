@@ -47,6 +47,7 @@ import {
   obterOuCriarConversaDireta,
   obterUrlArquivoComunicacao,
   perfilComunicacao,
+  resolverUrlFotoPerfil,
   salvarPerfilComunicacao,
   subscribeMensagens
 } from '../services/comunicacaoService.js';
@@ -175,7 +176,7 @@ export default function Comunicacao() {
       setConversas(rows);
       setSelectedId((current) => current || rows[0]?.id || '');
       const perfilRow = await salvarPerfilComunicacao(user, { status_manual: status });
-      setPerfilFoto(perfilRow?.foto_url || '');
+      setPerfilFoto(perfilRow?.foto_url ? await resolverUrlFotoPerfil(perfilRow.foto_url) : '');
     } catch (err) {
       setToast({ message: err.message || 'Falha ao carregar comunicação.', tone: 'red' });
     } finally {
@@ -438,7 +439,7 @@ export default function Comunicacao() {
     if (!file) return;
     try {
       const row = await enviarFotoPerfilComunicacao(file, user);
-      setPerfilFoto(row?.foto_url || '');
+      setPerfilFoto(row?.foto_url ? await resolverUrlFotoPerfil(row.foto_url) : '');
       updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || user?.cargo });
       setToast({ message: 'Foto de perfil atualizada.', tone: 'green' });
     } catch (err) {
@@ -940,7 +941,7 @@ export default function Comunicacao() {
 function Avatar({ user, fotoUrl }) {
   return (
     <span className="grid size-14 shrink-0 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-lg font-black text-cyan-50">
-      {fotoUrl || user?.foto_url ? <img className="size-full rounded-2xl object-cover" src={fotoUrl || user.foto_url} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
+      {fotoUrl ? <img className="size-full rounded-2xl object-cover" src={fotoUrl} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
     </span>
   );
 }
