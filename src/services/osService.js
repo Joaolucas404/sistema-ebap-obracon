@@ -78,7 +78,7 @@ export function sugerirEquipePorArea(area) {
 }
 
 export function podeCriarOS(perfil) {
-  return ['prefeitura', 'supervisor', 'diretoria', 'tecnico', 'operador'].includes(perfil);
+  return ['prefeitura', 'fiscal_operacional', 'supervisor', 'diretoria', 'tecnico', 'operador'].includes(perfil);
 }
 
 export function podeEditarOS(perfil, os) {
@@ -144,7 +144,7 @@ function action(from, to, label, descricao, acao, requiresMotivo = false) {
 function applyRoleScope(query, perfil, userId, areaSupervisao = '', equipe = '', scope = '') {
   if (['gerencia', 'diretoria'].includes(perfil)) return query;
   if (perfil === 'supervisor') return areaSupervisao ? query.eq('area', areaSupervisao) : query;
-  if (perfil === 'prefeitura') return query.eq('solicitante_id', userId);
+  if (['prefeitura', 'fiscal_operacional'].includes(perfil)) return query.eq('solicitante_id', userId);
   if (perfil === 'tecnico') {
     const own = [`solicitante_id.eq.${userId}`, `responsavel_id.eq.${userId}`, `tecnico_responsavel.eq.${userId}`];
     const team = equipe ? [`equipe.eq.${equipe}`, `equipe_responsavel.eq.${equipe}`] : [];
@@ -243,7 +243,7 @@ export async function criarOS(payload, user) {
   if (payload.ativo_id && !ativo) throw new Error('Ativo selecionado não encontrado.');
 
   const area = ativo?.area_responsavel || payload.area;
-  const ebapId = ativo?.ebap_id || payload.ebap_id || atual.ebap_id || null;
+  const ebapId = ativo?.ebap_id || payload.ebap_id || null;
   const equipamentoTipo = ativo?.tipo || payload.equipamento_tipo || null;
   const equipeResponsavel = payload.equipe_responsavel || payload.equipe || sugerirEquipePorArea(area) || user?.equipe || null;
   const equipamentoFalha = String(ativo?.nome_operacional || payload.equipamento_falha || '').trim();
@@ -256,15 +256,15 @@ export async function criarOS(payload, user) {
   }
 
   const numero = payload.numero || gerarNumeroOS();
-  const origem = payload.origem || (user?.perfil === 'prefeitura' ? 'prefeitura' : 'operacao');
-  const supervisorArea = await buscarSupervisorPorArea(payload.area);
+  const origem = payload.origem || (['prefeitura', 'fiscal_operacional'].includes(user?.perfil) ? 'prefeitura' : 'operacao');
+  const supervisorArea = await buscarSupervisorPorArea(area);
   const now = new Date().toISOString();
   const insertPayload = {
     numero,
     origem,
     ebap_id: ebapId,
-    equipamento_id: ativo ? null : payload.equipamento_id || atual.equipamento_id || null,
-    ativo_id: ativo?.id || payload.ativo_id || atual.ativo_id || null,
+    equipamento_id: ativo ? null : payload.equipamento_id || null,
+    ativo_id: ativo?.id || payload.ativo_id || null,
     solicitante_id: payload.solicitante_id || user?.id || null,
     responsavel_id: payload.responsavel_id || null,
     titulo: payload.titulo,
@@ -285,7 +285,7 @@ export async function criarOS(payload, user) {
       {
         acao: 'roteamento_inicial',
         area_anterior: null,
-        area_nova: payload.area,
+        area_nova: area,
         supervisor_anterior: null,
         supervisor_novo: supervisorArea?.supervisor_id || null,
         justificativa: 'Roteamento automático por área da OS.',
@@ -297,7 +297,7 @@ export async function criarOS(payload, user) {
     payload: {
       ...(payload.payload || {}),
       equipamento_falha: equipamentoFalha,
-      ativo_id: ativo?.id || payload.ativo_id || atual.ativo_id || null,
+      ativo_id: ativo?.id || payload.ativo_id || null,
       ativo_nome: ativo?.nome_operacional || null,
       ativo_tipo: equipamentoTipo,
       ativo_area: area,

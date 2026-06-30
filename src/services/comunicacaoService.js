@@ -267,6 +267,33 @@ export async function enviarMensagemComunicacao({ conversaId, corpo, tipo = 'tex
   return data;
 }
 
+export async function atualizarMensagemComunicacao(mensagem, patch = {}, user) {
+  if (!mensagem?.id) throw new Error('Mensagem não identificada.');
+  if (!user?.id) throw new Error('Usuário não identificado.');
+
+  const { data, error } = await supabase
+    .from('comunicacao_mensagens')
+    .update(patch)
+    .eq('id', mensagem.id)
+    .select(MENSAGEM_SELECT)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function excluirMensagemComunicacao(mensagem, user) {
+  if (!mensagem?.id) throw new Error('Mensagem não identificada.');
+  if (!user?.id) throw new Error('Usuário não identificado.');
+  if (mensagem.autor_id !== user.id) throw new Error('Somente mensagens próprias podem ser excluídas.');
+
+  const { error } = await supabase
+    .from('comunicacao_mensagens')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', mensagem.id)
+    .eq('autor_id', user.id);
+  if (error) throw new Error(error.message);
+}
+
 export async function enviarArquivoComunicacao({ conversaId, file, corpo = '' }, user) {
   if (!file) throw new Error('Selecione um arquivo.');
   const tipoArquivo = fileKind(file);

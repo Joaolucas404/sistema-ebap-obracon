@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2, Download, Eye, RefreshCcw, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Download, Eye, RefreshCcw, Save, X, XCircle } from 'lucide-react';
 import PdfTemplate from '../components/pdf/PdfTemplate.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
@@ -20,6 +20,7 @@ import {
   blankPayload,
   alterarEbapRelatorio,
   buscarRascunhoOperador,
+  cancelarRascunhoRelatorio,
   criarRascunhoRelatorio,
   finalizarRelatorio,
   listarEbapsRelatorio,
@@ -60,6 +61,7 @@ export default function RelatorioDiario() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState('');
   const [error, setError] = useState('');
+  const [progressOpen, setProgressOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const autosaveTimer = useRef(null);
   const pdfRef = useRef(null);
@@ -93,6 +95,7 @@ export default function RelatorioDiario() {
 
   const currentStepNumber = Math.max(1, currentIndex + 1);
   const progress = RELATORIO_STEPS.length ? Math.round((currentStepNumber / RELATORIO_STEPS.length) * 100) : 0;
+  const currentStepInfo = RELATORIO_STEPS[currentIndex] || RELATORIO_STEPS[0];
   const operationalSummary = useMemo(() => buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps), [payload, fotos, equipamentos, relatorio, ebaps]);
 
   async function loadInitial() {
@@ -130,7 +133,7 @@ export default function RelatorioDiario() {
       saveDraft(false);
     }, 1200);
     return () => clearTimeout(autosaveTimer.current);
-  }, [payload, relatorio?.id, relatorio?.status]);
+  }, [payload, currentStep, relatorio?.id, relatorio?.status]);
 
   async function loadEquipamentos(ebapId, basePayload = payload) {
     const rows = await listarEquipamentosRelatorio(ebapId);
@@ -183,6 +186,32 @@ export default function RelatorioDiario() {
       if (showToast) setToast({ message: 'Rascunho salvo.', tone: 'green' });
     } catch (err) {
       setError(err.message || 'Falha ao salvar rascunho.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleCancelarRdo() {
+    if (!relatorio?.id || !canEdit || !isEditableReport(relatorio.status)) return;
+    const confirmed = window.confirm('Cancelar este RDO? O rascunho será descartado e você poderá iniciar outro depois.');
+    if (!confirmed) return;
+
+    clearTimeout(autosaveTimer.current);
+    setSaving(true);
+    setError('');
+    try {
+      await cancelarRascunhoRelatorio(relatorio.id, user);
+      setRelatorio(null);
+      setPayload(blankPayload());
+      setFotos([]);
+      setEquipamentos([]);
+      setCurrentStep('dados');
+      setLastSaved('');
+      const history = await listarRelatoriosAnteriores({ perfil: user?.perfil, userId: user?.id });
+      setAnteriores(history.data);
+      setToast({ message: 'RDO cancelado.', tone: 'orange' });
+    } catch (err) {
+      setError(err.message || 'Falha ao cancelar RDO.');
     } finally {
       setSaving(false);
     }
@@ -294,6 +323,12 @@ export default function RelatorioDiario() {
                 </button>
               )}
               {canEdit && isEditableReport(relatorio?.status) && (
+                <button className="danger-button" type="button" onClick={handleCancelarRdo} disabled={saving || !relatorio?.id}>
+                  <XCircle size={17} />
+                  Cancelar
+                </button>
+              )}
+              {canEdit && isEditableReport(relatorio?.status) && (
                 <button className="secondary-button" type="button" onClick={() => saveDraft(true)} disabled={saving || !relatorio?.id}>
                   <Save size={17} />
                   Salvar
@@ -316,6 +351,7 @@ export default function RelatorioDiario() {
         canEdit={canEdit}
         onRefresh={loadInitial}
         onSave={() => saveDraft(true)}
+        onCancel={handleCancelarRdo}
         onFinalize={handleFinalizar}
       />
 
@@ -347,9 +383,31 @@ export default function RelatorioDiario() {
 
       {relatorio?.id ? (
         <>
-          <RelatorioStepper steps={RELATORIO_STEPS} currentStep={currentStep} completedSteps={completedSteps} onStepClick={setCurrentStep} />
+          <MobileRdoProgress
+            step={currentStepInfo}
+            currentStepNumber={currentStepNumber}
+            total={RELATORIO_STEPS.length}
+            progress={progress}
+            lastSaved={lastSaved}
+            saving={saving}
+            onOpen={() => setProgressOpen(true)}
+          />
+          <div className="hidden sm:block">
+            <RelatorioStepper steps={RELATORIO_STEPS} currentStep={currentStep} completedSteps={completedSteps} onStepClick={setCurrentStep} />
+          </div>
           {renderStep()}
           <WizardNavigation currentIndex={currentIndex} total={RELATORIO_STEPS.length} onPrevious={goPrevious} onNext={goNext} />
+          <ProgressModal
+            open={progressOpen}
+            steps={RELATORIO_STEPS}
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            onClose={() => setProgressOpen(false)}
+            onSelect={(stepId) => {
+              setCurrentStep(stepId);
+              setProgressOpen(false);
+            }}
+          />
         </>
       ) : (
         <div className="glass-card rounded-3xl p-8 text-center text-slate-300">
@@ -411,7 +469,7 @@ function buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps)
   };
 }
 
-function MobileRdoHeader({ relatorio, saving, canEdit, onRefresh, onSave, onFinalize }) {
+function MobileRdoHeader({ relatorio, saving, canEdit, onRefresh, onSave, onCancel, onFinalize }) {
   const canUpdate = canEdit && isEditableReport(relatorio?.status);
 
   return (
@@ -434,12 +492,91 @@ function MobileRdoHeader({ relatorio, saving, canEdit, onRefresh, onSave, onFina
         )}
       </div>
       {canUpdate && (
-        <button className="primary-button mt-2 min-h-11 w-full justify-center" type="button" onClick={onFinalize} disabled={saving || !relatorio?.id}>
-          <CheckCircle2 size={16} />
-          Finalizar RDO
-        </button>
+        <div className="mt-2 grid grid-cols-[0.9fr_1.1fr] gap-2">
+          <button className="danger-button min-h-11 justify-center px-3" type="button" onClick={onCancel} disabled={saving || !relatorio?.id}>
+            <XCircle size={16} />
+            Cancelar
+          </button>
+          <button className="primary-button min-h-11 justify-center px-3" type="button" onClick={onFinalize} disabled={saving || !relatorio?.id}>
+            <CheckCircle2 size={16} />
+            Finalizar
+          </button>
+        </div>
       )}
     </section>
+  );
+}
+
+function MobileRdoProgress({ step, currentStepNumber, total, progress, lastSaved, saving, onOpen }) {
+  return (
+    <section className="rounded-[26px] border border-blue-200/15 bg-[#10224D]/85 p-4 shadow-lg shadow-black/20 sm:hidden">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-200/70">RDO Diário</span>
+          <h2 className="mt-1 truncate text-2xl font-black text-white">{step?.title || 'Etapa atual'}</h2>
+          <p className="mt-1 text-sm font-bold text-slate-300">
+            Etapa {currentStepNumber} de {total}
+          </p>
+        </div>
+        <button className="secondary-button min-h-10 shrink-0 px-3" type="button" onClick={onOpen}>
+          Ver progresso
+        </button>
+      </div>
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between text-xs font-black text-slate-300">
+          <span>{progress}% concluído</span>
+          <span>{saving ? 'salvando...' : lastSaved ? `salvo às ${lastSaved}` : 'auto save ativo'}</span>
+        </div>
+        <div className="h-3 overflow-hidden rounded-full bg-[#0A1633] ring-1 ring-blue-200/10">
+          <div className="h-full rounded-full bg-blue-500 transition-[width]" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProgressModal({ open, steps, currentStep, completedSteps, onClose, onSelect }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end bg-black/55 p-3 sm:hidden" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 cursor-default" type="button" onClick={onClose} aria-label="Fechar progresso" />
+      <section className="relative max-h-[82dvh] w-full rounded-[28px] border border-blue-200/15 bg-[#10224D] shadow-2xl shadow-black/45">
+        <header className="flex items-center justify-between border-b border-blue-200/10 p-4">
+          <div>
+            <h3 className="text-xl font-black text-white">Progresso do RDO</h3>
+            <p className="text-sm font-semibold text-slate-300">Toque em uma etapa para abrir.</p>
+          </div>
+          <button className="grid size-10 place-items-center rounded-full bg-white/10 text-slate-200" type="button" onClick={onClose} aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </header>
+        <div className="grid max-h-[62dvh] gap-2 overflow-auto p-3">
+          {steps.map((step) => {
+            const isDone = completedSteps.includes(step.id);
+            const isCurrent = currentStep === step.id;
+            return (
+              <button
+                key={step.id}
+                className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-left ${
+                  isCurrent ? 'border-blue-300/45 bg-blue-600/25' : 'border-blue-200/10 bg-[#0A1633]/70'
+                }`}
+                type="button"
+                onClick={() => onSelect(step.id)}
+              >
+                <span className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-black ${isDone ? 'bg-blue-500 text-white' : isCurrent ? 'bg-white text-blue-700' : 'bg-white/10 text-slate-300'}`}>
+                  {isDone ? '✓' : isCurrent ? '●' : '○'}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-base font-black text-white">{step.title}</strong>
+                  <small className="block text-xs font-bold text-slate-300">{isDone ? 'Concluído' : isCurrent ? 'Atual' : 'Pendente'}</small>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </div>
   );
 }
 

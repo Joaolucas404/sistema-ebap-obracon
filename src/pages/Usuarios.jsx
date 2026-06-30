@@ -42,7 +42,8 @@ const AUTO_AREA_BY_PROFILE = {
   almoxarifado: 'almoxarifado',
   financeiro: 'financeiro',
   cco: 'cco',
-  prefeitura: 'prefeitura'
+  prefeitura: 'prefeitura',
+  fiscal_operacional: 'prefeitura'
 };
 
 function canEditUser(currentUser, targetUser) {

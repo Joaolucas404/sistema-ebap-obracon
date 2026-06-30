@@ -32,6 +32,7 @@ function perfilLabel(perfil) {
     gerencia: 'Gerência',
     diretoria: 'Diretoria',
     prefeitura: 'Prefeitura',
+    fiscal_operacional: 'Fiscal Operacional',
     sst: 'SST',
     administrativo: 'Administrativo',
     almoxarifado: 'Almoxarifado',

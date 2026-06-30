@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Camera,
@@ -14,7 +14,7 @@ import {
   Wrench
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { canAccess } from '../../config/permissions.js';
+import { canAccess, normalizePerfil } from '../../config/permissions.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
@@ -104,6 +104,7 @@ function prettyRole(role) {
     gerencia: 'Gerência',
     diretoria: 'Diretoria',
     prefeitura: 'Prefeitura',
+    fiscal_operacional: 'Fiscal Operacional',
     sst: 'SST',
     administrativo: 'Administrativo',
     almoxarifado: 'Almoxarifado',
@@ -111,6 +112,10 @@ function prettyRole(role) {
   };
 
   return labels[role] || role || 'Perfil';
+}
+
+function isFiscalOperacional(user) {
+  return normalizePerfil(user?.perfil) === 'fiscal_operacional';
 }
 
 function MobileHeader({ user }) {
@@ -145,10 +150,60 @@ function MobileHeader({ user }) {
 }
 
 function MobileHome({ user }) {
-  const availableActions = useMemo(
-    () => MOBILE_HOME_ACTIONS.filter((action) => canAccess(user?.perfil, action.key)),
-    [user?.perfil]
-  );
+  if (isFiscalOperacional(user)) {
+    const actions = [
+      {
+        title: 'Abrir OS',
+        description: 'Registrar uma solicitação com EBAP, equipamento, descrição, prioridade e fotos.',
+        path: '/os?nova=1',
+        icon: Wrench,
+        tone: 'from-blue-500/30 to-blue-500/5'
+      },
+      {
+        title: 'Minhas Solicitações',
+        description: 'Acompanhar somente as solicitações abertas por você.',
+        path: '/os?visao=minhas',
+        icon: FileText,
+        tone: 'from-indigo-500/25 to-blue-500/5'
+      }
+    ];
+
+    return (
+      <section className="grid gap-4">
+        <div className="rounded-[28px] border border-blue-200/15 bg-[#10224D]/80 p-5 shadow-xl shadow-black/20">
+          <span className="text-xs font-black uppercase tracking-[0.18em] text-blue-200/70">Fiscal Operacional</span>
+          <h1 className="mt-2 text-2xl font-black leading-tight text-white">Solicitações de campo</h1>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-300">
+            Tela simples para abrir e acompanhar suas próprias OS.
+          </p>
+        </div>
+
+        <div className="grid gap-4">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.title}
+                to={action.path}
+                className={`group flex min-h-[150px] items-center gap-4 rounded-[30px] border border-blue-200/15 bg-gradient-to-br ${action.tone} p-5 shadow-lg shadow-black/20 transition duration-200 active:scale-[0.99]`}
+              >
+                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-blue-200/15 bg-white/10 text-blue-100 shadow-inner shadow-white/5">
+                  <Icon size={32} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-2xl font-black text-white">{action.title}</strong>
+                  <span className="mt-2 block text-base font-semibold leading-snug text-slate-300">{action.description}</span>
+                </span>
+                <ChevronRight className="shrink-0 text-blue-100/70 transition group-active:translate-x-0.5" size={26} />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
+  const availableActions = MOBILE_HOME_ACTIONS.filter((action) => canAccess(user?.perfil, action.key));
 
   return (
     <section className="grid gap-4">
@@ -233,17 +288,18 @@ export default function AppLayout() {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
-  if (isMobile) {
+  if (isMobile || isFiscalOperacional(user)) {
     const showMobileHome = location.pathname === '/dashboard' || location.pathname === '/';
     const isChatRoute = location.pathname.startsWith('/comunicacao');
+    const fiscal = isFiscalOperacional(user);
 
     return (
       <div className="min-h-screen bg-[#0A1633] text-white">
         {!isChatRoute && <MobileHeader user={user} />}
-        <main className={isChatRoute ? 'mx-auto min-h-screen max-w-md px-0 pb-0 pt-0' : 'mx-auto min-h-[calc(100vh-72px)] max-w-md px-4 pb-28 pt-4'}>
+        <main className={isChatRoute ? 'mx-auto min-h-screen max-w-md px-0 pb-0 pt-0' : `mx-auto min-h-[calc(100vh-72px)] max-w-md px-4 ${fiscal ? 'pb-6' : 'pb-28'} pt-4`}>
           {showMobileHome ? <MobileHome user={user} /> : <Outlet />}
         </main>
-        {!isChatRoute && <MobileBottomNav user={user} />}
+        {!isChatRoute && !fiscal && <MobileBottomNav user={user} />}
       </div>
     );
   }

@@ -15,7 +15,8 @@ export const AREAS_OPERACIONAIS = [
   { value: 'cco', label: 'CCO' },
   { value: 'diretoria', label: 'Diretoria' },
   { value: 'gerencia', label: 'Gerência' },
-  { value: 'prefeitura', label: 'Prefeitura' }
+  { value: 'prefeitura', label: 'Prefeitura' },
+  { value: 'fiscal_operacional', label: 'Fiscal Operacional' }
 ];
 
 export const EQUIPES_TECNICAS = [
@@ -38,7 +39,8 @@ const AUTO_AREA_BY_PROFILE = {
   almoxarifado: 'almoxarifado',
   financeiro: 'financeiro',
   cco: 'cco',
-  prefeitura: 'prefeitura'
+  prefeitura: 'prefeitura',
+  fiscal_operacional: 'prefeitura'
 };
 
 const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';

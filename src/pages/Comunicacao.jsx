@@ -3,18 +3,25 @@ import {
   Archive,
   ArrowLeft,
   Camera,
+  Copy,
   Download,
   File as FileIcon,
   FileText,
+  Forward,
   Image,
   MessageCircle,
   Mic,
   Paperclip,
+  Pause,
+  Pin,
   Play,
   Radio,
+  Reply,
   Search,
   Send,
+  Share2,
   Square,
+  Trash2,
   Users,
   Video,
   X
@@ -25,12 +32,14 @@ import { useAuthStore } from '../store/authStore.js';
 import { supabase } from '../lib/supabase.js';
 import {
   broadcastDigitando,
+  atualizarMensagemComunicacao,
   buscarPessoasComunicacao,
   criarCanalDigitando,
   criarCanalPresenca,
   enviarArquivoComunicacao,
   enviarFotoPerfilComunicacao,
   enviarMensagemComunicacao,
+  excluirMensagemComunicacao,
   GRUPOS_OPERACIONAIS,
   listarConversasComunicacao,
   listarMensagensComunicacao,
@@ -86,6 +95,19 @@ function fileIcon(tipo) {
   return FileIcon;
 }
 
+function getMessageText(mensagem) {
+  return String(mensagem?.corpo || mensagem?.metadata?.original?.corpo || '').trim();
+}
+
+function createMessageReference(mensagem) {
+  return {
+    id: mensagem?.id,
+    autor: mensagem?.autor?.nome || mensagem?.autor?.usuario || 'Usuário',
+    corpo: getMessageText(mensagem) || (mensagem?.anexos?.length ? 'Arquivo anexado' : 'Mensagem'),
+    created_at: mensagem?.created_at || null
+  };
+}
+
 export default function Comunicacao() {
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -110,12 +132,19 @@ export default function Comunicacao() {
   const [pendingAudio, setPendingAudio] = useState(null);
   const [audioLevels, setAudioLevels] = useState([10, 16, 24, 34, 42, 34, 24, 16, 10]);
   const [imagePreview, setImagePreview] = useState(null);
+  const [actionMessage, setActionMessage] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  const [shareMessage, setShareMessage] = useState(null);
+  const [shareTargets, setShareTargets] = useState([]);
+  const [newMessagesNotice, setNewMessagesNotice] = useState(false);
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [signedUrls, setSignedUrls] = useState({});
   const recorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const typingTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const messagesScrollRef = useRef(null);
+  const isAtBottomRef = useRef(true);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const documentInputRef = useRef(null);
@@ -137,6 +166,7 @@ export default function Comunicacao() {
     return conversas.filter((conversa) => !term || conversa.nome.toLowerCase().includes(term) || String(conversa.descricao || '').toLowerCase().includes(term));
   }, [conversas, search]);
   const arquivos = useMemo(() => mensagens.flatMap((mensagem) => (mensagem.anexos || []).map((anexo) => ({ ...anexo, mensagem }))), [mensagens]);
+  const pinnedMessages = useMemo(() => mensagens.filter((mensagem) => mensagem.metadata?.pinned), [mensagens]);
 
   async function loadConversas() {
     setLoading(true);
@@ -242,7 +272,12 @@ export default function Comunicacao() {
   }, [selected?.id, user?.id]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (isAtBottomRef.current || mensagens[mensagens.length - 1]?.autor_id === user?.id) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      setNewMessagesNotice(false);
+    } else if (mensagens.length) {
+      setNewMessagesNotice(true);
+    }
   }, [mensagens.length, selected?.id]);
 
   useEffect(() => {
@@ -280,13 +315,103 @@ export default function Comunicacao() {
     if (!selected?.id || !message.trim()) return;
     setSending(true);
     try {
-      await enviarMensagemComunicacao({ conversaId: selected.id, corpo: message }, user);
+      await enviarMensagemComunicacao({
+        conversaId: selected.id,
+        corpo: message,
+        metadata: replyTo ? { reply_to: createMessageReference(replyTo) } : {}
+      }, user);
       setMessage('');
+      setReplyTo(null);
       await loadMensagens(selected.id);
     } catch (err) {
       setToast({ message: err.message || 'Falha ao enviar mensagem.', tone: 'red' });
     } finally {
       setSending(false);
+    }
+  }
+
+  function handleMessagesScroll() {
+    const node = messagesScrollRef.current;
+    if (!node) return;
+    const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
+    isAtBottomRef.current = distanceFromBottom < 80;
+    if (isAtBottomRef.current) setNewMessagesNotice(false);
+  }
+
+  function scrollToBottom() {
+    isAtBottomRef.current = true;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setNewMessagesNotice(false);
+  }
+
+  function scrollToMessage(messageId) {
+    document.getElementById(`mensagem-${messageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function copyMessage(mensagem = actionMessage) {
+    const text = getMessageText(mensagem);
+    if (!text) return;
+    await navigator.clipboard?.writeText(text);
+    setActionMessage(null);
+    setToast({ message: 'Mensagem copiada.', tone: 'green' });
+  }
+
+  function startReply(mensagem = actionMessage) {
+    setReplyTo(mensagem);
+    setActionMessage(null);
+  }
+
+  function startShare(mensagem = actionMessage) {
+    setShareMessage(mensagem);
+    setShareTargets([]);
+    setActionMessage(null);
+  }
+
+  async function shareSelectedMessage() {
+    if (!shareMessage || !shareTargets.length) return;
+    setSending(true);
+    try {
+      await Promise.all(shareTargets.map((conversaId) => enviarMensagemComunicacao({
+        conversaId,
+        corpo: getMessageText(shareMessage) || 'Mensagem compartilhada',
+        metadata: {
+          shared: true,
+          shared_by: user?.nome || user?.usuario || 'Usuário',
+          original: createMessageReference(shareMessage)
+        }
+      }, user)));
+      setShareMessage(null);
+      setShareTargets([]);
+      setToast({ message: 'Mensagem compartilhada.', tone: 'green' });
+    } catch (err) {
+      setToast({ message: err.message || 'Falha ao compartilhar mensagem.', tone: 'red' });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function togglePinMessage(mensagem = actionMessage) {
+    if (!mensagem) return;
+    try {
+      await atualizarMensagemComunicacao(mensagem, {
+        metadata: { ...(mensagem.metadata || {}), pinned: !mensagem.metadata?.pinned, pinned_by: user?.id || null }
+      }, user);
+      setActionMessage(null);
+      await loadMensagens(selected.id);
+    } catch (err) {
+      setToast({ message: err.message || 'Falha ao fixar mensagem.', tone: 'red' });
+    }
+  }
+
+  async function deleteMessage(mensagem = actionMessage) {
+    if (!mensagem) return;
+    try {
+      await excluirMensagemComunicacao(mensagem, user);
+      setActionMessage(null);
+      await loadMensagens(selected.id);
+      setToast({ message: 'Mensagem excluída.', tone: 'green' });
+    } catch (err) {
+      setToast({ message: err.message || 'Falha ao excluir mensagem.', tone: 'red' });
     }
   }
 
@@ -609,7 +734,7 @@ export default function Comunicacao() {
           </div>
         </aside>
 
-        <main className={`${mobileListOpen && selected ? 'hidden xl:grid' : 'grid'} min-h-screen grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border border-cyan-300/15 bg-navy-950/55 md:min-h-[680px] md:rounded-3xl xl:grid`}>
+        <main className={`${mobileListOpen && selected ? 'hidden xl:grid' : 'grid'} h-[100dvh] min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border border-cyan-300/15 bg-navy-950/55 md:h-auto md:min-h-[680px] md:rounded-3xl xl:grid`}>
           {selected ? (
             <>
               <header className="flex items-center gap-3 border-b border-cyan-300/10 p-3 md:p-4">
@@ -617,31 +742,65 @@ export default function Comunicacao() {
                   <ArrowLeft size={20} />
                 </button>
                 <Avatar user={{ nome: selected.nome }} fotoUrl="" />
-                <div className="min-w-0 flex-1">
+                <button className="min-w-0 flex-1 text-left" type="button" onClick={() => setToast({ message: 'Detalhes da conversa em breve.', tone: 'cyan' })}>
                   <h2 className="truncate text-lg font-black text-white md:text-xl">{selected.nome}</h2>
-                  <p className="truncate text-xs font-bold text-slate-300 md:text-sm">{selected.descricao || 'Conversa operacional'}</p>
-                </div>
+                  <p className="truncate text-xs font-bold text-slate-300 md:text-sm">{selected.tipo === 'direta' ? 'Online' : `${selected.membros?.length || 0} participantes`}</p>
+                </button>
                 <div className="hidden flex-wrap gap-2 md:flex">
                   {GRUPOS_OPERACIONAIS.includes(selected.nome) && <span className="status-chip">Grupo operacional</span>}
                   <span className="status-chip">{mensagens.length} mensagem(ns)</span>
                 </div>
               </header>
 
-              <section className="space-y-3 overflow-auto p-3 md:p-4">
+              <section ref={messagesScrollRef} className="relative min-h-0 space-y-3 overflow-auto p-3 md:p-4" onScroll={handleMessagesScroll}>
+                {!!pinnedMessages.length && (
+                  <div className="sticky top-0 z-10 rounded-2xl border border-blue-200/20 bg-[#10224D]/95 p-3 shadow-xl shadow-black/20 backdrop-blur">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-blue-100">
+                      <Pin size={14} />
+                      Mensagem fixada
+                    </div>
+                    <button className="mt-1 line-clamp-2 text-left text-sm font-semibold text-white" type="button" onClick={() => scrollToMessage(pinnedMessages[0].id)}>
+                      {getMessageText(pinnedMessages[0]) || 'Arquivo anexado'}
+                    </button>
+                  </div>
+                )}
                 {mensagens.map((mensagem) => (
-                  <MensagemItem key={mensagem.id} mensagem={mensagem} mine={mensagem.autor_id === user?.id} signedUrls={signedUrls} onPreviewImage={setImagePreview} />
+                  <MensagemItem
+                    key={mensagem.id}
+                    mensagem={mensagem}
+                    mine={mensagem.autor_id === user?.id}
+                    signedUrls={signedUrls}
+                    onPreviewImage={setImagePreview}
+                    onOpenActions={setActionMessage}
+                    onGoToMessage={scrollToMessage}
+                  />
                 ))}
                 {typing?.digitando && <div className="text-sm font-bold text-cyan-100">{typing.nome} está digitando...</div>}
                 <div ref={messagesEndRef} />
+                {newMessagesNotice && (
+                  <button className="sticky bottom-2 mx-auto flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-black text-white shadow-xl shadow-blue-950/30" type="button" onClick={scrollToBottom}>
+                    <ArrowLeft className="-rotate-90" size={16} />
+                    Novas mensagens
+                  </button>
+                )}
               </section>
 
-              <form className="border-t border-cyan-300/10 p-2 sm:p-4" onSubmit={handleSend}>
+              <form className="sticky bottom-0 z-20 border-t border-cyan-300/10 bg-[#0A1633]/95 p-2 backdrop-blur sm:p-4 md:static" onSubmit={handleSend}>
+                {replyTo && (
+                  <div className="mb-2 flex items-start gap-3 rounded-2xl border border-blue-200/15 bg-white/5 p-3">
+                    <Reply className="mt-0.5 shrink-0 text-blue-200" size={17} />
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-xs font-black text-blue-100">{replyTo.autor?.nome || replyTo.autor?.usuario || 'Usuário'}</strong>
+                      <span className="line-clamp-2 text-sm font-semibold text-slate-200">{getMessageText(replyTo) || 'Arquivo anexado'}</span>
+                    </div>
+                    <button className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-slate-200" type="button" onClick={() => setReplyTo(null)} aria-label="Cancelar resposta">
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
                 {pendingAudio && (
                   <div className="mb-3 rounded-3xl border border-blue-200/15 bg-[#0A1633]/90 p-3">
-                    <div className="flex items-center gap-3">
-                      <audio className="min-w-0 flex-1" src={pendingAudio.url} controls />
-                      <span className="font-mono text-xs font-black text-slate-300">{formatDuration(pendingAudio.duration || 0)}</span>
-                    </div>
+                    <VoiceMessage url={pendingAudio.url} durationHint={pendingAudio.duration || 0} />
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button className="secondary-button min-h-10 justify-center" type="button" onClick={discardPendingAudio} disabled={sending}>
                         <X size={17} />
@@ -750,6 +909,30 @@ export default function Comunicacao() {
           <img className="max-h-[88vh] max-w-full rounded-2xl object-contain shadow-2xl" src={imagePreview.url} alt={imagePreview.name} />
         </div>
       )}
+      {actionMessage && (
+        <MessageActions
+          mensagem={actionMessage}
+          mine={actionMessage.autor_id === user?.id}
+          onClose={() => setActionMessage(null)}
+          onReply={() => startReply(actionMessage)}
+          onShare={() => startShare(actionMessage)}
+          onCopy={() => copyMessage(actionMessage)}
+          onForward={() => startShare(actionMessage)}
+          onPin={() => togglePinMessage(actionMessage)}
+          onDelete={() => deleteMessage(actionMessage)}
+        />
+      )}
+      {shareMessage && (
+        <ShareMessageModal
+          conversas={conversas}
+          selectedId={selected?.id}
+          selectedTargets={shareTargets}
+          onToggle={(conversaId) => setShareTargets((current) => (current.includes(conversaId) ? current.filter((id) => id !== conversaId) : [...current, conversaId]))}
+          onClose={() => setShareMessage(null)}
+          onSubmit={shareSelectedMessage}
+          sending={sending}
+        />
+      )}
     </div>
   );
 }
@@ -762,25 +945,136 @@ function Avatar({ user, fotoUrl }) {
   );
 }
 
-function MensagemItem({ mensagem, mine, signedUrls, onPreviewImage }) {
+function MensagemItem({ mensagem, mine, signedUrls, onPreviewImage, onOpenActions, onGoToMessage }) {
+  const longPressTimerRef = useRef(null);
   const leituraCount = mensagem.leituras?.length || 0;
+  const anexos = mensagem.anexos || [];
+  const onlyVisualMedia = anexos.length === 1 && ['imagem', 'video', 'audio'].includes(anexos[0].tipo);
+  const mediaName = anexos[0]?.nome_original || '';
+  const shouldShowBody = Boolean(mensagem.corpo) && !(onlyVisualMedia && [mediaName, 'Áudio'].includes(mensagem.corpo));
+  const reply = mensagem.metadata?.reply_to;
+  const sharedBy = mensagem.metadata?.shared_by;
   return (
-    <article className={mine ? 'ml-auto max-w-[85%] rounded-2xl border border-blue-300/20 bg-blue-500/15 p-3' : 'mr-auto max-w-[85%] rounded-2xl border border-cyan-300/15 bg-navy-900/80 p-3'}>
+    <article
+      id={`mensagem-${mensagem.id}`}
+      className={mine ? 'ml-auto max-w-[85%] rounded-2xl border border-blue-300/20 bg-blue-500/15 p-3' : 'mr-auto max-w-[85%] rounded-2xl border border-cyan-300/15 bg-navy-900/80 p-3'}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onOpenActions?.(mensagem);
+      }}
+      onPointerDown={() => {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = window.setTimeout(() => onOpenActions?.(mensagem), 550);
+      }}
+      onPointerUp={() => window.clearTimeout(longPressTimerRef.current)}
+      onPointerCancel={() => window.clearTimeout(longPressTimerRef.current)}
+      onDoubleClick={() => onOpenActions?.(mensagem)}
+    >
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <strong className="text-sm text-white">{mensagem.autor?.nome || mensagem.autor?.usuario || 'Sistema'}</strong>
         <span className="text-xs font-bold text-slate-400">{formatTime(mensagem.created_at)}</span>
       </div>
-      {mensagem.corpo && <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-100">{mensagem.corpo}</p>}
-      {!!mensagem.anexos?.length && (
+      {sharedBy && (
+        <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-blue-100">
+          <Forward size={14} />
+          Mensagem compartilhada por {sharedBy}
+        </div>
+      )}
+      {reply && (
+        <button className="mb-2 block w-full rounded-xl border-l-4 border-blue-300 bg-white/5 p-2 text-left" type="button" onClick={() => reply.id && onGoToMessage?.(reply.id)}>
+          <strong className="block truncate text-xs font-black text-blue-100">{reply.autor}</strong>
+          <span className="line-clamp-2 text-xs font-semibold text-slate-200">{reply.corpo}</span>
+        </button>
+      )}
+      {shouldShowBody && <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-100">{mensagem.corpo}</p>}
+      {!!anexos.length && (
         <div className="mt-3 grid gap-2">
-          {mensagem.anexos.map((anexo) => {
+          {anexos.map((anexo) => {
             const url = signedUrls[anexo.id];
             return <AnexoMensagem key={anexo.id} anexo={anexo} url={url} onPreviewImage={onPreviewImage} />;
           })}
         </div>
       )}
+      <button className="mt-2 text-[11px] font-black uppercase tracking-wide text-blue-100/80 md:hidden" type="button" onClick={() => onOpenActions?.(mensagem)}>
+        Ações
+      </button>
       {mine && <small className="mt-2 block text-right text-[11px] font-black uppercase tracking-wide text-blue-100">Lido por {leituraCount}</small>}
     </article>
+  );
+}
+
+function MessageActions({ mensagem, mine, onClose, onReply, onShare, onCopy, onForward, onPin, onDelete }) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end bg-black/45 p-3 md:items-center md:justify-center" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 cursor-default" type="button" onClick={onClose} aria-label="Fechar ações" />
+      <div className="relative w-full max-w-md rounded-3xl border border-blue-200/15 bg-[#10224D] p-3 shadow-2xl shadow-black/40">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <span className="text-sm font-black text-white">Ações da mensagem</span>
+          <button className="grid size-9 place-items-center rounded-full bg-white/10 text-slate-200" type="button" onClick={onClose} aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="mb-3 rounded-2xl bg-[#0A1633]/80 p-3 text-sm font-semibold text-slate-100">
+          <span className="line-clamp-2">{getMessageText(mensagem) || 'Arquivo anexado'}</span>
+        </div>
+        <div className="grid gap-1">
+          <ActionButton icon={Reply} label="Responder" onClick={onReply} />
+          <ActionButton icon={Share2} label="Compartilhar" onClick={onShare} />
+          <ActionButton icon={Copy} label="Copiar" onClick={onCopy} />
+          <ActionButton icon={Forward} label="Encaminhar" onClick={onForward} />
+          <ActionButton icon={Pin} label={mensagem.metadata?.pinned ? 'Desfixar' : 'Fixar mensagem'} onClick={onPin} />
+          {mine && <ActionButton icon={Trash2} label="Excluir" danger onClick={onDelete} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({ icon: Icon, label, danger = false, onClick }) {
+  return (
+    <button className={`flex min-h-12 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black transition hover:bg-white/10 ${danger ? 'text-red-200' : 'text-white'}`} type="button" onClick={onClick}>
+      <Icon size={18} />
+      {label}
+    </button>
+  );
+}
+
+function ShareMessageModal({ conversas, selectedId, selectedTargets, onToggle, onClose, onSubmit, sending }) {
+  const options = conversas.filter((conversa) => conversa.id !== selectedId);
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end bg-black/55 p-3 md:items-center md:justify-center" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 cursor-default" type="button" onClick={onClose} aria-label="Fechar compartilhamento" />
+      <div className="relative flex max-h-[82dvh] w-full max-w-md flex-col rounded-3xl border border-blue-200/15 bg-[#10224D] shadow-2xl shadow-black/40">
+        <header className="flex items-center justify-between border-b border-blue-200/10 p-4">
+          <div>
+            <h3 className="text-lg font-black text-white">Compartilhar mensagem</h3>
+            <p className="text-sm font-semibold text-slate-300">Selecione conversas ou grupos.</p>
+          </div>
+          <button className="grid size-10 place-items-center rounded-full bg-white/10 text-slate-200" type="button" onClick={onClose} aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </header>
+        <div className="grid gap-2 overflow-auto p-3">
+          {options.map((conversa) => (
+            <label key={conversa.id} className="flex min-h-14 items-center gap-3 rounded-2xl border border-blue-200/10 bg-[#0A1633]/70 px-3 text-white">
+              <input className="size-5 accent-blue-500" type="checkbox" checked={selectedTargets.includes(conversa.id)} onChange={() => onToggle(conversa.id)} />
+              <Avatar user={{ nome: conversa.nome }} fotoUrl="" />
+              <span className="min-w-0 flex-1">
+                <strong className="block truncate text-sm">{conversa.nome}</strong>
+                <small className="block truncate text-xs font-semibold text-slate-300">{conversa.descricao || 'Conversa operacional'}</small>
+              </span>
+            </label>
+          ))}
+          {!options.length && <div className="rounded-2xl bg-[#0A1633]/70 p-4 text-sm font-bold text-slate-300">Nenhuma outra conversa disponível.</div>}
+        </div>
+        <footer className="border-t border-blue-200/10 p-3">
+          <button className="primary-button min-h-12 w-full justify-center" type="button" onClick={onSubmit} disabled={sending || !selectedTargets.length}>
+            <Share2 size={18} />
+            Compartilhar
+          </button>
+        </footer>
+      </div>
+    </div>
   );
 }
 
@@ -791,7 +1085,6 @@ function AnexoMensagem({ anexo, url, onPreviewImage }) {
     return (
       <button className="overflow-hidden rounded-2xl border border-blue-200/15 bg-navy-950/55 text-left" type="button" onClick={() => url && onPreviewImage?.({ url, name })}>
         {url ? <img className="max-h-72 w-full object-cover" src={url} alt={name} /> : <div className="grid h-40 place-items-center text-sm font-bold text-slate-300">Carregando imagem...</div>}
-        <span className="block truncate px-3 py-2 text-xs font-black text-blue-100">{name}</span>
       </button>
     );
   }
@@ -807,12 +1100,8 @@ function AnexoMensagem({ anexo, url, onPreviewImage }) {
 
   if (anexo.tipo === 'audio') {
     return (
-      <div className="rounded-2xl border border-blue-200/15 bg-navy-950/55 p-3">
-        <div className="mb-2 flex items-center gap-2 text-sm font-black text-blue-100">
-          <Play size={16} />
-          Áudio
-        </div>
-        {url ? <audio className="w-full" src={url} controls /> : <div className="text-sm font-bold text-slate-300">Carregando áudio...</div>}
+      <div className="rounded-2xl border border-blue-200/15 bg-navy-950/55 p-2">
+        {url ? <VoiceMessage url={url} /> : <div className="px-2 py-3 text-sm font-bold text-slate-300">Carregando áudio...</div>}
       </div>
     );
   }
@@ -830,6 +1119,71 @@ function AnexoMensagem({ anexo, url, onPreviewImage }) {
           <Download size={16} />
           Baixar
         </a>
+      </div>
+    </div>
+  );
+}
+
+function VoiceMessage({ url, durationHint = 0 }) {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState(durationHint);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+
+    const handleTime = () => setCurrentTime(audio.currentTime || 0);
+    const handleLoaded = () => {
+      if (Number.isFinite(audio.duration)) setDuration(Math.round(audio.duration));
+    };
+    const handleEnded = () => setPlaying(false);
+
+    audio.addEventListener('timeupdate', handleTime);
+    audio.addEventListener('loadedmetadata', handleLoaded);
+    audio.addEventListener('ended', handleEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', handleTime);
+      audio.removeEventListener('loadedmetadata', handleLoaded);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [url]);
+
+  async function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+      return;
+    }
+    await audio.play();
+    setPlaying(true);
+  }
+
+  const total = duration || durationHint || 0;
+  const progress = total ? Math.min(100, (currentTime / total) * 100) : 0;
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-[#0A1633]/85 px-3 py-2 ring-1 ring-blue-200/10">
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <button
+        className="grid size-10 shrink-0 place-items-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-950/25 transition hover:bg-blue-500 active:scale-95"
+        type="button"
+        onClick={togglePlay}
+        aria-label={playing ? 'Pausar áudio' : 'Reproduzir áudio'}
+      >
+        {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex items-center justify-between gap-3">
+          <span className="text-xs font-black uppercase tracking-wide text-blue-100">Áudio</span>
+          <span className="font-mono text-[11px] font-black text-slate-300">{formatDuration(Math.round(currentTime))} / {formatDuration(total)}</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-blue-300 transition-[width]" style={{ width: `${progress}%` }} />
+        </div>
       </div>
     </div>
   );

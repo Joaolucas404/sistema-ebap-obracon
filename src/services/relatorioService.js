@@ -124,6 +124,27 @@ export async function salvarRascunhoRelatorio(relatorioId, payload) {
   return data;
 }
 
+export async function cancelarRascunhoRelatorio(relatorioId, user) {
+  if (!relatorioId) throw new Error('Relatório não identificado.');
+
+  let query = supabase
+    .from('relatorios_diarios')
+    .update({
+      status: 'cancelado',
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', relatorioId)
+    .in('status', ['rascunho', 'correcao_solicitada']);
+
+  if (user?.id) query = query.eq('operador_id', user.id);
+
+  const { data, error } = await query.select(RELATORIO_SELECT).single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function alterarEbapRelatorio(relatorioId, ebapId) {
   const { data, error } = await supabase
     .from('relatorios_diarios')

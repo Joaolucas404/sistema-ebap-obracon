@@ -36,6 +36,7 @@ import {
   prioridadeLabel,
   prioridadeTone,
   areaLabel,
+  equipeTecnicaLabel,
   registrarExecucaoOS,
   statusLabel,
   statusTone,
@@ -200,6 +201,9 @@ export default function DetalheOS() {
         listarResponsaveis(),
         listarSstVinculosOS(id)
       ]);
+      if (user?.perfil === 'fiscal_operacional' && osData.solicitante_id !== user?.id) {
+        throw new Error('Você não tem acesso a esta solicitação.');
+      }
       setOs(osData);
       setHistorico(historicoRows);
       setComentarios(comentariosRows);
@@ -557,6 +561,74 @@ export default function DetalheOS() {
   const workflowActions = getWorkflowActions(user?.perfil, os);
   const equipamentoFalha = os.payload?.equipamento_falha || os.ativo?.nome_operacional || os.equipamento?.nome || '-';
   const isFinalizacaoComAtivo = Boolean(os.ativo_id);
+  const isFiscalOperacional = user?.perfil === 'fiscal_operacional';
+
+  if (isFiscalOperacional) {
+    return (
+      <div className="grid gap-4">
+        <PageHeader
+          title={os.numero}
+          description={os.titulo}
+          actions={
+            <Link className="secondary-button" to="/os?visao=minhas">
+              <ArrowLeft size={17} />
+              Voltar
+            </Link>
+          }
+        />
+
+        {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
+
+        <section className="rounded-[26px] border border-blue-200/15 bg-[#10224D]/80 p-5 shadow-lg shadow-black/20">
+          <div className="grid gap-4">
+            <Info label="Status" value={<StatusBadge tone={statusTone(os.status)}>{statusLabel(os.status)}</StatusBadge>} />
+            <Info label="Equipe responsável" value={equipeTecnicaLabel(os.equipe_responsavel || os.equipe) || 'Ainda não definida'} />
+          </div>
+        </section>
+
+        <section className="rounded-[26px] border border-blue-200/15 bg-[#10224D]/80 p-5 shadow-lg shadow-black/20">
+          <h3 className="mb-4 text-xl font-black text-white">Fotos</h3>
+          <div className="grid gap-3">
+            {anexos.length ? (
+              anexos.map((anexo) => (
+                <button
+                  key={anexo.id}
+                  type="button"
+                  className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-2xl border border-blue-200/15 bg-[#0A1633]/70 p-4 text-left"
+                  onClick={() => openAnexo(anexo)}
+                >
+                  <Paperclip className="text-blue-200" size={20} />
+                  <span className="min-w-0">
+                    <strong className="block truncate text-white">{anexo.legenda || 'Foto da solicitação'}</strong>
+                    <small className="block truncate text-slate-400">Toque para visualizar</small>
+                  </span>
+                </button>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-blue-200/15 bg-[#0A1633]/70 p-4 text-sm text-slate-300">Nenhuma foto enviada.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-[26px] border border-blue-200/15 bg-[#10224D]/80 p-5 shadow-lg shadow-black/20">
+          <h3 className="mb-4 text-xl font-black text-white">Histórico</h3>
+          <div className="grid gap-3">
+            {historico.length ? (
+              historico.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-blue-200/15 bg-[#0A1633]/70 p-4">
+                  <strong className="block text-sm font-black text-white">{statusLabel(item.status_novo) || item.acao || 'Atualização'}</strong>
+                  <span className="mt-1 block text-xs font-bold text-slate-400">{formatDate(item.created_at)}</span>
+                  {item.descricao && <p className="mt-2 text-sm leading-6 text-slate-300">{item.descricao}</p>}
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-blue-200/15 bg-[#0A1633]/70 p-4 text-sm text-slate-300">Nenhum histórico disponível.</div>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4">

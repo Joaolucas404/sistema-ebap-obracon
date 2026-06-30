@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, CheckCircle2, Clock, Plus, RefreshCcw, Search, TriangleAlert } from 'lucide-react';
+import { BarChart3, Camera, CheckCircle2, Clock, Plus, RefreshCcw, Search, TriangleAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import KpiCard from '../components/ui/KpiCard.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Toast from '../components/ui/Toast.jsx';
 import OSCard from '../components/os/OSCard.jsx';
 import OSFilters from '../components/os/OSFilters.jsx';
@@ -20,7 +21,8 @@ import {
   OS_PRIORIDADES,
   podeCriarOS,
   podeExcluirOS,
-  sugerirEquipePorArea
+  sugerirEquipePorArea,
+  uploadAnexoOS
 } from '../services/osService.js';
 import { ativoStatusLabel, listarAtivosPorEbap } from '../services/ativosService.js';
 
@@ -55,6 +57,7 @@ export default function OrdensServico() {
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [fotoFiles, setFotoFiles] = useState([]);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
 
@@ -65,16 +68,21 @@ export default function OrdensServico() {
   const userAreaOperacional = user?.area_operacional || user?.area_supervisao || '';
   const tecnicoScope = user?.perfil === 'tecnico' ? searchParams.get('visao') || '' : '';
   const isTecnico = user?.perfil === 'tecnico';
+  const isFiscalOperacional = user?.perfil === 'fiscal_operacional';
   const pageTitle = isTecnico
     ? tecnicoScope === 'equipe'
       ? 'OS da Equipe'
       : tecnicoScope === 'historico'
         ? 'Histórico'
         : 'Minhas OS'
-    : 'Ordens de Serviço';
+    : isFiscalOperacional
+      ? 'Minhas Solicitações'
+      : 'Ordens de Serviço';
   const pageDescription = isTecnico
     ? `Equipe ${user?.equipe || '-'} • visualização restrita ao técnico e à própria equipe.`
-    : 'Cadastro, acompanhamento, filtros, dashboard e rastreabilidade de OS conectados ao Supabase.';
+    : isFiscalOperacional
+      ? 'Acompanhe somente as OS abertas por você.'
+      : 'Cadastro, acompanhamento, filtros, dashboard e rastreabilidade de OS conectados ao Supabase.';
 
   async function loadBase() {
     const [ebapRows, responsavelRows] = await Promise.all([listarEbaps(), listarResponsaveis()]);
@@ -137,6 +145,7 @@ export default function OrdensServico() {
 
   function openCreate() {
     setForm(emptyForm);
+    setFotoFiles([]);
     setAtivosEbap([]);
     setError('');
     setModalOpen(true);
@@ -168,10 +177,14 @@ export default function OrdensServico() {
     setSaving(true);
     setError('');
     try {
-      await criarOS({ ...form, equipamento_falha: equipamentoFalha }, user);
+      const created = await criarOS({ ...form, equipamento_falha: equipamentoFalha }, user);
+      if (isFiscalOperacional && fotoFiles.length) {
+        await Promise.all(fotoFiles.map((file) => uploadAnexoOS(created.id, file, user, 'Foto enviada pelo Fiscal Operacional.', 'foto_solicitacao')));
+      }
       setToast({ message: 'OS criada com sucesso.', tone: 'green' });
       setModalOpen(false);
       setForm(emptyForm);
+      setFotoFiles([]);
       await loadOS();
     } catch (err) {
       setError(err.message || 'Não foi possível criar a OS.');
@@ -208,14 +221,14 @@ export default function OrdensServico() {
         description={pageDescription}
         actions={
           <>
-            <button className="secondary-button" type="button" onClick={loadOS} disabled={loading}>
+            {!isFiscalOperacional && <button className="secondary-button" type="button" onClick={loadOS} disabled={loading}>
               <RefreshCcw size={17} />
               Atualizar
-            </button>
+            </button>}
             {canCreate && (
               <button className="primary-button" type="button" onClick={openCreate}>
                 <Plus size={18} />
-                Nova OS
+                {isFiscalOperacional ? 'Abrir OS' : 'Nova OS'}
               </button>
             )}
           </>
@@ -240,20 +253,20 @@ export default function OrdensServico() {
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {!isFiscalOperacional && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard icon={BarChart3} label="Total" value={dashboard?.total ?? 0} helper="OS no escopo do perfil" />
         <KpiCard icon={Clock} label="Abertas" value={dashboard?.abertas ?? 0} helper="Pendentes ou em execução" tone="orange" />
         <KpiCard icon={CheckCircle2} label="Concluídas" value={dashboard?.concluidas ?? 0} helper="Encerradas no fluxo" tone="green" />
         <KpiCard icon={TriangleAlert} label="Atrasadas" value={dashboard?.atrasadas ?? 0} helper="Data programada vencida" tone="red" />
-      </div>
+      </div>}
 
-      <OSFilters filters={filters} onChange={setFilters} ebaps={ebaps} responsaveis={responsaveis} showResponsavel={user?.perfil !== 'tecnico'} />
+      {!isFiscalOperacional && <OSFilters filters={filters} onChange={setFilters} ebaps={ebaps} responsaveis={responsaveis} showResponsavel={user?.perfil !== 'tecnico'} />}
 
       <section className="grid gap-3">
         {loading ? (
           <div className="glass-card rounded-3xl p-8 text-center text-slate-300">Carregando ordens de serviço...</div>
         ) : items.length ? (
-          items.map((os) => <OSCard key={os.id} os={os} canDelete={canDelete} onDelete={handleDeleteOS} />)
+          items.map((os) => isFiscalOperacional ? <FiscalSolicitacaoCard key={os.id} os={os} /> : <OSCard key={os.id} os={os} canDelete={canDelete} onDelete={handleDeleteOS} />)
         ) : (
           <div className="glass-card rounded-3xl p-8 text-center">
             <Search className="mx-auto text-cyan-200" size={34} />
@@ -263,7 +276,7 @@ export default function OrdensServico() {
         )}
       </section>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {!isFiscalOperacional && <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm font-bold text-slate-300">
           Página {filters.page} de {totalPages} • {count} registro(s)
         </span>
@@ -275,7 +288,7 @@ export default function OrdensServico() {
             Próxima
           </button>
         </div>
-      </div>
+      </div>}
 
       <Modal open={modalOpen} title="Nova Ordem de Serviço" onClose={() => setModalOpen(false)}>
         <form className="grid gap-4" onSubmit={handleCreate}>
@@ -309,7 +322,7 @@ export default function OrdensServico() {
               </select>
             </label>
             <label className="field-label">
-              Equipamento com falha
+              Equipamento
               <select className="form-control mb-2" value={form.ativo_id} onChange={(event) => handleAtivoChange(event.target.value)} disabled={!form.ebap_id} required>
                 <option value="">Selecionar ativo cadastrado...</option>
                 {ativosEbap.map((ativo) => (
@@ -318,6 +331,7 @@ export default function OrdensServico() {
                   </option>
                 ))}
               </select>
+              {!isFiscalOperacional && (
               <input
                 className="form-control"
                 value={form.equipamento_falha}
@@ -328,19 +342,20 @@ export default function OrdensServico() {
                 required
                 readOnly={Boolean(ativoSelecionado)}
               />
+              )}
             </label>
-            <label className="field-label">
+            {!isFiscalOperacional && <label className="field-label">
               Tipo de equipamento
               <input className="form-control" value={form.equipamento_tipo || ativoSelecionado?.tipo || ''} readOnly placeholder="Preenchido pelo ativo selecionado" />
-            </label>
-            <label className="field-label">
+            </label>}
+            {!isFiscalOperacional && <label className="field-label">
               Tipo de manutenção
               <select className="form-control" value={form.tipo_manutencao} onChange={(event) => updateForm('tipo_manutencao', event.target.value)}>
                 <option value="corretiva">Corretiva</option>
                 <option value="preventiva">Preventiva</option>
                 <option value="preditiva">Preditiva</option>
               </select>
-            </label>
+            </label>}
             <label className="field-label">
               Prioridade
               <select className="form-control" value={form.prioridade} onChange={(event) => updateForm('prioridade', event.target.value)}>
@@ -351,7 +366,7 @@ export default function OrdensServico() {
                 ))}
               </select>
             </label>
-            <label className="field-label">
+            {!isFiscalOperacional && <label className="field-label">
               Área de atuação
               <select className="form-control" value={form.area} onChange={(event) => updateForm('area', event.target.value)} required disabled={Boolean(ativoSelecionado)}>
                 <option value="">Selecione...</option>
@@ -361,8 +376,8 @@ export default function OrdensServico() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="field-label">
+            </label>}
+            {!isFiscalOperacional && <label className="field-label">
               Equipe responsável
               <select className="form-control" value={form.equipe_responsavel} onChange={(event) => updateForm('equipe_responsavel', event.target.value)} required>
                 <option value="">Selecione...</option>
@@ -370,7 +385,7 @@ export default function OrdensServico() {
                   <option key={equipe.value} value={equipe.value}>{equipe.label}</option>
                 ))}
               </select>
-            </label>
+            </label>}
             <label className="field-label md:col-span-2">
               Título
               <input className="form-control" value={form.titulo} onChange={(event) => updateForm('titulo', event.target.value)} required />
@@ -379,6 +394,25 @@ export default function OrdensServico() {
               Descrição
               <textarea className="form-control min-h-28 py-3" value={form.descricao} onChange={(event) => updateForm('descricao', event.target.value)} required />
             </label>
+            {isFiscalOperacional && (
+              <label className="field-label md:col-span-2">
+                Fotos
+                <div className="rounded-2xl border border-blue-200/15 bg-navy-950/55 p-4">
+                  <input
+                    className="form-control"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    onChange={(event) => setFotoFiles(Array.from(event.target.files || []))}
+                  />
+                  <div className="mt-3 flex items-center gap-2 text-sm font-bold text-slate-300">
+                    <Camera size={17} className="text-blue-200" />
+                    {fotoFiles.length ? `${fotoFiles.length} foto(s) selecionada(s)` : 'Nenhuma foto selecionada'}
+                  </div>
+                </div>
+              </label>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
@@ -394,5 +428,28 @@ export default function OrdensServico() {
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />
     </div>
+  );
+}
+
+function FiscalSolicitacaoCard({ os }) {
+  const date = os.created_at ? new Date(os.created_at) : null;
+  const formattedDate = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('pt-BR') : '-';
+
+  return (
+    <article className="rounded-[26px] border border-blue-200/15 bg-[#10224D]/80 p-4 shadow-lg shadow-black/20">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <strong className="block text-lg font-black text-white">{os.numero}</strong>
+          <h3 className="mt-1 line-clamp-2 text-xl font-black text-white">{os.titulo}</h3>
+        </div>
+        <StatusBadge tone={statusTone(os.status)}>{statusLabel(os.status)}</StatusBadge>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3 text-sm font-bold text-slate-300">
+        <span>{formattedDate}</span>
+        <a className="primary-button min-h-10 px-4" href={`/os/${os.id}`}>
+          Detalhes
+        </a>
+      </div>
+    </article>
   );
 }
