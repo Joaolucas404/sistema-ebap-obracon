@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive,
+  ArrowLeft,
   Camera,
   Download,
   File,
@@ -15,7 +16,8 @@ import {
   Send,
   Square,
   Users,
-  Video
+  Video,
+  X
 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import Toast from '../components/ui/Toast.jsx';
@@ -99,12 +101,15 @@ export default function Comunicacao() {
   const [status, setStatus] = useState('online');
   const [typing, setTyping] = useState(null);
   const [perfilFoto, setPerfilFoto] = useState('');
+  const [mobileListOpen, setMobileListOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
-  const [audioUrl, setAudioUrl] = useState('');
+  const [pendingAudio, setPendingAudio] = useState(null);
+  const [audioLevels, setAudioLevels] = useState([10, 16, 24, 34, 42, 34, 24, 16, 10]);
+  const [imagePreview, setImagePreview] = useState(null);
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [signedUrls, setSignedUrls] = useState({});
   const recorderRef = useRef(null);
@@ -118,6 +123,11 @@ export default function Comunicacao() {
   const holdTimerRef = useRef(null);
   const holdStartedRef = useRef(false);
   const suppressAudioClickRef = useRef(false);
+  const streamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationRef = useRef(null);
+  const recordingStartedAtRef = useRef(0);
 
   const selected = useMemo(() => conversas.find((conversa) => conversa.id === selectedId) || conversas[0] || null, [conversas, selectedId]);
   const perfil = perfilComunicacao(user);
@@ -244,6 +254,17 @@ export default function Comunicacao() {
     return () => window.clearInterval(timer);
   }, [recording]);
 
+  useEffect(() => () => {
+    window.clearTimeout(holdTimerRef.current);
+    window.cancelAnimationFrame(animationRef.current);
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    audioContextRef.current?.close?.();
+  }, []);
+
+  useEffect(() => () => {
+    if (pendingAudio?.url) URL.revokeObjectURL(pendingAudio.url);
+  }, [pendingAudio?.url]);
+
   useEffect(() => {
     const anexos = mensagens.flatMap((mensagem) => mensagem.anexos || []);
     anexos.forEach((anexo) => {
@@ -309,6 +330,7 @@ export default function Comunicacao() {
       });
       setSelectedId(conversa.id);
       setActiveTab('conversas');
+      setMobileListOpen(false);
       setSearch('');
       setPeopleResults([]);
     } catch (err) {
@@ -324,6 +346,18 @@ export default function Comunicacao() {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        const audioContext = new AudioContextClass();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+        source.connect(analyser);
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+        animateWaveform();
+      }
       audioChunksRef.current = [];
       const recorder = new MediaRecorder(stream);
       recorderRef.current = recorder;
@@ -331,24 +365,20 @@ export default function Comunicacao() {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
       recorder.onstop = async () => {
+        window.cancelAnimationFrame(animationRef.current);
         stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        audioContextRef.current?.close?.();
+        audioContextRef.current = null;
+        analyserRef.current = null;
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioUrl(URL.createObjectURL(blob));
+        if (!blob.size) return;
         const file = new File([blob], `audio-${Date.now()}.webm`, { type: 'audio/webm' });
-        if (selected?.id) {
-          setSending(true);
-          try {
-            await enviarArquivoComunicacao({ conversaId: selected.id, file, corpo: 'Áudio' }, user);
-            await loadMensagens(selected.id);
-            setToast({ message: 'Áudio enviado.', tone: 'green' });
-          } catch (err) {
-            setToast({ message: err.message || 'Falha ao enviar áudio.', tone: 'red' });
-          } finally {
-            setSending(false);
-          }
-        }
+        const duration = recordingStartedAtRef.current ? Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000)) : recordingSeconds;
+        setPendingAudio({ file, url: URL.createObjectURL(blob), duration });
       };
       recorder.start();
+      recordingStartedAtRef.current = Date.now();
       setRecording(true);
     } catch (err) {
       setToast({ message: err.message || 'Não foi possível iniciar o áudio.', tone: 'red' });
@@ -358,6 +388,46 @@ export default function Comunicacao() {
   function stopRecording() {
     recorderRef.current?.stop();
     setRecording(false);
+  }
+
+  function animateWaveform() {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const draw = () => {
+      analyser.getByteFrequencyData(data);
+      const levels = Array.from({ length: 9 }, (_, index) => {
+        const start = Math.floor((index / 9) * data.length);
+        const end = Math.floor(((index + 1) / 9) * data.length);
+        const slice = data.slice(start, end);
+        const average = slice.reduce((sum, value) => sum + value, 0) / Math.max(1, slice.length);
+        return Math.max(8, Math.min(44, Math.round(8 + average / 5)));
+      });
+      setAudioLevels(levels);
+      animationRef.current = window.requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  async function sendPendingAudio() {
+    if (!pendingAudio?.file || !selected?.id) return;
+    setSending(true);
+    try {
+      await enviarArquivoComunicacao({ conversaId: selected.id, file: pendingAudio.file, corpo: 'Áudio' }, user);
+      await loadMensagens(selected.id);
+      URL.revokeObjectURL(pendingAudio.url);
+      setPendingAudio(null);
+      setToast({ message: 'Áudio enviado.', tone: 'green' });
+    } catch (err) {
+      setToast({ message: err.message || 'Falha ao enviar áudio.', tone: 'red' });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function discardPendingAudio() {
+    if (pendingAudio?.url) URL.revokeObjectURL(pendingAudio.url);
+    setPendingAudio(null);
   }
 
   function handleAudioPointerDown() {
@@ -403,14 +473,16 @@ export default function Comunicacao() {
   }
 
   return (
-    <div className="grid gap-4">
-      <PageHeader
-        title="Comunicação"
-        description="Conversas operacionais, grupos, arquivos, áudio e rastreabilidade interna do SIGEBAP."
-        leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><Radio size={24} /></span>}
-      />
+    <div className="grid gap-0 md:gap-4">
+      <div className="hidden md:block">
+        <PageHeader
+          title="Comunicação"
+          description="Conversas operacionais, grupos, arquivos, áudio e rastreabilidade interna do SIGEBAP."
+          leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><Radio size={24} /></span>}
+        />
+      </div>
 
-      <section className="grid gap-3 rounded-3xl border border-cyan-300/15 bg-navy-950/45 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+      <section className="hidden gap-3 rounded-3xl border border-cyan-300/15 bg-navy-950/45 p-4 md:grid lg:grid-cols-[1fr_auto] lg:items-center">
         <div className="flex items-center gap-3">
           <label className="relative cursor-pointer" title="Atualizar foto de perfil">
             <Avatar user={user} fotoUrl={perfilFoto} />
@@ -436,13 +508,13 @@ export default function Comunicacao() {
         </div>
       </section>
 
-      <section className="grid min-h-[680px] gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
-        <aside className="grid min-h-[680px] min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3 overflow-hidden rounded-3xl border border-cyan-300/15 bg-navy-950/55 p-4">
+      <section className="grid min-h-screen gap-0 md:min-h-[680px] md:gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+        <aside className={`${mobileListOpen || !selected ? 'grid' : 'hidden'} min-h-screen min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3 overflow-hidden border border-cyan-300/15 bg-navy-950/55 p-4 md:min-h-[680px] md:rounded-3xl xl:grid`}>
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <button key={tab.key} type="button" className={activeTab === tab.key ? 'primary-button min-h-10 px-3' : 'secondary-button min-h-10 px-3'} onClick={() => setActiveTab(tab.key)}>
+                <button key={tab.key} type="button" className={`${tab.key === 'arquivos' ? 'hidden md:inline-flex' : ''} ${activeTab === tab.key ? 'primary-button min-h-10 px-3' : 'secondary-button min-h-10 px-3'}`} onClick={() => setActiveTab(tab.key)}>
                   <Icon size={16} />
                   {tab.label}
                 </button>
@@ -485,25 +557,33 @@ export default function Comunicacao() {
                 {loading ? (
                   <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Carregando conversas...</div>
                 ) : filteredConversas.length ? (
-                  filteredConversas.map((conversa) => (
-                    <button
-                      key={conversa.id}
-                      type="button"
-                      className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
-                      onClick={() => {
-                        setSelectedId(conversa.id);
-                        setActiveTab('conversas');
-                      }}
-                    >
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                          <strong className="block truncate text-white">{conversa.nome}</strong>
-                          <span className="mt-1 block truncate text-xs font-bold text-slate-400">{conversa.descricao || 'Grupo operacional'}</span>
+                  filteredConversas.map((conversa) => {
+                    const ultima = Array.isArray(conversa.ultima_mensagem) ? conversa.ultima_mensagem[0] : conversa.ultima_mensagem;
+                    return (
+                      <button
+                        key={conversa.id}
+                        type="button"
+                        className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
+                        onClick={() => {
+                          setSelectedId(conversa.id);
+                          setActiveTab('conversas');
+                          setMobileListOpen(false);
+                        }}
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <Avatar user={{ nome: conversa.nome }} fotoUrl="" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <strong className="block truncate text-white">{conversa.nome}</strong>
+                              <span className="shrink-0 text-[11px] font-black text-slate-400">{formatTime(ultima?.created_at)}</span>
+                            </div>
+                            <span className="mt-1 block truncate text-xs font-bold text-slate-400">{ultima?.corpo || conversa.descricao || 'Sem mensagens recentes'}</span>
+                          </div>
+                          {conversa.tipo === 'grupo' && <span className="shrink-0 rounded-full bg-navy-950/70 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">Grupo</span>}
                         </div>
-                        <span className="shrink-0 rounded-full bg-navy-950/70 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{conversa.tipo === 'grupo' ? 'Grupo' : 'Direta'}</span>
-                      </div>
-                    </button>
-                  ))
+                      </button>
+                    );
+                  })
                 ) : (
                   <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Nenhuma conversa encontrada.</div>
                 )}
@@ -515,7 +595,7 @@ export default function Comunicacao() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3">
+          <div className="hidden rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3 md:block">
             <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-cyan-100">Presença</h3>
             <div className="grid gap-2">
               {onlineUsers.slice(0, 8).map((presence) => (
@@ -529,30 +609,51 @@ export default function Comunicacao() {
           </div>
         </aside>
 
-        <main className="grid min-h-[680px] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl border border-cyan-300/15 bg-navy-950/55">
+        <main className={`${mobileListOpen && selected ? 'hidden xl:grid' : 'grid'} min-h-screen grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border border-cyan-300/15 bg-navy-950/55 md:min-h-[680px] md:rounded-3xl xl:grid`}>
           {selected ? (
             <>
-              <header className="flex flex-col gap-3 border-b border-cyan-300/10 p-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-xl font-black text-white">{selected.nome}</h2>
-                  <p className="text-sm font-bold text-slate-300">{selected.descricao || 'Conversa operacional'}</p>
+              <header className="flex items-center gap-3 border-b border-cyan-300/10 p-3 md:p-4">
+                <button className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-blue-100 xl:hidden" type="button" onClick={() => setMobileListOpen(true)} aria-label="Voltar para conversas">
+                  <ArrowLeft size={20} />
+                </button>
+                <Avatar user={{ nome: selected.nome }} fotoUrl="" />
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-lg font-black text-white md:text-xl">{selected.nome}</h2>
+                  <p className="truncate text-xs font-bold text-slate-300 md:text-sm">{selected.descricao || 'Conversa operacional'}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="hidden flex-wrap gap-2 md:flex">
                   {GRUPOS_OPERACIONAIS.includes(selected.nome) && <span className="status-chip">Grupo operacional</span>}
                   <span className="status-chip">{mensagens.length} mensagem(ns)</span>
                 </div>
               </header>
 
-              <section className="space-y-3 overflow-auto p-4">
+              <section className="space-y-3 overflow-auto p-3 md:p-4">
                 {mensagens.map((mensagem) => (
-                  <MensagemItem key={mensagem.id} mensagem={mensagem} mine={mensagem.autor_id === user?.id} signedUrls={signedUrls} />
+                  <MensagemItem key={mensagem.id} mensagem={mensagem} mine={mensagem.autor_id === user?.id} signedUrls={signedUrls} onPreviewImage={setImagePreview} />
                 ))}
                 {typing?.digitando && <div className="text-sm font-bold text-cyan-100">{typing.nome} está digitando...</div>}
                 <div ref={messagesEndRef} />
               </section>
 
               <form className="border-t border-cyan-300/10 p-2 sm:p-4" onSubmit={handleSend}>
-                {audioUrl && <audio className="mb-3 w-full" src={audioUrl} controls />}
+                {pendingAudio && (
+                  <div className="mb-3 rounded-3xl border border-blue-200/15 bg-[#0A1633]/90 p-3">
+                    <div className="flex items-center gap-3">
+                      <audio className="min-w-0 flex-1" src={pendingAudio.url} controls />
+                      <span className="font-mono text-xs font-black text-slate-300">{formatDuration(pendingAudio.duration || 0)}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button className="secondary-button min-h-10 justify-center" type="button" onClick={discardPendingAudio} disabled={sending}>
+                        <X size={17} />
+                        Excluir
+                      </button>
+                      <button className="primary-button min-h-10 justify-center" type="button" onClick={sendPendingAudio} disabled={sending}>
+                        <Send size={17} />
+                        Enviar
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <input ref={cameraInputRef} className="hidden" type="file" accept="image/*" capture="environment" onChange={handleFile} disabled={sending} />
                 <input ref={galleryInputRef} className="hidden" type="file" accept="image/*" onChange={handleFile} disabled={sending} />
                 <input ref={documentInputRef} className="hidden" type="file" accept=".pdf,.xls,.xlsx,.csv,.doc,.docx,.txt" onChange={handleFile} disabled={sending} />
@@ -598,7 +699,7 @@ export default function Comunicacao() {
                       </span>
                       <span className="font-mono text-slate-200">{formatDuration(recordingSeconds)}</span>
                       <span className="flex min-w-0 flex-1 items-end gap-0.5 overflow-hidden" aria-hidden="true">
-                        {[10, 16, 24, 34, 42, 34, 24, 16, 10].map((height, index) => (
+                        {audioLevels.map((height, index) => (
                           <span
                             key={`${height}-${index}`}
                             className="w-1 animate-pulse rounded-full bg-blue-200/80"
@@ -626,7 +727,7 @@ export default function Comunicacao() {
                     onPointerDown={handleAudioPointerDown}
                     onPointerUp={handleAudioPointerUp}
                     onPointerCancel={handleAudioPointerUp}
-                    disabled={sending}
+                    disabled={sending || Boolean(pendingAudio)}
                     aria-label={message.trim() ? 'Enviar mensagem' : recording ? 'Parar gravação' : 'Gravar áudio'}
                   >
                     {message.trim() ? <Send size={21} /> : recording ? <Square size={18} /> : <Mic size={21} />}
@@ -641,6 +742,14 @@ export default function Comunicacao() {
       </section>
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />
+      {imagePreview && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/90 p-3" role="dialog" aria-modal="true">
+          <button className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white" type="button" onClick={() => setImagePreview(null)} aria-label="Fechar imagem">
+            <X size={24} />
+          </button>
+          <img className="max-h-[88vh] max-w-full rounded-2xl object-contain shadow-2xl" src={imagePreview.url} alt={imagePreview.name} />
+        </div>
+      )}
     </div>
   );
 }
@@ -653,10 +762,10 @@ function Avatar({ user, fotoUrl }) {
   );
 }
 
-function MensagemItem({ mensagem, mine, signedUrls }) {
+function MensagemItem({ mensagem, mine, signedUrls, onPreviewImage }) {
   const leituraCount = mensagem.leituras?.length || 0;
   return (
-    <article className={mine ? 'ml-auto max-w-[82%] rounded-2xl border border-emerald-300/20 bg-emerald-500/10 p-3' : 'mr-auto max-w-[82%] rounded-2xl border border-cyan-300/15 bg-navy-900/80 p-3'}>
+    <article className={mine ? 'ml-auto max-w-[85%] rounded-2xl border border-blue-300/20 bg-blue-500/15 p-3' : 'mr-auto max-w-[85%] rounded-2xl border border-cyan-300/15 bg-navy-900/80 p-3'}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <strong className="text-sm text-white">{mensagem.autor?.nome || mensagem.autor?.usuario || 'Sistema'}</strong>
         <span className="text-xs font-bold text-slate-400">{formatTime(mensagem.created_at)}</span>
@@ -665,20 +774,64 @@ function MensagemItem({ mensagem, mine, signedUrls }) {
       {!!mensagem.anexos?.length && (
         <div className="mt-3 grid gap-2">
           {mensagem.anexos.map((anexo) => {
-            const Icon = fileIcon(anexo.tipo);
             const url = signedUrls[anexo.id];
-            return (
-              <a key={anexo.id} className="flex items-center gap-3 rounded-xl border border-cyan-300/10 bg-navy-950/55 p-2 text-sm font-bold text-cyan-50" href={url || '#'} target="_blank" rel="noreferrer">
-                <Icon size={18} />
-                <span className="min-w-0 flex-1 truncate">{anexo.nome_original || 'Arquivo'}</span>
-                {anexo.tipo === 'audio' ? <Play size={16} /> : <Download size={16} />}
-              </a>
-            );
+            return <AnexoMensagem key={anexo.id} anexo={anexo} url={url} onPreviewImage={onPreviewImage} />;
           })}
         </div>
       )}
-      {mine && <small className="mt-2 block text-right text-[11px] font-black uppercase tracking-wide text-emerald-100">Lido por {leituraCount}</small>}
+      {mine && <small className="mt-2 block text-right text-[11px] font-black uppercase tracking-wide text-blue-100">Lido por {leituraCount}</small>}
     </article>
+  );
+}
+
+function AnexoMensagem({ anexo, url, onPreviewImage }) {
+  const name = anexo.nome_original || 'Arquivo';
+
+  if (anexo.tipo === 'imagem') {
+    return (
+      <button className="overflow-hidden rounded-2xl border border-blue-200/15 bg-navy-950/55 text-left" type="button" onClick={() => url && onPreviewImage?.({ url, name })}>
+        {url ? <img className="max-h-72 w-full object-cover" src={url} alt={name} /> : <div className="grid h-40 place-items-center text-sm font-bold text-slate-300">Carregando imagem...</div>}
+        <span className="block truncate px-3 py-2 text-xs font-black text-blue-100">{name}</span>
+      </button>
+    );
+  }
+
+  if (anexo.tipo === 'video') {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-blue-200/15 bg-navy-950/55">
+        {url ? <video className="max-h-72 w-full bg-black" src={url} controls /> : <div className="grid h-36 place-items-center text-sm font-bold text-slate-300">Carregando vídeo...</div>}
+        <span className="block truncate px-3 py-2 text-xs font-black text-blue-100">{name}</span>
+      </div>
+    );
+  }
+
+  if (anexo.tipo === 'audio') {
+    return (
+      <div className="rounded-2xl border border-blue-200/15 bg-navy-950/55 p-3">
+        <div className="mb-2 flex items-center gap-2 text-sm font-black text-blue-100">
+          <Play size={16} />
+          Áudio
+        </div>
+        {url ? <audio className="w-full" src={url} controls /> : <div className="text-sm font-bold text-slate-300">Carregando áudio...</div>}
+      </div>
+    );
+  }
+
+  const Icon = fileIcon(anexo.tipo);
+  return (
+    <div className="rounded-2xl border border-cyan-300/10 bg-navy-950/55 p-3 text-sm font-bold text-cyan-50">
+      <div className="flex items-center gap-3">
+        <Icon size={20} />
+        <span className="min-w-0 flex-1 truncate">{name}</span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <a className="secondary-button min-h-10 justify-center" href={url || '#'} target="_blank" rel="noreferrer">Visualizar</a>
+        <a className="primary-button min-h-10 justify-center" href={url || '#'} download={name} target="_blank" rel="noreferrer">
+          <Download size={16} />
+          Baixar
+        </a>
+      </div>
+    </div>
   );
 }
 

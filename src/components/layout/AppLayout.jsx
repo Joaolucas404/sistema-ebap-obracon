@@ -235,14 +235,15 @@ export default function AppLayout() {
 
   if (isMobile) {
     const showMobileHome = location.pathname === '/dashboard' || location.pathname === '/';
+    const isChatRoute = location.pathname.startsWith('/comunicacao');
 
     return (
       <div className="min-h-screen bg-[#0A1633] text-white">
-        <MobileHeader user={user} />
-        <main className="mx-auto min-h-[calc(100vh-72px)] max-w-md px-4 pb-28 pt-4">
+        {!isChatRoute && <MobileHeader user={user} />}
+        <main className={isChatRoute ? 'mx-auto min-h-screen max-w-md px-0 pb-0 pt-0' : 'mx-auto min-h-[calc(100vh-72px)] max-w-md px-4 pb-28 pt-4'}>
           {showMobileHome ? <MobileHome user={user} /> : <Outlet />}
         </main>
-        <MobileBottomNav user={user} />
+        {!isChatRoute && <MobileBottomNav user={user} />}
       </div>
     );
   }
