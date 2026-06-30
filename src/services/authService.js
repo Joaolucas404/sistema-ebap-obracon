@@ -46,6 +46,12 @@ export async function loginWithUsuarioSenha(usuario, senha) {
     .update({ ultimo_login: ultimoLogin, atualizado_em: ultimoLogin })
     .eq('id', data.id);
 
+  const { data: perfilComunicacao } = await supabase
+    .from('comunicacao_perfis')
+    .select('foto_url,cargo,area,equipe')
+    .eq('usuario_id', data.id)
+    .maybeSingle();
+
   return {
     id: data.id,
     usuario: data.usuario,
@@ -55,6 +61,8 @@ export async function loginWithUsuarioSenha(usuario, senha) {
     area_operacional: data.area_operacional,
     area_supervisao: data.area_supervisao,
     equipe: data.equipe,
+    foto_url: perfilComunicacao?.foto_url || '',
+    cargo: perfilComunicacao?.cargo || data.setor || data.perfil,
     status_aprovacao: data.status_aprovacao,
     ativo: data.ativo,
     ultimo_login: ultimoLogin,

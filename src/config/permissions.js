@@ -43,7 +43,7 @@ export const ROUTE_KEYS = {
 };
 
 export const ROLE_PERMISSIONS = {
-  operador: ['dashboard', 'notificacoes', 'comunicacao', 'localizacaoEbaps', 'ativos', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes', 'perfil'],
+  operador: ['dashboard', 'notificacoes', 'comunicacao', 'localizacaoEbaps', 'ativos', 'relatorio', 'ccoRelatoriosDiarios', 'acervoOperador', 'orientacoes', 'perfil', 'os'],
   tecnico: ['os', 'relatorio', 'perfil', 'comunicacao'],
   cco: ['dashboard', 'notificacoes', 'comunicacao', 'localizacaoEbaps', 'ativos', 'ccoRelatoriosDiarios', 'ccoAnaliseOS', 'supervisao', 'orientacoes', 'perfil'],
   supervisor: ['dashboard', 'notificacoes', 'comunicacao', 'localizacaoEbaps', 'ativos', 'dashboardOS', 'os', 'supervisao', 'relatorio', 'ccoRelatoriosDiarios', 'manutencao', 'salaSituacaoEbaps', 'osDiaria', 'arquivoRelatorios', 'compras', 'orientacoes', 'usuarios', 'modelosRelatorio', 'perfil'],

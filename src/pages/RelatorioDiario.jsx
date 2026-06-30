@@ -276,41 +276,52 @@ export default function RelatorioDiario() {
   }
 
   return (
-    <div className="grid gap-4">
-      <PageHeader
-        title="RDO - Relatório Diário Operacional"
-        description="RDO completo com checklist por equipamento, salvamento automático, fotos e finalização para validação CCO."
-        actions={
-          <>
-            <button className="secondary-button" type="button" onClick={loadInitial}>
-              <RefreshCcw size={17} />
-              Atualizar
-            </button>
-            {relatorio?.id && (
-              <button className="secondary-button" type="button" onClick={handleGerarPdf} disabled={saving}>
-                <Download size={17} />
-                PDF
+    <div className="grid gap-4 pb-24 sm:pb-0">
+      <div className="hidden sm:block">
+        <PageHeader
+          title="RDO - Relatório Diário Operacional"
+          description="RDO completo com checklist por equipamento, salvamento automático, fotos e finalização para validação CCO."
+          actions={
+            <>
+              <button className="secondary-button" type="button" onClick={loadInitial}>
+                <RefreshCcw size={17} />
+                Atualizar
               </button>
-            )}
-            {canEdit && isEditableReport(relatorio?.status) && (
-              <button className="secondary-button" type="button" onClick={() => saveDraft(true)} disabled={saving || !relatorio?.id}>
-                <Save size={17} />
-                Salvar
-              </button>
-            )}
-            {canEdit && isEditableReport(relatorio?.status) && (
-              <button className="primary-button" type="button" onClick={handleFinalizar} disabled={saving || !relatorio?.id}>
-                <CheckCircle2 size={17} />
-                Finalizar
-              </button>
-            )}
-          </>
-        }
+              {relatorio?.id && (
+                <button className="secondary-button" type="button" onClick={handleGerarPdf} disabled={saving}>
+                  <Download size={17} />
+                  PDF
+                </button>
+              )}
+              {canEdit && isEditableReport(relatorio?.status) && (
+                <button className="secondary-button" type="button" onClick={() => saveDraft(true)} disabled={saving || !relatorio?.id}>
+                  <Save size={17} />
+                  Salvar
+                </button>
+              )}
+              {canEdit && isEditableReport(relatorio?.status) && (
+                <button className="primary-button" type="button" onClick={handleFinalizar} disabled={saving || !relatorio?.id}>
+                  <CheckCircle2 size={17} />
+                  Finalizar
+                </button>
+              )}
+            </>
+          }
+        />
+      </div>
+
+      <MobileRdoHeader
+        relatorio={relatorio}
+        saving={saving}
+        canEdit={canEdit}
+        onRefresh={loadInitial}
+        onSave={() => saveDraft(true)}
+        onFinalize={handleFinalizar}
       />
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
-      <section className="glass-card rounded-3xl p-5">
+      <section className="glass-card rounded-3xl p-4 sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <label className="field-label">
             EBAP
@@ -346,7 +357,7 @@ export default function RelatorioDiario() {
         </div>
       )}
 
-      <section className="glass-card rounded-3xl p-5">
+      <section className="glass-card rounded-3xl p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-xl font-black text-white">Histórico do operador</h3>
@@ -400,11 +411,43 @@ function buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps)
   };
 }
 
+function MobileRdoHeader({ relatorio, saving, canEdit, onRefresh, onSave, onFinalize }) {
+  const canUpdate = canEdit && isEditableReport(relatorio?.status);
+
+  return (
+    <section className="rounded-[28px] border border-blue-200/15 bg-[#10224D]/80 p-4 shadow-lg shadow-black/20 sm:hidden">
+      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-200/70">RDO</span>
+      <h1 className="mt-1 text-2xl font-black leading-tight text-white">Relatório Diário Operacional</h1>
+      <p className="mt-1 text-sm font-semibold text-slate-300">Preenchimento rápido para operação de campo.</p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button className="secondary-button min-h-11 justify-center px-3" type="button" onClick={onRefresh}>
+          <RefreshCcw size={16} />
+          Atualizar
+        </button>
+        {canUpdate ? (
+          <button className="secondary-button min-h-11 justify-center px-3" type="button" onClick={onSave} disabled={saving || !relatorio?.id}>
+            <Save size={16} />
+            Salvar
+          </button>
+        ) : (
+          <StatusBadge tone={relatorio?.status ? 'blue' : 'slate'}>{relatorio?.status || 'sem RDO'}</StatusBadge>
+        )}
+      </div>
+      {canUpdate && (
+        <button className="primary-button mt-2 min-h-11 w-full justify-center" type="button" onClick={onFinalize} disabled={saving || !relatorio?.id}>
+          <CheckCircle2 size={16} />
+          Finalizar RDO
+        </button>
+      )}
+    </section>
+  );
+}
+
 function OperationalSummary({ summary }) {
   return (
-    <section className="sticky top-2 z-20 glass-card rounded-3xl p-4 shadow-xl shadow-navy-950/30">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,0.8fr))]">
-        <SummaryInfo label="EBAP" value={summary.ebap} />
+    <section className="glass-card rounded-[26px] p-3 shadow-lg shadow-navy-950/20 lg:sticky lg:top-2 lg:z-20 lg:rounded-3xl lg:p-4 lg:shadow-xl">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,0.8fr))] lg:gap-3">
+        <SummaryInfo className="col-span-2 md:col-span-1" label="EBAP" value={summary.ebap} />
         <SummaryInfo label="Equipamentos" value={summary.totalEquipamentos} />
         <SummaryInfo label="Preenchidos" value={summary.preenchidos} tone="text-emerald-200" />
         <SummaryInfo label="Pendentes" value={summary.pendentes} tone={summary.pendentes ? 'text-amber-200' : 'text-emerald-200'} />
@@ -414,11 +457,11 @@ function OperationalSummary({ summary }) {
   );
 }
 
-function SummaryInfo({ label, value, tone = 'text-white' }) {
+function SummaryInfo({ label, value, tone = 'text-white', className = '' }) {
   return (
-    <div className="rounded-2xl border border-cyan-300/10 bg-navy-950/50 p-3">
+    <div className={['rounded-2xl border border-cyan-300/10 bg-navy-950/50 p-3', className].join(' ')}>
       <small className="block text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</small>
-      <strong className={['mt-1 block truncate text-lg font-black', tone].join(' ')}>{value}</strong>
+      <strong className={['mt-1 block truncate text-base font-black sm:text-lg', tone].join(' ')}>{value}</strong>
     </div>
   );
 }
@@ -438,7 +481,7 @@ function WizardNavigation({ currentIndex, total, onPrevious, onNext }) {
           <ArrowRight size={17} />
         </button>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-cyan-300/15 bg-navy-950/95 p-3 shadow-2xl sm:hidden">
+      <div className="fixed inset-x-4 bottom-24 z-40 mx-auto max-w-md rounded-[26px] border border-cyan-300/15 bg-navy-950/95 p-2 shadow-2xl sm:hidden">
         <div className="grid grid-cols-[0.85fr_1.15fr] gap-2">
           <button type="button" className="secondary-button justify-center" onClick={onPrevious} disabled={isFirst}>
             <ArrowLeft size={17} />

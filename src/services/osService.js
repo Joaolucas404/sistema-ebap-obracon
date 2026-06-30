@@ -78,7 +78,7 @@ export function sugerirEquipePorArea(area) {
 }
 
 export function podeCriarOS(perfil) {
-  return ['prefeitura', 'supervisor', 'diretoria', 'tecnico'].includes(perfil);
+  return ['prefeitura', 'supervisor', 'diretoria', 'tecnico', 'operador'].includes(perfil);
 }
 
 export function podeEditarOS(perfil, os) {

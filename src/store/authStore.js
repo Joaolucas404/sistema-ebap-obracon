@@ -14,6 +14,11 @@ export const useAuthStore = create(
           user: user ? { ...user, perfil: normalizePerfil(user.perfil) } : null,
           isAuthenticated: Boolean(user)
         }),
+      updateUser: (patch) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...patch, perfil: normalizePerfil(patch?.perfil || state.user.perfil) } : state.user,
+          isAuthenticated: state.isAuthenticated
+        })),
       logout: () => {
         window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
         window.localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -26,10 +31,7 @@ export const useAuthStore = create(
     }),
     {
       name: AUTH_STORAGE_KEY,
-      storage: createJSONStorage(() => window.sessionStorage),
-      onRehydrateStorage: () => () => {
-        window.localStorage.removeItem(AUTH_STORAGE_KEY);
-      },
+      storage: createJSONStorage(() => window.localStorage),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated

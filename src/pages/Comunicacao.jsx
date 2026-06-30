@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive,
+  Camera,
   Download,
   File,
+  FileText,
   Image,
   MessageCircle,
   Mic,
@@ -12,7 +14,8 @@ import {
   Search,
   Send,
   Square,
-  Users
+  Users,
+  Video
 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import Toast from '../components/ui/Toast.jsx';
@@ -61,6 +64,12 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('pt-BR');
 }
 
+function formatDuration(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+}
+
 function initials(name = '') {
   return String(name || '?').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }
@@ -77,6 +86,7 @@ function fileIcon(tipo) {
 
 export default function Comunicacao() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const [activeTab, setActiveTab] = useState('conversas');
   const [conversas, setConversas] = useState([]);
   const [selectedId, setSelectedId] = useState('');
@@ -92,6 +102,8 @@ export default function Comunicacao() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [audioUrl, setAudioUrl] = useState('');
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [signedUrls, setSignedUrls] = useState({});
@@ -99,6 +111,13 @@ export default function Comunicacao() {
   const audioChunksRef = useRef([]);
   const typingTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const documentInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const holdTimerRef = useRef(null);
+  const holdStartedRef = useRef(false);
+  const suppressAudioClickRef = useRef(false);
 
   const selected = useMemo(() => conversas.find((conversa) => conversa.id === selectedId) || conversas[0] || null, [conversas, selectedId]);
   const perfil = perfilComunicacao(user);
@@ -217,6 +236,15 @@ export default function Comunicacao() {
   }, [mensagens.length, selected?.id]);
 
   useEffect(() => {
+    if (!recording) {
+      setRecordingSeconds(0);
+      return undefined;
+    }
+    const timer = window.setInterval(() => setRecordingSeconds((current) => current + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [recording]);
+
+  useEffect(() => {
     const anexos = mensagens.flatMap((mensagem) => mensagem.anexos || []);
     anexos.forEach((anexo) => {
       if (signedUrls[anexo.id]) return;
@@ -245,6 +273,7 @@ export default function Comunicacao() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file || !selected?.id) return;
+    setAttachmentMenuOpen(false);
     setSending(true);
     try {
       await enviarArquivoComunicacao({ conversaId: selected.id, file }, user);
@@ -264,6 +293,7 @@ export default function Comunicacao() {
     try {
       const row = await enviarFotoPerfilComunicacao(file, user);
       setPerfilFoto(row?.foto_url || '');
+      updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || user?.cargo });
       setToast({ message: 'Foto de perfil atualizada.', tone: 'green' });
     } catch (err) {
       setToast({ message: err.message || 'Falha ao atualizar foto de perfil.', tone: 'red' });
@@ -287,42 +317,77 @@ export default function Comunicacao() {
   }
 
   async function startRecording() {
+    if (recording || sending) return;
     if (!navigator.mediaDevices?.getUserMedia) {
       setToast({ message: 'Gravação de áudio não suportada neste navegador.', tone: 'orange' });
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioChunksRef.current = [];
-    const recorder = new MediaRecorder(stream);
-    recorderRef.current = recorder;
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) audioChunksRef.current.push(event.data);
-    };
-    recorder.onstop = async () => {
-      stream.getTracks().forEach((track) => track.stop());
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      setAudioUrl(URL.createObjectURL(blob));
-      const file = new File([blob], `audio-${Date.now()}.webm`, { type: 'audio/webm' });
-      if (selected?.id) {
-        setSending(true);
-        try {
-          await enviarArquivoComunicacao({ conversaId: selected.id, file, corpo: 'Áudio' }, user);
-          await loadMensagens(selected.id);
-          setToast({ message: 'Áudio enviado.', tone: 'green' });
-        } catch (err) {
-          setToast({ message: err.message || 'Falha ao enviar áudio.', tone: 'red' });
-        } finally {
-          setSending(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioUrl(URL.createObjectURL(blob));
+        const file = new File([blob], `audio-${Date.now()}.webm`, { type: 'audio/webm' });
+        if (selected?.id) {
+          setSending(true);
+          try {
+            await enviarArquivoComunicacao({ conversaId: selected.id, file, corpo: 'Áudio' }, user);
+            await loadMensagens(selected.id);
+            setToast({ message: 'Áudio enviado.', tone: 'green' });
+          } catch (err) {
+            setToast({ message: err.message || 'Falha ao enviar áudio.', tone: 'red' });
+          } finally {
+            setSending(false);
+          }
         }
-      }
-    };
-    recorder.start();
-    setRecording(true);
+      };
+      recorder.start();
+      setRecording(true);
+    } catch (err) {
+      setToast({ message: err.message || 'Não foi possível iniciar o áudio.', tone: 'red' });
+    }
   }
 
   function stopRecording() {
     recorderRef.current?.stop();
     setRecording(false);
+  }
+
+  function handleAudioPointerDown() {
+    if (message.trim() || sending || recording) return;
+    holdStartedRef.current = false;
+    window.clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = window.setTimeout(() => {
+      holdStartedRef.current = true;
+      startRecording();
+    }, 350);
+  }
+
+  function handleAudioPointerUp() {
+    window.clearTimeout(holdTimerRef.current);
+    if (holdStartedRef.current) {
+      suppressAudioClickRef.current = true;
+      stopRecording();
+      window.setTimeout(() => {
+        suppressAudioClickRef.current = false;
+      }, 250);
+    }
+  }
+
+  function handleAudioClick() {
+    if (suppressAudioClickRef.current || message.trim() || sending) return;
+    if (recording) {
+      stopRecording();
+      return;
+    }
+    startRecording();
   }
 
   function handleTyping(value) {
@@ -486,27 +551,85 @@ export default function Comunicacao() {
                 <div ref={messagesEndRef} />
               </section>
 
-              <form className="border-t border-cyan-300/10 p-4" onSubmit={handleSend}>
+              <form className="border-t border-cyan-300/10 p-2 sm:p-4" onSubmit={handleSend}>
                 {audioUrl && <audio className="mb-3 w-full" src={audioUrl} controls />}
-                <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
-                  <label className="secondary-button min-h-12 cursor-pointer justify-center">
-                    <Paperclip size={18} />
-                    <input className="hidden" type="file" accept="image/*,video/*,audio/*,.pdf,.xls,.xlsx,.csv,.doc,.docx,.txt" onChange={handleFile} disabled={sending} />
-                  </label>
-                  <input
-                    className="form-control min-w-0"
-                    value={message}
-                    onChange={(event) => handleTyping(event.target.value)}
-                    placeholder="Digite uma mensagem operacional..."
-                    disabled={sending}
-                  />
-                  <button className={recording ? 'danger-button min-h-12 justify-center' : 'secondary-button min-h-12 justify-center'} type="button" onClick={recording ? stopRecording : startRecording} disabled={sending}>
-                    {recording ? <Square size={18} /> : <Mic size={18} />}
-                    {recording ? 'Parar' : 'Áudio'}
+                <input ref={cameraInputRef} className="hidden" type="file" accept="image/*" capture="environment" onChange={handleFile} disabled={sending} />
+                <input ref={galleryInputRef} className="hidden" type="file" accept="image/*" onChange={handleFile} disabled={sending} />
+                <input ref={documentInputRef} className="hidden" type="file" accept=".pdf,.xls,.xlsx,.csv,.doc,.docx,.txt" onChange={handleFile} disabled={sending} />
+                <input ref={videoInputRef} className="hidden" type="file" accept="video/*" onChange={handleFile} disabled={sending} />
+
+                <div className="relative flex min-h-[54px] w-full items-center gap-2 rounded-[28px] border border-blue-200/15 bg-[#0A1633]/90 px-2 shadow-inner shadow-white/5 ring-1 ring-white/5">
+                  {attachmentMenuOpen && (
+                    <div className="absolute bottom-[calc(100%+0.6rem)] left-0 z-20 grid w-56 gap-1 rounded-3xl border border-blue-200/15 bg-[#10224D] p-2 shadow-2xl shadow-black/35">
+                      <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-white hover:bg-white/10" type="button" onClick={() => cameraInputRef.current?.click()}>
+                        <Camera size={18} className="text-blue-200" />
+                        Tirar foto
+                      </button>
+                      <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-white hover:bg-white/10" type="button" onClick={() => galleryInputRef.current?.click()}>
+                        <Image size={18} className="text-blue-200" />
+                        Galeria
+                      </button>
+                      <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-white hover:bg-white/10" type="button" onClick={() => documentInputRef.current?.click()}>
+                        <FileText size={18} className="text-blue-200" />
+                        Documento
+                      </button>
+                      <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-white hover:bg-white/10" type="button" onClick={() => videoInputRef.current?.click()}>
+                        <Video size={18} className="text-blue-200" />
+                        Vídeo
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-slate-200 transition hover:bg-white/10 active:scale-95"
+                    type="button"
+                    onClick={() => setAttachmentMenuOpen((open) => !open)}
+                    disabled={sending || recording}
+                    aria-label="Anexar arquivo"
+                  >
+                    <Paperclip size={22} />
                   </button>
-                  <button className="primary-button min-h-12 justify-center" type="submit" disabled={sending || !message.trim()}>
-                    <Send size={18} />
-                    Enviar
+
+                  {recording ? (
+                    <div className="flex min-w-0 flex-1 items-center gap-3 text-sm font-black text-white">
+                      <span className="inline-flex items-center gap-2 text-red-200">
+                        <Mic size={18} />
+                        Gravando
+                      </span>
+                      <span className="font-mono text-slate-200">{formatDuration(recordingSeconds)}</span>
+                      <span className="flex min-w-0 flex-1 items-end gap-0.5 overflow-hidden" aria-hidden="true">
+                        {[10, 16, 24, 34, 42, 34, 24, 16, 10].map((height, index) => (
+                          <span
+                            key={`${height}-${index}`}
+                            className="w-1 animate-pulse rounded-full bg-blue-200/80"
+                            style={{ height, animationDelay: `${index * 80}ms` }}
+                          />
+                        ))}
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      className="min-h-11 min-w-0 flex-1 bg-transparent text-base font-semibold text-white outline-none placeholder:text-slate-400"
+                      value={message}
+                      onChange={(event) => handleTyping(event.target.value)}
+                      placeholder="Digite uma mensagem..."
+                      disabled={sending}
+                    />
+                  )}
+
+                  <button
+                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition active:scale-95 ${
+                      message.trim() ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30' : recording ? 'bg-red-500/90 text-white' : 'bg-white/10 text-blue-100'
+                    }`}
+                    type={message.trim() ? 'submit' : 'button'}
+                    onClick={message.trim() ? undefined : handleAudioClick}
+                    onPointerDown={handleAudioPointerDown}
+                    onPointerUp={handleAudioPointerUp}
+                    onPointerCancel={handleAudioPointerUp}
+                    disabled={sending}
+                    aria-label={message.trim() ? 'Enviar mensagem' : recording ? 'Parar gravação' : 'Gravar áudio'}
+                  >
+                    {message.trim() ? <Send size={21} /> : recording ? <Square size={18} /> : <Mic size={21} />}
                   </button>
                 </div>
               </form>

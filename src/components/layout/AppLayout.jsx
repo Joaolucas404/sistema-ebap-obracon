@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  Bell,
   Camera,
   CheckSquare,
   ChevronRight,
@@ -10,6 +9,7 @@ import {
   MessageCircle,
   Mic,
   PackageCheck,
+  Plus,
   UserRound,
   Wrench
 } from 'lucide-react';
@@ -53,12 +53,12 @@ const MOBILE_HOME_ACTIONS = [
     tone: 'from-sky-500/25 to-blue-500/5'
   },
   {
-    key: 'notificacoes',
-    title: 'Alertas',
-    description: 'Avisos, pendências e retornos do CCO.',
-    path: '/notificacoes',
-    icon: Bell,
-    tone: 'from-amber-500/20 to-blue-500/5'
+    key: 'os',
+    title: 'Abrir OS',
+    description: 'Criar nova ordem de serviço em campo.',
+    path: '/os?nova=1',
+    icon: Plus,
+    tone: 'from-blue-400/25 to-indigo-500/5'
   },
   {
     key: 'ativos',
@@ -125,14 +125,18 @@ function MobileHeader({ user }) {
         </div>
         <Link
           to="/perfil"
-          className="flex max-w-[148px] items-center gap-2 rounded-2xl border border-blue-200/15 bg-white/10 p-1.5 pr-3 text-left shadow-inner shadow-white/5"
+          className="flex max-w-[190px] items-center gap-2 rounded-2xl border border-blue-200/15 bg-white/10 p-1.5 pr-3 text-left shadow-inner shadow-white/5"
         >
           <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-blue-500/20 text-xs font-black text-white ring-1 ring-blue-200/20">
             {user?.foto_url ? <img className="h-full w-full object-cover" src={user.foto_url} alt={user.nome || 'Usuário'} /> : initials}
           </span>
           <span className="min-w-0 leading-tight">
             <span className="block truncate text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</span>
-            <span className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-300">{prettyRole(user?.perfil)}</span>
+            <span className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-300">{user?.cargo || prettyRole(user?.perfil)}</span>
+            <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide text-blue-100">
+              <span className="size-1.5 rounded-full bg-blue-400" />
+              Online
+            </span>
           </span>
         </Link>
       </div>

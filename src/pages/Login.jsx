@@ -131,14 +131,18 @@ export default function Login() {
           <main className="grid place-items-center p-4 md:p-8">
             <form className="login-rise glass-card w-full max-w-lg rounded-[30px] border-white/20 p-7 shadow-2xl shadow-black/25 md:p-9" onSubmit={handleSubmit}>
               <div className="text-center">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#17B33A]">Acesso operacional</p>
-                <h2 className="mt-3 text-4xl font-black leading-tight text-white">{LOGIN_COPY.title}</h2>
-                <p className="mt-2 text-base font-black leading-6 text-slate-200">{LOGIN_COPY.subtitle}</p>
-                <div className="mt-6">
+                <div className="mx-auto mb-6 grid max-w-[220px] justify-items-center lg:hidden">
+                  <img className="h-auto w-36" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
+                  <p className="mt-5 text-xs font-black uppercase tracking-[0.24em] text-blue-200">SIGEBAP Mobile</p>
+                  <h1 className="mt-2 text-3xl font-black leading-tight text-white">Operação em Campo</h1>
+                </div>
+                <p className="hidden text-xs font-black uppercase tracking-[0.28em] text-blue-200 lg:block">Acesso operacional</p>
+                <h2 className="mt-3 hidden text-4xl font-black leading-tight text-white lg:block">{LOGIN_COPY.title}</h2>
+                <p className="mt-2 hidden text-base font-black leading-6 text-slate-200 lg:block">{LOGIN_COPY.subtitle}</p>
+                <div className="mt-2 lg:mt-6">
                   <p className="text-2xl font-black text-white">Bem-vindo</p>
                   <p className="mt-1 text-sm font-semibold text-slate-300">Acesse a plataforma operacional</p>
                 </div>
-                <p className="mt-4 text-xs font-semibold leading-5 text-slate-400 lg:hidden">{LOGIN_COPY.description}</p>
               </div>
 
               <div className="mt-8 grid gap-4">
