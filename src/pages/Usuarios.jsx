@@ -378,7 +378,19 @@ export default function Usuarios() {
             <StatusBadge tone="cyan">{usuarios.length} usuário(s)</StatusBadge>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-[1320px] w-full border-separate border-spacing-y-2 p-3 text-left">
+            <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-y-2 p-3 text-left xl:min-w-0">
+              <colgroup>
+                <col className="w-[120px]" />
+                <col className="w-[86px]" />
+                <col className="w-[110px]" />
+                <col className="w-[82px]" />
+                <col className="w-[100px]" />
+                <col className="w-[86px]" />
+                <col className="w-[96px]" />
+                <col className="w-[78px]" />
+                <col className="w-[108px]" />
+                <col className="w-[330px]" />
+              </colgroup>
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-slate-400">
                   <th className="px-3 py-2">Nome</th>
@@ -401,12 +413,22 @@ export default function Usuarios() {
                 ) : usuarios.length ? (
                   usuariosPaginados.map((usuario) => (
                     <tr key={usuario.id}>
-                      <td className="rounded-l-2xl border-y border-l border-cyan-300/10 bg-navy-950/55 px-3 py-3 font-bold text-white">{usuario.nome}</td>
-                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.usuario}</td>
+                      <td className="rounded-l-2xl border-y border-l border-cyan-300/10 bg-navy-950/55 px-3 py-3 font-bold text-white">
+                        <span className="block break-words">{usuario.nome}</span>
+                      </td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
+                        <span className="block break-words">{usuario.usuario}</span>
+                      </td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3"><StatusBadge>{usuario.perfil}</StatusBadge></td>
-                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.setor || '-'}</td>
-                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{areaOperacionalLabel(usuario.area_operacional || usuario.area_supervisao)}</td>
-                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{equipeTecnicaLabel(usuario.equipe)}</td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
+                        <span className="block break-words">{usuario.setor || '-'}</span>
+                      </td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
+                        <span className="block break-words">{areaOperacionalLabel(usuario.area_operacional || usuario.area_supervisao)}</span>
+                      </td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
+                        <span className="block break-words">{equipeTecnicaLabel(usuario.equipe)}</span>
+                      </td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3">
                         <StatusBadge tone={usuario.status_aprovacao === 'pendente' ? 'orange' : usuario.status_aprovacao === 'rejeitado' ? 'red' : 'green'}>
                           {usuario.status_aprovacao || 'aprovado'}
@@ -417,18 +439,18 @@ export default function Usuarios() {
                       </td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-300">{formatDate(usuario.ultimo_login)}</td>
                       <td className="rounded-r-2xl border-y border-r border-cyan-300/10 bg-navy-950/55 px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openEdit(usuario)} disabled={!canEditUser(currentUser, usuario)}>Editar</button>
-                          <button className="secondary-button min-h-10 px-3" type="button" onClick={() => openReset(usuario)} disabled={!canEditUser(currentUser, usuario)}>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button className="secondary-button min-h-10 px-3 text-sm" type="button" onClick={() => openEdit(usuario)} disabled={!canEditUser(currentUser, usuario)}>Editar</button>
+                          <button className="secondary-button min-h-10 px-3 text-sm" type="button" onClick={() => openReset(usuario)} disabled={!canEditUser(currentUser, usuario)}>
                             <RotateCcw size={15} />
                             Senha
                           </button>
-                          <button className={usuario.ativo ? 'danger-button min-h-10 px-3' : 'secondary-button min-h-10 px-3'} type="button" onClick={() => handleToggle(usuario)} disabled={saving || !canEditUser(currentUser, usuario)}>
+                          <button className={usuario.ativo ? 'danger-button min-h-10 px-3 text-sm' : 'secondary-button min-h-10 px-3 text-sm'} type="button" onClick={() => handleToggle(usuario)} disabled={saving || !canEditUser(currentUser, usuario)}>
                             {usuario.ativo ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
                             {usuario.ativo ? 'Desativar' : 'Reativar'}
                           </button>
                           {canDeleteUsers && (
-                            <button className="danger-button min-h-10 px-3" type="button" onClick={() => openDelete(usuario)} disabled={saving || usuario.id === currentUser?.id}>
+                            <button className="danger-button min-h-10 px-3 text-sm" type="button" onClick={() => openDelete(usuario)} disabled={saving || usuario.id === currentUser?.id}>
                               <Trash2 size={15} />
                               Excluir
                             </button>
