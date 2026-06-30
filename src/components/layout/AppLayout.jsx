@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { canAccess, normalizePerfil } from '../../config/permissions.js';
+import { supabase } from '../../lib/supabase.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
@@ -118,8 +119,50 @@ function isFiscalOperacional(user) {
   return normalizePerfil(user?.perfil) === 'fiscal_operacional';
 }
 
+function extractSignedStoragePath(url) {
+  try {
+    const parsed = new URL(url);
+    const marker = '/storage/v1/object/sign/';
+    const index = parsed.pathname.indexOf(marker);
+    if (index < 0) return null;
+    const rest = parsed.pathname.slice(index + marker.length);
+    const [bucket, ...pathParts] = rest.split('/');
+    const path = decodeURIComponent(pathParts.join('/'));
+    return bucket && path ? { bucket, path } : null;
+  } catch {
+    return null;
+  }
+}
+
 function MobileHeader({ user }) {
   const initials = (user?.nome || user?.usuario || 'U').slice(0, 2).toUpperCase();
+  const [photoUrl, setPhotoUrl] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+    async function resolvePhotoUrl() {
+      const source = user?.foto_url || '';
+      if (!source) {
+        setPhotoUrl('');
+        return;
+      }
+
+      const signed = extractSignedStoragePath(source);
+      if (!signed) {
+        setPhotoUrl(source);
+        return;
+      }
+
+      const { data, error } = await supabase.storage.from(signed.bucket).createSignedUrl(signed.path, 60 * 60 * 24 * 7);
+      if (!alive) return;
+      setPhotoUrl(error ? '' : data?.signedUrl || '');
+    }
+
+    resolvePhotoUrl();
+    return () => {
+      alive = false;
+    };
+  }, [user?.foto_url]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-blue-200/10 bg-[#0A1633]/95 px-4 py-3 shadow-lg shadow-black/20 backdrop-blur-xl">
@@ -133,7 +176,7 @@ function MobileHeader({ user }) {
           className="flex max-w-[190px] items-center gap-2 rounded-2xl border border-blue-200/15 bg-white/10 p-1.5 pr-3 text-left shadow-inner shadow-white/5"
         >
           <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-blue-500/20 text-xs font-black text-white ring-1 ring-blue-200/20">
-            {user?.foto_url ? <img className="h-full w-full object-cover" src={user.foto_url} alt={user.nome || 'Usuário'} /> : initials}
+            {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user.nome || 'Usuário'} onError={() => setPhotoUrl('')} /> : initials}
           </span>
           <span className="min-w-0 leading-tight">
             <span className="block truncate text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</span>
