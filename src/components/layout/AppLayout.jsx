@@ -339,7 +339,7 @@ export default function AppLayout() {
     <div className="app-bg">
       <div className="content-layer">
         <Topbar />
-        <div className="desktop-shell mx-auto grid max-w-[1680px] gap-3 lg:grid-cols-[88px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)] 2xl:grid-cols-[264px_minmax(0,1fr)]">
+        <div className="desktop-shell grid w-full max-w-none gap-3 lg:grid-cols-[82px_minmax(0,1fr)] xl:grid-cols-[218px_minmax(0,1fr)] 2xl:grid-cols-[232px_minmax(0,1fr)]">
           <div className="min-w-0">
             <Sidebar />
           </div>

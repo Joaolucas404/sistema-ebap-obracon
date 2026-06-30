@@ -8,7 +8,7 @@ import EbapStatusBadge from './EbapStatusBadge.jsx';
 const VILA_VELHA_CENTER = [-20.3417, -40.2875];
 
 const markerColors = {
-  OPERANDO: '#17B33A',
+  OPERANDO: '#3B82F6',
   ATENCAO: '#FACC15',
   CRITICA: '#EF4444'
 };
@@ -65,15 +65,18 @@ function LocateButton({ onLocation }) {
   );
 }
 
-export default function EbapsMap({ ebaps, onSelect, compact = false }) {
+export default function EbapsMap({ ebaps, onSelect, compact = false, surface = true }) {
   const [layer, setLayer] = useState('mapa');
   const [myLocation, setMyLocation] = useState(null);
   const mapRef = useRef(null);
 
   const validEbaps = useMemo(() => ebaps.filter((ebap) => ebap.latitude && ebap.longitude), [ebaps]);
+  const shellClass = surface
+    ? `glass-card relative overflow-hidden rounded-3xl p-2 ${compact ? 'min-h-[260px]' : 'min-h-[520px]'}`
+    : `relative overflow-hidden rounded-2xl border border-blue-200/10 bg-[#0A1633]/70 ${compact ? 'min-h-[260px]' : 'min-h-[620px]'}`;
 
   return (
-    <section className={`glass-card relative overflow-hidden rounded-3xl p-2 ${compact ? 'min-h-[260px]' : 'min-h-[520px]'}`}>
+    <section className={shellClass}>
       <div className="absolute right-4 top-4 z-[1000] flex gap-2">
         <button className={layer === 'mapa' ? 'primary-button min-h-10' : 'secondary-button min-h-10 bg-[#0B2D6B]/90'} type="button" onClick={() => setLayer('mapa')}>
           <Layers size={16} />
@@ -88,7 +91,7 @@ export default function EbapsMap({ ebaps, onSelect, compact = false }) {
       <MapContainer
         center={VILA_VELHA_CENTER}
         zoom={12}
-        className={`${compact ? 'h-[260px] min-h-[260px]' : 'h-[640px] min-h-[520px]'} w-full rounded-2xl`}
+        className={`${compact ? 'h-[260px] min-h-[260px]' : 'h-[68vh] min-h-[620px]'} w-full ${surface ? 'rounded-2xl' : 'rounded-2xl'}`}
         ref={mapRef}
         scrollWheelZoom
       >
@@ -122,7 +125,7 @@ export default function EbapsMap({ ebaps, onSelect, compact = false }) {
       <div className="absolute bottom-4 right-4 z-[1000] hidden rounded-2xl border border-cyan-300/20 bg-[#0B2D6B]/90 p-3 text-xs font-bold text-white shadow-xl md:block">
         <div className="mb-2 font-black uppercase text-slate-300">Legenda</div>
         <div className="grid gap-2">
-          <Legend color="#17B33A" label="Operando" />
+          <Legend color="#3B82F6" label="Operando" />
           <Legend color="#FACC15" label="Atencao" />
           <Legend color="#EF4444" label="Critica" />
         </div>

@@ -26,17 +26,17 @@ const STATUS_COLORS = {
   solicitada_prefeitura: '#38bdf8',
   aguardando_supervisor: '#f59e0b',
   analise_supervisor: '#facc15',
-  programada: '#22c55e',
+  programada: '#3B82F6',
   encaminhada_tecnicos: '#06b6d4',
   em_execucao: '#3b82f6',
-  concluida_tecnicos: '#14b8a6',
+  concluida_tecnicos: '#6366F1',
   validacao_supervisor: '#a78bfa',
   enviada_prefeitura: '#60a5fa',
   aguardando_validacao_prefeitura: '#f97316',
   nao_conforme: '#ef4444',
-  concluida_arquivada: '#22c55e',
-  concluida: '#22c55e',
-  finalizada: '#22c55e',
+  concluida_arquivada: '#3B82F6',
+  concluida: '#3B82F6',
+  finalizada: '#3B82F6',
   cancelada: '#94a3b8',
   rejeitada: '#ef4444',
   aberta: '#38bdf8',
@@ -44,7 +44,7 @@ const STATUS_COLORS = {
   aguardando_material: '#fb923c'
 };
 
-const AREA_COLORS = ['#38bdf8', '#22c55e', '#f59e0b', '#ef4444', '#a78bfa', '#14b8a6', '#f97316', '#60a5fa'];
+const AREA_COLORS = ['#38bdf8', '#3B82F6', '#f59e0b', '#ef4444', '#a78bfa', '#6366F1', '#f97316', '#60a5fa'];
 const TABS = ['Operacao', 'SST', 'Almoxarifado', 'Compras', 'Financeiro'];
 
 function formatDate(value) {
@@ -70,7 +70,7 @@ function money(value) {
 }
 
 function statusTone(status) {
-  if (['normal', 'concluida_arquivada', 'concluida', 'finalizada', 'validado_cco'].includes(status)) return 'green';
+  if (['normal', 'concluida_arquivada', 'concluida', 'finalizada', 'validado_cco'].includes(status)) return 'blue';
   if (['critico', 'critica', 'nao_conforme', 'rejeitada', 'cancelada', 'rejeitado_cco'].includes(status)) return 'red';
   if (['atencao', 'aguardando_supervisor', 'analise_supervisor', 'aguardando_validacao_prefeitura', 'correcao_solicitada'].includes(status)) return 'orange';
   return 'cyan';
@@ -79,7 +79,7 @@ function statusTone(status) {
 function ebapTone(status) {
   if (status === 'critico') return 'red';
   if (status === 'atencao') return 'orange';
-  return 'green';
+  return 'blue';
 }
 
 function prettyStatus(status) {
@@ -224,7 +224,7 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
   function rowTone(ebap) {
     if (ebap.criticidade?.nivel === 'critico') return 'red';
     if (ebap.criticidade?.nivel === 'atencao') return 'orange';
-    return 'green';
+    return 'blue';
   }
 
   function barClass(ebap) {
@@ -234,54 +234,43 @@ function EbapsCompactTable({ title, ebaps, onSelect }) {
   }
 
   return (
-    <section className="premium-card overflow-hidden p-4">
+    <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/55 p-4 shadow-xl shadow-black/15">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-base font-black text-white">{title}</h3>
-        <StatusBadge tone="cyan">{ebaps.length} unidades</StatusBadge>
+        <div>
+          <h3 className="text-base font-black text-white">{title}</h3>
+          <p className="text-xs font-semibold text-slate-400">Ordenadas por criticidade</p>
+        </div>
+        <StatusBadge tone="blue">{ebaps.length}</StatusBadge>
       </div>
-      <div className="max-h-[360px] overflow-auto pr-1">
-        <table className="w-full min-w-[560px] text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-[#0a2a62] text-[11px] uppercase tracking-wide text-slate-400">
-            <tr>
-              <th className="px-3 py-2">EBAP</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Criticidade</th>
-              <th className="px-3 py-2">OS</th>
-              <th className="px-3 py-2">RDO</th>
-              <th className="px-3 py-2">Atualizacao</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ebaps.length ? ebaps.map((ebap) => (
-              <tr key={ebap.id} className="border-t border-cyan-300/10 transition hover:bg-white/5">
-                <td className="px-3 py-2">
-                  <button type="button" className="font-black text-white hover:text-cyan-100" onClick={() => onSelect(ebap)}>
-                    {ebap.nome_curto || ebap.nome}
-                  </button>
-                  <small className="block text-slate-400">{ebap.codigo || ebap.bairro || 'EBAP'}</small>
-                </td>
-                <td className="px-3 py-2">
-                  <StatusBadge tone={rowTone(ebap)}>{ebap.criticidade?.label || 'Normal'}</StatusBadge>
-                </td>
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-20 overflow-hidden rounded-full bg-navy-950">
-                      <div className={barClass(ebap)} style={{ width: `${ebap.criticidade?.score || 0}%` }} />
-                    </div>
-                    <strong className="text-white">{ebap.criticidade?.score || 0}%</strong>
-                  </div>
-                </td>
-                <td className="px-3 py-2 font-black text-white">{ebap.ordensAbertas || 0}</td>
-                <td className="px-3 py-2 font-black text-white">{ebap.roPendentes || 0}</td>
-                <td className="px-3 py-2 text-xs font-bold text-slate-300">{timeAgo(ebap.updatedAt)}</td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan="6" className="px-3 py-8 text-center text-sm font-bold text-slate-300">Nenhuma EBAP cadastrada.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="grid max-h-[70vh] gap-2 overflow-auto pr-1">
+        {ebaps.length ? ebaps.map((ebap) => (
+          <button
+            key={ebap.id}
+            type="button"
+            className="rounded-2xl border border-blue-200/10 bg-[#0A1633]/65 p-3 text-left transition hover:border-blue-300/35 hover:bg-[#16356B]/55"
+            onClick={() => onSelect(ebap)}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <strong className="block truncate text-sm font-black text-white">{ebap.nome_curto || ebap.nome}</strong>
+                <small className="block truncate text-xs font-semibold text-slate-400">{ebap.codigo || ebap.bairro || 'EBAP'} - {timeAgo(ebap.updatedAt)}</small>
+              </div>
+              <StatusBadge tone={rowTone(ebap)}>{ebap.criticidade?.label || 'Normal'}</StatusBadge>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#061431]">
+                <div className={barClass(ebap)} style={{ width: `${ebap.criticidade?.score || 0}%` }} />
+              </div>
+              <strong className="text-xs font-black text-white">{ebap.criticidade?.score || 0}%</strong>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black text-slate-200">
+              <span className="rounded-xl bg-white/5 px-2 py-1.5">OS: {ebap.ordensAbertas || 0}</span>
+              <span className="rounded-xl bg-white/5 px-2 py-1.5">RDO: {ebap.roPendentes || 0}</span>
+            </div>
+          </button>
+        )) : (
+          <EmptyPanel text="Nenhuma EBAP cadastrada." />
+        )}
       </div>
     </section>
   );
@@ -367,7 +356,7 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
                   <XAxis dataKey="name" stroke="#cbd5e1" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" interval={0} height={58} />
                   <YAxis allowDecimals={false} stroke="#cbd5e1" tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ background: '#08214f', border: '1px solid rgba(125,211,252,.35)', color: '#fff' }} />
-                  <Bar dataKey="total" fill="#22c55e" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="total" fill="#3B82F6" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : <EmptyPanel />}
@@ -414,7 +403,7 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
       {activeTab === 'Financeiro' && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MiniMetric icon={DollarSign} label="Valor medido no mes" value={money(data?.kpis.valorMedidoMes)} tone="cyan" />
-          <MiniMetric icon={CheckCircle2} label="Valor aprovado" value={money(data?.kpis.valorAprovado)} tone="green" />
+          <MiniMetric icon={CheckCircle2} label="Valor aprovado" value={money(data?.kpis.valorAprovado)} tone="blue" />
           <MiniMetric icon={AlertTriangle} label="Valor glosado" value={money(data?.kpis.valorGlosado)} tone="red" />
           <MiniMetric icon={WalletCards} label="Medicoes pendentes" value={data?.kpis.medicoesPendentes || 0} tone="orange" />
         </div>
@@ -579,14 +568,23 @@ export default function Dashboard() {
         onSelectEbap={setSelectedEbap}
         navigate={navigate}
       />
-      <div className="hidden gap-3 md:grid">
-      <section className="page-surface">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl font-black leading-tight text-white">{greeting}, {user?.nome || 'Operacao'}</h2>
-            <p className="text-sm text-slate-300">Portal Executivo EBAPs - {new Date().toLocaleString('pt-BR')}</p>
+      <div className="hidden gap-5 md:grid">
+      <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/60 p-5 shadow-xl shadow-black/15">
+        <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.65fr)_auto] xl:items-center">
+          <div className="min-w-0">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-blue-200/70">Dashboard operacional</span>
+            <h2 className="mt-1 truncate text-2xl font-black leading-tight text-white">{greeting}, {user?.nome || 'Operacao'}</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-300">{new Date().toLocaleString('pt-BR')}</p>
           </div>
-          <button type="button" className="secondary-button" onClick={loadDashboard} disabled={loading}>
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+            <MiniMetric icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} tone="cyan" />
+            <MiniMetric icon={ShieldAlert} label="OS criticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} tone="red" />
+            <MiniMetric icon={Clock3} label="Supervisor" value={loading ? '...' : data?.kpis.osAguardandoSupervisor ?? 0} tone="orange" />
+            <MiniMetric icon={FileText} label="RDO pend." value={loading ? '...' : data?.kpis.roPendentes ?? 0} tone="orange" />
+            <MiniMetric icon={Factory} label="EBAPs crit." value={loading ? '...' : criticidade.criticas} tone="red" />
+            <MiniMetric icon={CheckCircle2} label="Concl. hoje" value={loading ? '...' : data?.kpis.osConcluidasHoje ?? 0} tone="blue" />
+          </div>
+          <button type="button" className="secondary-button min-h-12 justify-center px-5" onClick={loadDashboard} disabled={loading}>
             <RefreshCcw size={17} className={loading ? 'animate-spin' : ''} />
             Atualizar
           </button>
@@ -595,29 +593,20 @@ export default function Dashboard() {
 
       {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <MiniMetric icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} tone="cyan" />
-        <MiniMetric icon={ShieldAlert} label="OS criticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} tone="red" />
-        <MiniMetric icon={Clock3} label="Aguard. supervisor" value={loading ? '...' : data?.kpis.osAguardandoSupervisor ?? 0} tone="orange" />
-        <MiniMetric icon={FileText} label="RDO pendentes" value={loading ? '...' : data?.kpis.roPendentes ?? 0} tone="orange" />
-        <MiniMetric icon={Factory} label="EBAPs criticas" value={loading ? '...' : criticidade.criticas} tone="red" />
-        <MiniMetric icon={CheckCircle2} label="OS concluidas hoje" value={loading ? '...' : data?.kpis.osConcluidasHoje ?? 0} tone="green" />
-      </section>
-
-      <section className="grid gap-3 xl:grid-cols-[1.25fr_0.75fr]">
-        <section className="premium-card p-4">
-          <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,2.85fr)_minmax(320px,1fr)]">
+        <section className="rounded-2xl border border-blue-200/10 bg-[#10224D]/55 p-4 shadow-xl shadow-black/15">
+          <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-base font-black text-white">Mapa operacional</h3>
-              <p className="text-xs text-slate-300">Resumo georreferenciado das EBAPs cadastradas.</p>
+              <h3 className="text-lg font-black text-white">Mapa operacional</h3>
+              <p className="text-sm font-semibold text-slate-300">Visao georreferenciada das EBAPs cadastradas.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <StatusBadge tone="green">{criticidade.normais} operando</StatusBadge>
+              <StatusBadge tone="blue">{criticidade.normais} operando</StatusBadge>
               <StatusBadge tone="orange">{criticidade.atencao} atencao</StatusBadge>
               <StatusBadge tone="red">{criticidade.criticas} critica</StatusBadge>
             </div>
           </div>
-          <EbapsMap ebaps={mapEbaps} onSelect={setSelectedEbap} compact />
+          <EbapsMap ebaps={mapEbaps} onSelect={setSelectedEbap} surface={false} />
         </section>
 
         <EbapsCompactTable title="Todas as EBAPs" ebaps={rankedEbaps} onSelect={setSelectedEbap} />
