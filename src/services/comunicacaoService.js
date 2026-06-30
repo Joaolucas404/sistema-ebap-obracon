@@ -117,15 +117,15 @@ export async function listarConversasComunicacao(user) {
   const area = String(user?.area_operacional || user?.area_supervisao || '');
 
   return (data || []).filter((conversa) => {
-    if (['gerencia', 'diretoria'].includes(role)) return true;
+    const isMember = (conversa.membros || []).some((membro) => membro.usuario_id === user?.id);
+    if (isMember) return true;
     if (conversa.tipo === 'direta') {
-      return (conversa.membros || []).some((membro) => membro.usuario_id === user?.id);
+      return false;
     }
-    if (!conversa.equipe && !conversa.area) return true;
     if (conversa.equipe && conversa.equipe === equipe) return true;
     if (conversa.area && [area, role].includes(conversa.area)) return true;
     if (conversa.nome === 'Supervisão' && role === 'supervisor') return true;
-    if (conversa.nome === 'CCO' && ['cco', 'supervisor', 'gerencia', 'diretoria'].includes(role)) return true;
+    if (conversa.nome === 'CCO' && role === 'cco') return true;
     return false;
   });
 }
