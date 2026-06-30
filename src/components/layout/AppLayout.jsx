@@ -16,7 +16,7 @@ import {
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { canAccess, normalizePerfil } from '../../config/permissions.js';
 import { useAuthStore } from '../../store/authStore.js';
-import { resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
+import { obterPerfilComunicacao, resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
 
@@ -121,12 +121,18 @@ function isFiscalOperacional(user) {
 
 function MobileHeader({ user }) {
   const initials = (user?.nome || user?.usuario || 'U').slice(0, 2).toUpperCase();
+  const updateUser = useAuthStore((state) => state.updateUser);
   const [photoUrl, setPhotoUrl] = useState('');
 
   useEffect(() => {
     let alive = true;
     async function resolvePhotoUrl() {
-      const source = user?.foto_url || '';
+      let source = user?.foto_url || '';
+      if (!source && user?.id) {
+        const perfil = await obterPerfilComunicacao(user.id);
+        source = perfil?.foto_url || '';
+        if (source) updateUser({ foto_url: source, cargo: perfil?.cargo || user?.cargo });
+      }
       if (!source) {
         setPhotoUrl('');
         return;
@@ -144,7 +150,7 @@ function MobileHeader({ user }) {
     return () => {
       alive = false;
     };
-  }, [user?.foto_url]);
+  }, [user?.id, user?.foto_url]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-blue-200/10 bg-[#0A1633]/95 px-4 py-3 shadow-lg shadow-black/20 backdrop-blur-xl">

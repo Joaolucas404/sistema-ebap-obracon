@@ -7,7 +7,7 @@ import NotificationsPanel from '../notificacoes/NotificationsPanel.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
 import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
-import { enviarFotoPerfilComunicacao, resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
+import { enviarFotoPerfilComunicacao, obterPerfilComunicacao, resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
 import ProfilePhotoCropModal from '../perfil/ProfilePhotoCropModal.jsx';
 
 function prettyRole(role) {
@@ -77,7 +77,12 @@ export default function Topbar() {
   useEffect(() => {
     let alive = true;
     async function resolvePhotoUrl() {
-      const source = user?.foto_url || '';
+      let source = user?.foto_url || '';
+      if (!source && user?.id) {
+        const perfil = await obterPerfilComunicacao(user.id);
+        source = perfil?.foto_url || '';
+        if (source) updateUser({ foto_url: source, cargo: perfil?.cargo || user?.cargo });
+      }
       if (!source) {
         setPhotoUrl('');
         return;
@@ -96,7 +101,7 @@ export default function Topbar() {
     return () => {
       alive = false;
     };
-  }, [user?.foto_url]);
+  }, [user?.id, user?.foto_url]);
 
   const clock = useMemo(() => {
     const date = new Intl.DateTimeFormat('pt-BR', {

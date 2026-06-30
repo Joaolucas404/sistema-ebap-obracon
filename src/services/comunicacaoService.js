@@ -69,8 +69,10 @@ export async function resolverUrlFotoPerfil(fotoUrl, expiresIn = FOTO_PERFIL_EXP
   if (!path) return source;
 
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
-  if (error) throw new Error(error.message);
-  return data?.signedUrl || '';
+  if (!error && data?.signedUrl) return data.signedUrl;
+
+  const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path);
+  return publicData?.publicUrl || source;
 }
 
 function fileKind(file) {
@@ -100,13 +102,15 @@ export async function salvarPerfilComunicacao(user, patch = {}) {
   const perfil = perfilComunicacao(user);
   const row = {
     usuario_id: user.id,
-    foto_url: patch.foto_url ?? perfil.foto_url,
     cargo: patch.cargo ?? perfil.cargo,
     equipe: patch.equipe ?? user.equipe ?? null,
     area: patch.area ?? user.area_operacional ?? user.area_supervisao ?? user.perfil ?? null,
     status_manual: patch.status_manual || 'online',
     updated_at: new Date().toISOString()
   };
+  if (Object.prototype.hasOwnProperty.call(patch, 'foto_url')) {
+    row.foto_url = patch.foto_url ?? perfil.foto_url;
+  }
 
   const { data, error } = await supabase
     .from('comunicacao_perfis')
@@ -115,6 +119,17 @@ export async function salvarPerfilComunicacao(user, patch = {}) {
     .single();
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function obterPerfilComunicacao(usuarioId) {
+  if (!usuarioId) return null;
+  const { data, error } = await supabase
+    .from('comunicacao_perfis')
+    .select('*')
+    .eq('usuario_id', usuarioId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data || null;
 }
 
 export async function enviarFotoPerfilComunicacao(file, user) {

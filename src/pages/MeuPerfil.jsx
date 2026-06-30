@@ -6,7 +6,7 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Toast from '../components/ui/Toast.jsx';
 import ProfilePhotoCropModal from '../components/perfil/ProfilePhotoCropModal.jsx';
 import { useAuthStore } from '../store/authStore.js';
-import { enviarFotoPerfilComunicacao, resolverUrlFotoPerfil } from '../services/comunicacaoService.js';
+import { enviarFotoPerfilComunicacao, obterPerfilComunicacao, resolverUrlFotoPerfil } from '../services/comunicacaoService.js';
 import { areaOperacionalLabel, equipeTecnicaLabel } from '../services/usuariosService.js';
 
 function formatDate(value) {
@@ -63,7 +63,13 @@ export default function MeuPerfil() {
     let alive = true;
     async function loadPhoto() {
       try {
-        const resolved = await resolverUrlFotoPerfil(user?.foto_url);
+        let source = user?.foto_url || '';
+        if (!source && user?.id) {
+          const perfil = await obterPerfilComunicacao(user.id);
+          source = perfil?.foto_url || '';
+          if (source) updateUser({ foto_url: source, cargo: perfil?.cargo || cargo });
+        }
+        const resolved = await resolverUrlFotoPerfil(source);
         if (alive) setPhotoUrl(resolved);
       } catch {
         if (alive) setPhotoUrl('');
@@ -73,7 +79,7 @@ export default function MeuPerfil() {
     return () => {
       alive = false;
     };
-  }, [user?.foto_url]);
+  }, [user?.id, user?.foto_url]);
 
   function handlePhoto(event) {
     const file = event.target.files?.[0];

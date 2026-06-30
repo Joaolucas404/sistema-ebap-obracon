@@ -177,6 +177,9 @@ export default function Comunicacao() {
       setSelectedId((current) => current || rows[0]?.id || '');
       const perfilRow = await salvarPerfilComunicacao(user, { status_manual: status });
       setPerfilFoto(perfilRow?.foto_url ? await resolverUrlFotoPerfil(perfilRow.foto_url) : '');
+      if (perfilRow?.foto_url && perfilRow.foto_url !== user?.foto_url) {
+        updateUser({ foto_url: perfilRow.foto_url, cargo: perfilRow?.cargo || user?.cargo });
+      }
     } catch (err) {
       setToast({ message: err.message || 'Falha ao carregar comunicação.', tone: 'red' });
     } finally {
