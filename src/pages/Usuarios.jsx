@@ -13,9 +13,11 @@ import {
   areaOperacionalLabel,
   criarUsuario,
   desativarUsuario,
+  ebapUsuarioLabel,
   equipeTecnicaLabel,
   excluirUsuario,
   listarAcessosPendentes,
+  listarEbapsUsuarios,
   listarUsuarios,
   podeAprovarTecnicos,
   podeGerenciarUsuarios,
@@ -33,6 +35,7 @@ const blankForm = {
   setor: '',
   area_operacional: '',
   equipe: '',
+  ebap_id: '',
   ativo: true
 };
 
@@ -63,6 +66,7 @@ function formatDate(value) {
 export default function Usuarios() {
   const currentUser = useAuthStore((state) => state.user);
   const [usuarios, setUsuarios] = useState([]);
+  const [ebaps, setEbaps] = useState([]);
   const [pendentes, setPendentes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -101,6 +105,10 @@ export default function Usuarios() {
       ]);
       setUsuarios(usuariosRows);
       setPendentes(pendentesRows);
+      if (canManageUsers) {
+        const ebapRows = await listarEbapsUsuarios();
+        setEbaps(ebapRows);
+      }
     } catch (err) {
       setError(err.message || 'Falha ao carregar usuários.');
     } finally {
@@ -131,6 +139,7 @@ export default function Usuarios() {
       setor: user.setor || '',
       area_operacional: user.area_operacional || user.area_supervisao || '',
       equipe: user.equipe || '',
+      ebap_id: user.ebap_id || '',
       ativo: Boolean(user.ativo)
     });
     setModal({ type: 'edit', user });
@@ -163,7 +172,12 @@ export default function Usuarios() {
   function updateForm(field, value) {
     setForm((current) => {
       if (field === 'perfil') {
-        return { ...current, perfil: value, area_operacional: AUTO_AREA_BY_PROFILE[value] || current.area_operacional };
+        return {
+          ...current,
+          perfil: value,
+          area_operacional: AUTO_AREA_BY_PROFILE[value] || current.area_operacional,
+          ebap_id: value === 'operador' ? current.ebap_id : ''
+        };
       }
       if (field === 'equipe') {
         const selected = EQUIPES_TECNICAS.find((equipe) => equipe.value === value);
@@ -398,6 +412,7 @@ export default function Usuarios() {
                   <th className="px-3 py-2">Perfil</th>
                   <th className="px-3 py-2">Setor</th>
                   <th className="px-3 py-2">Área Operacional</th>
+                  <th className="px-3 py-2">EBAP</th>
                   <th className="px-3 py-2">Equipe</th>
                   <th className="px-3 py-2">Aprovação</th>
                   <th className="px-3 py-2">Status</th>
@@ -425,6 +440,9 @@ export default function Usuarios() {
                       </td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
                         <span className="block break-words">{areaOperacionalLabel(usuario.area_operacional || usuario.area_supervisao)}</span>
+                      </td>
+                      <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
+                        <span className="block break-words">{usuario.perfil === 'operador' ? ebapUsuarioLabel(usuario) : '-'}</span>
                       </td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">
                         <span className="block break-words">{equipeTecnicaLabel(usuario.equipe)}</span>
@@ -512,6 +530,19 @@ export default function Usuarios() {
                 <select className="form-control" value={form.equipe} onChange={(event) => updateForm('equipe', event.target.value)} required>
                   <option value="">Selecione...</option>
                   {EQUIPES_TECNICAS.map((equipe) => <option key={equipe.value} value={equipe.value}>{equipe.label}</option>)}
+                </select>
+              </label>
+            )}
+            {form.perfil === 'operador' && (
+              <label className="field-label">
+                EBAP do operador
+                <select className="form-control" value={form.ebap_id} onChange={(event) => updateForm('ebap_id', event.target.value)} required>
+                  <option value="">Selecione a EBAP...</option>
+                  {ebaps.map((ebap) => (
+                    <option key={ebap.id} value={ebap.id}>
+                      {ebap.nome}
+                    </option>
+                  ))}
                 </select>
               </label>
             )}

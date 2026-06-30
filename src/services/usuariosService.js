@@ -43,7 +43,7 @@ const AUTO_AREA_BY_PROFILE = {
   fiscal_operacional: 'prefeitura'
 };
 
-const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
+const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, ebap_id, ebap:ebaps(id,nome,nome_curto), status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
 
 export function areaOperacionalLabel(area) {
   return AREAS_OPERACIONAIS.find((item) => item.value === area)?.label || area || '-';
@@ -51,6 +51,10 @@ export function areaOperacionalLabel(area) {
 
 export function equipeTecnicaLabel(equipe) {
   return EQUIPES_TECNICAS.find((item) => item.value === equipe)?.label || equipe || '-';
+}
+
+export function ebapUsuarioLabel(usuario) {
+  return usuario?.ebap?.nome || usuario?.ebap?.nome_curto || '-';
 }
 
 export function areaFromEquipe(equipe) {
@@ -86,8 +90,10 @@ function normalizePayload(payload) {
   const perfil = normalizePerfil(payload.perfil);
   const equipe = payload.equipe || null;
   const equipeArea = equipe ? areaFromEquipe(equipe) : '';
+  const ebapId = payload.ebap_id || null;
   if (equipe && !equipeArea) throw new Error('Equipe técnica inválida.');
   if (perfil === 'tecnico' && !equipe) throw new Error('Equipe é obrigatória para técnico.');
+  if (perfil === 'operador' && !ebapId) throw new Error('EBAP é obrigatória para operador.');
   const area = normalizeAreaOperacional(payload.area_operacional, perfil);
   if (perfil === 'tecnico' && equipeArea && area !== equipeArea) {
     throw new Error('A área operacional do técnico deve corresponder à equipe selecionada.');
@@ -99,6 +105,7 @@ function normalizePayload(payload) {
     setor: payload.setor ? String(payload.setor).trim() : null,
     area_operacional: area,
     equipe,
+    ebap_id: perfil === 'operador' ? ebapId : null,
     ativo: Boolean(payload.ativo)
   };
 
@@ -108,6 +115,16 @@ function normalizePayload(payload) {
 
 export async function listarUsuarios() {
   const { data, error } = await supabase.from('usuarios').select(SELECT_FIELDS).is('deleted_at', null).order('nome', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function listarEbapsUsuarios() {
+  const { data, error } = await supabase
+    .from('ebaps')
+    .select('id,nome,nome_curto')
+    .is('deleted_at', null)
+    .order('nome', { ascending: true });
   if (error) throw new Error(error.message);
   return data || [];
 }

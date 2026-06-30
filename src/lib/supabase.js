@@ -7,7 +7,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase não configurado. Preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env.');
 }
 
-export const supabase = createClient(supabaseUrl || 'https://example.supabase.co', supabaseAnonKey || 'anon-key');
-
-console.log(import.meta.env.VITE_SUPABASE_URL);
-console.log(import.meta.env.VITE_SUPABASE_ANON_KEY);
+export const supabase = createClient(supabaseUrl || 'https://example.supabase.co', supabaseAnonKey || 'anon-key', {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false
+  }
+});
