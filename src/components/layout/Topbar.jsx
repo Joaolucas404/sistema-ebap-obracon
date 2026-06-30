@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Clock3, LogOut } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, Clock3, Image, LogOut, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MENU_ITEMS } from '../../config/menu.js';
 import NotificationBadgeButton from '../notificacoes/NotificationBadgeButton.jsx';
 import NotificationsPanel from '../notificacoes/NotificationsPanel.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
+import { supabase } from '../../lib/supabase.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
+import { enviarFotoPerfilComunicacao } from '../../services/comunicacaoService.js';
 
 function prettyRole(role) {
   const labels = {
@@ -17,6 +19,7 @@ function prettyRole(role) {
     gerencia: 'Gerência',
     diretoria: 'Diretoria',
     prefeitura: 'Prefeitura',
+    fiscal_operacional: 'Fiscal Operacional',
     sst: 'SST',
     administrativo: 'Administrativo',
     almoxarifado: 'Almoxarifado',
@@ -26,11 +29,36 @@ function prettyRole(role) {
   return labels[role] || role || 'Perfil';
 }
 
+function initials(name = '') {
+  return String(name || 'U')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
+
+function extractSignedStoragePath(url) {
+  try {
+    const parsed = new URL(url);
+    const marker = '/storage/v1/object/sign/';
+    const index = parsed.pathname.indexOf(marker);
+    if (index < 0) return null;
+    const rest = parsed.pathname.slice(index + marker.length);
+    const [bucket, ...pathParts] = rest.split('/');
+    const path = decodeURIComponent(pathParts.join('/'));
+    return bucket && path ? { bucket, path } : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Topbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const {
     ultimas,
     unreadCount,
@@ -44,6 +72,10 @@ export default function Topbar() {
   const current = MENU_ITEMS.find((item) => item.path === location.pathname);
   const [now, setNow] = useState(() => new Date());
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState('');
+  const profilePhotoInputRef = useRef(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -55,6 +87,32 @@ export default function Topbar() {
     iniciarRealtime(user);
     return () => pararRealtime();
   }, [user, carregarResumo, iniciarRealtime, pararRealtime]);
+
+  useEffect(() => {
+    let alive = true;
+    async function resolvePhotoUrl() {
+      const source = user?.foto_url || '';
+      if (!source) {
+        setPhotoUrl('');
+        return;
+      }
+
+      const signed = extractSignedStoragePath(source);
+      if (!signed) {
+        setPhotoUrl(source);
+        return;
+      }
+
+      const { data, error } = await supabase.storage.from(signed.bucket).createSignedUrl(signed.path, 60 * 60 * 24 * 7);
+      if (!alive) return;
+      setPhotoUrl(error ? '' : data?.signedUrl || '');
+    }
+
+    resolvePhotoUrl();
+    return () => {
+      alive = false;
+    };
+  }, [user?.foto_url]);
 
   const clock = useMemo(() => {
     const date = new Intl.DateTimeFormat('pt-BR', {
@@ -76,6 +134,24 @@ export default function Topbar() {
     pararRealtime();
     logout();
     navigate('/login', { replace: true });
+  }
+
+  async function handleProfilePhoto(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setSavingPhoto(true);
+    try {
+      const row = await enviarFotoPerfilComunicacao(file, user);
+      updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || user?.cargo });
+      setPhotoUrl(row?.foto_url || '');
+      setProfileMenuOpen(false);
+    } catch (err) {
+      window.alert(err.message || 'Não foi possível atualizar a foto.');
+    } finally {
+      setSavingPhoto(false);
+    }
   }
 
   async function handleRead(id) {
@@ -112,15 +188,52 @@ export default function Topbar() {
           <span className="hidden sm:inline">{clock.date}</span>
           {clock.time}
         </span>
-        <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-200/25 bg-white/10 px-2.5 py-1 text-xs font-black text-[#D6E4FF]">
-          <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-blue-500/20 text-[10px] text-white ring-1 ring-blue-200/20">
-            {user?.foto_url ? <img className="h-full w-full object-cover" src={user.foto_url} alt={user.nome || 'Usuário'} /> : (user?.nome || user?.usuario || 'U').slice(0, 2).toUpperCase()}
-          </span>
-          <span className="grid min-w-0 leading-tight">
-            <strong className="max-w-[140px] truncate text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
-            <small className="truncate text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{prettyRole(user?.perfil)}</small>
-          </span>
-        </span>
+        <div className="relative">
+          <button
+            type="button"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-200/25 bg-white/10 px-2.5 py-1 text-left text-xs font-black text-[#D6E4FF] transition hover:border-blue-200/45 hover:bg-white/15"
+            onClick={() => setProfileMenuOpen((open) => !open)}
+            title="Opções do perfil"
+          >
+            <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-blue-500/20 text-[10px] text-white ring-1 ring-blue-200/20">
+              {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user.nome || 'Usuário'} onError={() => setPhotoUrl('')} /> : initials(user?.nome || user?.usuario)}
+            </span>
+            <span className="grid min-w-0 leading-tight">
+              <strong className="max-w-[140px] truncate text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
+              <small className="truncate text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{prettyRole(user?.perfil)}</small>
+            </span>
+          </button>
+
+          <input ref={profilePhotoInputRef} className="hidden" type="file" accept="image/*" onChange={handleProfilePhoto} />
+
+          {profileMenuOpen && (
+            <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 overflow-hidden rounded-3xl border border-blue-200/20 bg-[#10224D] p-2 shadow-2xl shadow-black/35">
+              <div className="flex items-center gap-3 border-b border-blue-200/10 p-3">
+                <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-blue-500/20 text-sm font-black text-white ring-1 ring-blue-200/20">
+                  {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
+                </span>
+                <span className="min-w-0">
+                  <strong className="block truncate text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
+                  <small className="block truncate text-xs font-bold uppercase tracking-wide text-slate-400">{prettyRole(user?.perfil)}</small>
+                </span>
+              </div>
+              <div className="grid gap-1 p-1">
+                <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-slate-100 hover:bg-white/10" type="button" onClick={() => { setProfileMenuOpen(false); navigate('/perfil'); }}>
+                  <UserRound size={18} className="text-blue-100" />
+                  Meu perfil
+                </button>
+                <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-slate-100 hover:bg-white/10" type="button" onClick={() => profilePhotoInputRef.current?.click()} disabled={savingPhoto}>
+                  {photoUrl ? <Image size={18} className="text-blue-100" /> : <Camera size={18} className="text-blue-100" />}
+                  {savingPhoto ? 'Enviando foto...' : photoUrl ? 'Alterar foto' : 'Adicionar foto'}
+                </button>
+                <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-red-100 hover:bg-red-500/10" type="button" onClick={handleLogout}>
+                  <LogOut size={18} />
+                  Sair
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <NotificationBadgeButton count={unreadCount} onClick={() => setNotificationsOpen(true)} />
         <button type="button" className="secondary-button min-h-10 px-3" onClick={handleLogout}>
           <LogOut size={17} />
