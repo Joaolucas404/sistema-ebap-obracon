@@ -1,8 +1,8 @@
 import { Check } from 'lucide-react';
 
-export default function RelatorioStepper({ steps, currentStep, completedSteps = [], onStepClick }) {
+export default function RelatorioStepper({ steps, currentStep, completedSteps = [], onStepClick, canAccessStep = () => true }) {
   const currentIndex = Math.max(0, steps.findIndex((step) => step.id === currentStep));
-  const percent = steps.length ? Math.round(((currentIndex + 1) / steps.length) * 100) : 0;
+  const percent = steps.length ? Math.round((completedSteps.length / steps.length) * 100) : 0;
 
   return (
     <section className="glass-card rounded-3xl p-4">
@@ -16,16 +16,24 @@ export default function RelatorioStepper({ steps, currentStep, completedSteps = 
         </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const active = step.id === currentStep;
-          const done = completedSteps.includes(step.id) || index < currentIndex;
+          const done = completedSteps.includes(step.id);
+          const locked = !canAccessStep(step.id);
           return (
             <button
               key={step.id}
               type="button"
+              disabled={locked}
               className={[
                 'grid min-h-16 grid-cols-[34px_minmax(0,1fr)] items-center gap-2 rounded-2xl border p-3 text-left transition',
-                active ? 'border-cyan-300/70 bg-cyan-400/15' : done ? 'border-emerald-300/25 bg-emerald-400/10' : 'border-cyan-300/15 bg-navy-950/45 hover:border-cyan-300/40'
+                active
+                  ? 'border-cyan-300/70 bg-cyan-400/15'
+                  : locked
+                    ? 'border-cyan-300/10 bg-navy-950/30 opacity-60'
+                    : done
+                      ? 'border-emerald-300/25 bg-emerald-400/10'
+                      : 'border-cyan-300/15 bg-navy-950/45 hover:border-cyan-300/40'
               ].join(' ')}
               onClick={() => onStepClick(step.id)}
             >
@@ -37,7 +45,7 @@ export default function RelatorioStepper({ steps, currentStep, completedSteps = 
               </span>
               <span className="min-w-0">
                 <strong className="block truncate text-sm font-black text-white">{step.title}</strong>
-                <small className="block text-[11px] font-bold text-slate-400">{done ? 'Concluído' : active ? 'Atual' : 'Pendente'}</small>
+                <small className="block text-[11px] font-bold text-slate-400">{locked ? 'Bloqueado' : done ? 'Concluído' : active ? 'Atual' : 'Pendente'}</small>
               </span>
             </button>
           );

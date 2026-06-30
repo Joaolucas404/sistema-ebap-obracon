@@ -1,4 +1,12 @@
+import { useEffect } from 'react';
+
 export default function Toast({ message, tone = 'cyan', onClose }) {
+  useEffect(() => {
+    if (!message || !onClose) return undefined;
+    const timer = window.setTimeout(onClose, 4000);
+    return () => window.clearTimeout(timer);
+  }, [message, onClose]);
+
   if (!message) return null;
 
   const tones = {

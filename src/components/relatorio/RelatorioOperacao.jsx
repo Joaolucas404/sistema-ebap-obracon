@@ -53,14 +53,19 @@ export default function RelatorioOperacao({ data, onChange }) {
           </div>
         </label>
         <label className="field-label">
-          Nivel geral
-          <select className="form-control" value={data.nivel_geral || ''} onChange={(event) => setField('nivel_geral', event.target.value)}>
-            <option value="">Selecione...</option>
-            <option value="normal">Normal</option>
-            <option value="elevado">Elevado</option>
-            <option value="critico">Critico</option>
-            <option value="baixo">Baixo</option>
-          </select>
+          Nível de maré
+          <div className="relative">
+            <input
+              className="form-control pr-14"
+              type="number"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="Ex.: 1.25"
+              value={data.nivel_geral || ''}
+              onChange={(event) => setField('nivel_geral', event.target.value)}
+            />
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">m</span>
+          </div>
         </label>
         <label className="field-label md:col-span-2">
           Observacao geral

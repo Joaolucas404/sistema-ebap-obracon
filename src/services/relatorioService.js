@@ -358,6 +358,10 @@ export function normalizeRdoStatus(status) {
 
 export function validarRdoOperacional(payload, fotos = []) {
   const pendencias = [];
+  if (!String(payload?.dados?.clima || '').trim()) pendencias.push('Informe a condição climática.');
+  const nivelMare = Number(payload?.dados?.nivel_geral);
+  if (!String(payload?.dados?.nivel_geral || '').trim() || !Number.isFinite(nivelMare)) pendencias.push('Informe o nível de maré em metros.');
+
   const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
   sections.forEach((section) => {
     (payload?.[section]?.items || []).forEach((item) => {

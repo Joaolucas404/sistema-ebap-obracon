@@ -713,7 +713,7 @@ function RoDocument({ data }) {
           <Field label="Data da operacao" value={relatorio.data_operacao} />
           <Field label="Status" value={<StatusPill label={pretty(relatorio.status, 'status')} />} />
           <Field label="Turno" value={pretty(payload?.dados?.turno, 'turno')} />
-          <Field label="Clima / Nivel" value={`${pretty(payload?.dados?.clima)} / ${pretty(payload?.dados?.nivel_geral)}`} />
+          <Field label="Clima / Nível de maré" value={`${pretty(payload?.dados?.clima)} / ${pretty(payload?.dados?.nivel_geral)}`} />
         </div>
         <p className="pdf-text">{payload?.dados?.observacao || 'Sem observacao geral.'}</p>
       </Section>

@@ -30,6 +30,8 @@ import {
   listarValidacoesRelatorio,
   obterUrlFotoRelatorio,
   prepararPayloadEquipamentos,
+  ALERT_STATUS_VALUES,
+  FOTO_CATEGORIAS_OBRIGATORIAS,
   RELATORIO_STEPS,
   salvarRascunhoRelatorio,
   uploadFotoRelatorio,
@@ -69,33 +71,60 @@ export default function RelatorioDiario() {
   const [pdfData, setPdfData] = useState(null);
 
   const currentIndex = RELATORIO_STEPS.findIndex((step) => step.id === currentStep);
+  const stepPendencias = useMemo(() => buildStepPendencias(payload, fotos), [payload, fotos]);
+  const completedSteps = useMemo(
+    () => RELATORIO_STEPS.filter((step) => (stepPendencias[step.id] || []).length === 0).map((step) => step.id),
+    [stepPendencias]
+  );
+  const currentPendencias = stepPendencias[currentStep] || [];
+  const canGoNext = currentPendencias.length === 0;
+
+  function canAccessStep(stepId) {
+    const targetIndex = RELATORIO_STEPS.findIndex((step) => step.id === stepId);
+    if (targetIndex < 0) return false;
+    if (targetIndex <= currentIndex) return true;
+    return RELATORIO_STEPS.slice(0, targetIndex).every((step) => (stepPendencias[step.id] || []).length === 0);
+  }
+
+  function handleStepSelect(stepId) {
+    if (canAccessStep(stepId)) {
+      setError('');
+      setCurrentStep(stepId);
+      return true;
+    }
+    const targetIndex = RELATORIO_STEPS.findIndex((step) => step.id === stepId);
+    const blocker = RELATORIO_STEPS.slice(0, Math.max(0, targetIndex)).find((step) => (stepPendencias[step.id] || []).length);
+    const message = blocker
+      ? `Conclua a etapa "${blocker.title}" antes de avançar. ${stepPendencias[blocker.id][0]}`
+      : 'Conclua a etapa atual antes de avançar.';
+    setError(message);
+    setToast({ message, tone: 'orange' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
+  }
 
   const goNext = () => {
-    if (currentIndex < RELATORIO_STEPS.length - 1) {
-      setCurrentStep(RELATORIO_STEPS[currentIndex + 1].id);
+    if (currentIndex >= RELATORIO_STEPS.length - 1) return;
+    if (!canGoNext) {
+      const message = `Conclua esta etapa antes de avançar. ${currentPendencias[0]}`;
+      setError(message);
+      setToast({ message, tone: 'orange' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
+    setError('');
+    setCurrentStep(RELATORIO_STEPS[currentIndex + 1].id);
   };
 
   const goPrevious = () => {
     if (currentIndex > 0) {
+      setError('');
       setCurrentStep(RELATORIO_STEPS[currentIndex - 1].id);
     }
   };
 
-  const completedSteps = useMemo(() => {
-    const done = [];
-    if (payload?.dados?.turno) done.push('dados');
-    ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'].forEach((key) => {
-      if (payload?.[key]?.items?.length) done.push(key);
-    });
-    if (payload?.cco?.comunicacao) done.push('cco');
-    if (payload?.ocorrencias?.houve) done.push('ocorrencias');
-    if (fotos.length || payload?.fotos?.observacao) done.push('fotos');
-    return done;
-  }, [payload, fotos.length]);
-
   const currentStepNumber = Math.max(1, currentIndex + 1);
-  const progress = RELATORIO_STEPS.length ? Math.round((currentStepNumber / RELATORIO_STEPS.length) * 100) : 0;
+  const progress = RELATORIO_STEPS.length ? Math.round((completedSteps.length / RELATORIO_STEPS.length) * 100) : 0;
   const currentStepInfo = RELATORIO_STEPS[currentIndex] || RELATORIO_STEPS[0];
   const operationalSummary = useMemo(() => buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps), [payload, fotos, equipamentos, relatorio, ebaps]);
 
@@ -410,19 +439,37 @@ export default function RelatorioDiario() {
             onOpen={() => setProgressOpen(true)}
           />
           <div className="hidden sm:block">
-            <RelatorioStepper steps={RELATORIO_STEPS} currentStep={currentStep} completedSteps={completedSteps} onStepClick={setCurrentStep} />
+            <RelatorioStepper
+              steps={RELATORIO_STEPS}
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              onStepClick={handleStepSelect}
+              canAccessStep={canAccessStep}
+            />
           </div>
+          {currentPendencias.length > 0 && (
+            <div className="rounded-2xl border border-amber-300/25 bg-amber-500/10 p-4 text-sm font-bold text-amber-100">
+              Para avançar, conclua esta etapa: {currentPendencias[0]}
+            </div>
+          )}
           {renderStep()}
-          <WizardNavigation currentIndex={currentIndex} total={RELATORIO_STEPS.length} onPrevious={goPrevious} onNext={goNext} />
+          <WizardNavigation
+            currentIndex={currentIndex}
+            total={RELATORIO_STEPS.length}
+            onPrevious={goPrevious}
+            onNext={goNext}
+            canGoNext={canGoNext}
+            nextMessage={currentPendencias[0]}
+          />
           <ProgressModal
             open={progressOpen}
             steps={RELATORIO_STEPS}
             currentStep={currentStep}
             completedSteps={completedSteps}
+            canAccessStep={canAccessStep}
             onClose={() => setProgressOpen(false)}
             onSelect={(stepId) => {
-              setCurrentStep(stepId);
-              setProgressOpen(false);
+              if (handleStepSelect(stepId)) setProgressOpen(false);
             }}
           />
         </>
@@ -470,6 +517,105 @@ export default function RelatorioDiario() {
   );
 }
 
+
+function buildStepPendencias(payload, fotos) {
+  return RELATORIO_STEPS.reduce((acc, step) => {
+    acc[step.id] = getStepPendencias(step.id, payload, fotos);
+    return acc;
+  }, {});
+}
+
+function getStepPendencias(stepId, payload, fotos) {
+  if (stepId === 'dados') return validateDados(payload?.dados);
+  if (['bombas', 'rastelos', 'comportas'].includes(stepId)) return validateItems(payload?.[stepId]?.items || []);
+  if (stepId === 'eletrocentro') return validateEletrocentro(payload?.eletrocentro);
+  if (stepId === 'geradores') return validateGeradores(payload?.geradores);
+  if (stepId === 'cco') return validateCco(payload?.cco);
+  if (stepId === 'ocorrencias') return validateOcorrencias(payload?.ocorrencias);
+  if (stepId === 'fotos') return validateFotos(payload, fotos);
+  if (stepId === 'revisao') {
+    const previousSteps = RELATORIO_STEPS.filter((step) => step.id !== 'revisao');
+    const pending = previousSteps.flatMap((step) => getStepPendencias(step.id, payload, fotos));
+    return pending.length ? ['Conclua todas as etapas anteriores para revisar o RDO.'] : [];
+  }
+  return [];
+}
+
+function hasValue(value) {
+  return String(value ?? '').trim().length > 0;
+}
+
+function validateDados(dados = {}) {
+  const pendencias = [];
+  if (!hasValue(dados.turno)) pendencias.push('Informe o turno.');
+  if (!hasValue(dados.clima)) pendencias.push('Informe a condição climática.');
+  const nivelMare = Number(dados.nivel_geral);
+  if (!hasValue(dados.nivel_geral) || !Number.isFinite(nivelMare)) pendencias.push('Informe o nível de maré em metros.');
+  return pendencias;
+}
+
+function validateItems(items = []) {
+  return (items || []).flatMap((item, index) => {
+    const nome = item?.nome || item?.descricao || `Equipamento ${index + 1}`;
+    const pendencias = [];
+    if (!hasValue(item?.status)) pendencias.push(`${nome}: informe o status.`);
+    if (ALERT_STATUS_VALUES.includes(item?.status) && !hasValue(item?.observacao)) pendencias.push(`${nome}: informe o motivo.`);
+    return pendencias;
+  });
+}
+
+function validateEletrocentro(data = {}) {
+  const pendencias = [];
+  if (!['sim', 'nao'].includes(data?.sensores_possui)) pendencias.push('Informe se a EBAP possui sensores.');
+  if (!['sim', 'nao'].includes(data?.climatizadores_possui)) pendencias.push('Informe se a EBAP possui climatizadores.');
+  if (data?.sensores_possui === 'sim' && Number(data?.sensores_quantidade || 0) <= 0) pendencias.push('Informe a quantidade de sensores.');
+  if (data?.climatizadores_possui === 'sim' && Number(data?.climatizadores_quantidade || 0) <= 0) pendencias.push('Informe a quantidade de climatizadores.');
+  return [...pendencias, ...validateItems(data?.items || [])];
+}
+
+function validateGeradores(data = {}) {
+  if (!['sim', 'nao'].includes(data?.possui)) return ['Informe se a EBAP possui gerador.'];
+  if (data.possui !== 'sim') return [];
+
+  const pendencias = [];
+  if (Number(data?.quantidade || 0) <= 0) pendencias.push('Informe a quantidade de geradores.');
+  (data?.items || []).forEach((item, index) => {
+    const nome = item?.nome || `Gerador ${index + 1}`;
+    if (!hasValue(item?.status)) pendencias.push(`${nome}: informe o status.`);
+    if (ALERT_STATUS_VALUES.includes(item?.status) && !hasValue(item?.observacao)) pendencias.push(`${nome}: informe o motivo.`);
+    const diesel = Number(item?.diesel);
+    if (!Number.isFinite(diesel) || diesel < 0 || diesel > 100) pendencias.push(`${nome}: informe o nível de diesel entre 0% e 100%.`);
+  });
+  return pendencias;
+}
+
+function validateCco(data = {}) {
+  const pendencias = [];
+  if (!hasValue(data.comunicacao)) pendencias.push('Informe a comunicação com o CCO.');
+  if (!hasValue(data.supervisao)) pendencias.push('Informe a supervisão.');
+  return pendencias;
+}
+
+function validateOcorrencias(data = {}) {
+  if (!['sim', 'nao'].includes(data?.houve)) return ['Informe se houve ocorrência.'];
+  if (data.houve === 'sim' && !hasValue(data.descricao)) return ['Descreva a ocorrência registrada.'];
+  return [];
+}
+
+function validateFotos(payload, fotos = []) {
+  const categorias = new Set((fotos || []).map((foto) => foto.categoria));
+  const pendencias = [];
+  FOTO_CATEGORIAS_OBRIGATORIAS.forEach((categoria) => {
+    if (!categorias.has(categoria.value)) pendencias.push(`Anexe: ${categoria.label}.`);
+  });
+  if (payload?.geradores?.possui === 'sim') {
+    (payload?.geradores?.items || []).forEach((item, index) => {
+      const categoria = `gerador_${index + 1}`;
+      if (!categorias.has(categoria)) pendencias.push(`Anexe a foto do ${item?.nome || `Gerador ${index + 1}`}.`);
+    });
+  }
+  return pendencias;
+}
 
 function buildOperationalSummary(payload, fotos, equipamentos, relatorio, ebaps) {
   const sections = ['bombas', 'rastelos', 'comportas', 'eletrocentro', 'geradores'];
@@ -552,7 +698,7 @@ function MobileRdoProgress({ step, currentStepNumber, total, progress, lastSaved
   );
 }
 
-function ProgressModal({ open, steps, currentStep, completedSteps, onClose, onSelect }) {
+function ProgressModal({ open, steps, currentStep, completedSteps, canAccessStep, onClose, onSelect }) {
   if (!open) return null;
 
   return (
@@ -562,7 +708,7 @@ function ProgressModal({ open, steps, currentStep, completedSteps, onClose, onSe
         <header className="flex items-center justify-between border-b border-blue-200/10 p-4">
           <div>
             <h3 className="text-xl font-black text-white">Progresso do RDO</h3>
-            <p className="text-sm font-semibold text-slate-300">Toque em uma etapa para abrir.</p>
+            <p className="text-sm font-semibold text-slate-300">Etapas futuras liberam após concluir as anteriores.</p>
           </div>
           <button className="grid size-10 place-items-center rounded-full bg-white/10 text-slate-200" type="button" onClick={onClose} aria-label="Fechar">
             <X size={18} />
@@ -572,13 +718,15 @@ function ProgressModal({ open, steps, currentStep, completedSteps, onClose, onSe
           {steps.map((step) => {
             const isDone = completedSteps.includes(step.id);
             const isCurrent = currentStep === step.id;
+            const isLocked = canAccessStep ? !canAccessStep(step.id) : false;
             return (
               <button
                 key={step.id}
                 className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-left ${
-                  isCurrent ? 'border-blue-300/45 bg-blue-600/25' : 'border-blue-200/10 bg-[#0A1633]/70'
+                  isCurrent ? 'border-blue-300/45 bg-blue-600/25' : isLocked ? 'border-blue-200/10 bg-[#0A1633]/45 opacity-60' : 'border-blue-200/10 bg-[#0A1633]/70'
                 }`}
                 type="button"
+                disabled={isLocked}
                 onClick={() => onSelect(step.id)}
               >
                 <span className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-black ${isDone ? 'bg-blue-500 text-white' : isCurrent ? 'bg-white text-blue-700' : 'bg-white/10 text-slate-300'}`}>
@@ -586,7 +734,7 @@ function ProgressModal({ open, steps, currentStep, completedSteps, onClose, onSe
                 </span>
                 <span className="min-w-0 flex-1">
                   <strong className="block truncate text-base font-black text-white">{step.title}</strong>
-                  <small className="block text-xs font-bold text-slate-300">{isDone ? 'Concluído' : isCurrent ? 'Atual' : 'Pendente'}</small>
+                  <small className="block text-xs font-bold text-slate-300">{isLocked ? 'Bloqueado' : isDone ? 'Concluído' : isCurrent ? 'Atual' : 'Pendente'}</small>
                 </span>
               </button>
             );
@@ -620,9 +768,10 @@ function SummaryInfo({ label, value, tone = 'text-white', className = '' }) {
   );
 }
 
-function WizardNavigation({ currentIndex, total, onPrevious, onNext }) {
+function WizardNavigation({ currentIndex, total, onPrevious, onNext, canGoNext = true, nextMessage = '' }) {
   const isFirst = currentIndex <= 0;
   const isLast = currentIndex >= total - 1;
+  const nextDisabled = isLast || !canGoNext;
   return (
     <>
       <div className="mt-6 hidden justify-between gap-3 pb-2 sm:flex">
@@ -630,18 +779,22 @@ function WizardNavigation({ currentIndex, total, onPrevious, onNext }) {
           <ArrowLeft size={17} />
           Anterior
         </button>
-        <button type="button" className="primary-button" onClick={onNext} disabled={isLast}>
-          Próximo
-          <ArrowRight size={17} />
-        </button>
+        <div className="grid justify-items-end gap-2">
+          {nextDisabled && !isLast && nextMessage && <span className="max-w-md text-right text-xs font-bold text-amber-100">Preencha: {nextMessage}</span>}
+          <button type="button" className="primary-button" onClick={onNext} disabled={nextDisabled}>
+            Próximo
+            <ArrowRight size={17} />
+          </button>
+        </div>
       </div>
       <div className="fixed inset-x-4 bottom-24 z-40 mx-auto max-w-md rounded-[26px] border border-cyan-300/15 bg-navy-950/95 p-2 shadow-2xl sm:hidden">
+        {nextDisabled && !isLast && nextMessage && <p className="mb-2 px-2 text-xs font-bold text-amber-100">Preencha: {nextMessage}</p>}
         <div className="grid grid-cols-[0.85fr_1.15fr] gap-2">
           <button type="button" className="secondary-button justify-center" onClick={onPrevious} disabled={isFirst}>
             <ArrowLeft size={17} />
             Anterior
           </button>
-          <button type="button" className="primary-button justify-center" onClick={onNext} disabled={isLast}>
+          <button type="button" className="primary-button justify-center" onClick={onNext} disabled={nextDisabled}>
             Próximo
             <ArrowRight size={17} />
           </button>
