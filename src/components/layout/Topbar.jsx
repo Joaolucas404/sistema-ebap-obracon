@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
 import { enviarFotoPerfilComunicacao } from '../../services/comunicacaoService.js';
+import ProfilePhotoCropModal from '../perfil/ProfilePhotoCropModal.jsx';
 
 function prettyRole(role) {
   const labels = {
@@ -74,6 +75,7 @@ export default function Topbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [savingPhoto, setSavingPhoto] = useState(false);
+  const [photoCropFile, setPhotoCropFile] = useState(null);
   const [photoUrl, setPhotoUrl] = useState('');
   const profilePhotoInputRef = useRef(null);
 
@@ -136,16 +138,21 @@ export default function Topbar() {
     navigate('/login', { replace: true });
   }
 
-  async function handleProfilePhoto(event) {
+  function handleProfilePhoto(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    setPhotoCropFile(file);
+    setProfileMenuOpen(false);
+  }
 
+  async function saveCroppedProfilePhoto(file) {
     setSavingPhoto(true);
     try {
       const row = await enviarFotoPerfilComunicacao(file, user);
       updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || user?.cargo });
       setPhotoUrl(row?.foto_url || '');
+      setPhotoCropFile(null);
       setProfileMenuOpen(false);
     } catch (err) {
       window.alert(err.message || 'Não foi possível atualizar a foto.');
@@ -249,6 +256,13 @@ export default function Topbar() {
         onClose={() => setNotificationsOpen(false)}
         onRead={handleRead}
         onReadAll={handleReadAll}
+      />
+      <ProfilePhotoCropModal
+        open={Boolean(photoCropFile)}
+        file={photoCropFile}
+        saving={savingPhoto}
+        onCancel={() => setPhotoCropFile(null)}
+        onConfirm={saveCroppedProfilePhoto}
       />
     </header>
   );

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import Toast from '../components/ui/Toast.jsx';
+import ProfilePhotoCropModal from '../components/perfil/ProfilePhotoCropModal.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import { enviarFotoPerfilComunicacao } from '../services/comunicacaoService.js';
 import { areaOperacionalLabel, equipeTecnicaLabel } from '../services/usuariosService.js';
@@ -50,20 +51,26 @@ export default function MeuPerfil() {
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const [savingPhoto, setSavingPhoto] = useState(false);
+  const [photoCropFile, setPhotoCropFile] = useState(null);
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
 
   const area = areaOperacionalLabel(user?.area_operacional || user?.area_supervisao);
   const equipe = equipeTecnicaLabel(user?.equipe);
   const cargo = user?.cargo || user?.setor || perfilLabel(user?.perfil);
 
-  async function handlePhoto(event) {
+  function handlePhoto(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    setPhotoCropFile(file);
+  }
+
+  async function saveCroppedPhoto(file) {
     setSavingPhoto(true);
     try {
       const row = await enviarFotoPerfilComunicacao(file, user);
       updateUser({ foto_url: row?.foto_url || '', cargo: row?.cargo || cargo });
+      setPhotoCropFile(null);
       setToast({ message: 'Foto de perfil atualizada.', tone: 'green' });
     } catch (err) {
       setToast({ message: err.message || 'Não foi possível alterar a foto.', tone: 'red' });
@@ -143,6 +150,13 @@ export default function MeuPerfil() {
       </section>
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />
+      <ProfilePhotoCropModal
+        open={Boolean(photoCropFile)}
+        file={photoCropFile}
+        saving={savingPhoto}
+        onCancel={() => setPhotoCropFile(null)}
+        onConfirm={saveCroppedPhoto}
+      />
     </div>
   );
 }
