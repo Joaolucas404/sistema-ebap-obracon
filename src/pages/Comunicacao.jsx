@@ -47,6 +47,7 @@ import {
   obterOuCriarConversaDireta,
   obterUrlArquivoComunicacao,
   perfilComunicacao,
+  listarPerfisComunicacao,
   resolverUrlFotoPerfil,
   salvarPerfilComunicacao,
   subscribeMensagens
@@ -140,6 +141,7 @@ export default function Comunicacao() {
   const [newMessagesNotice, setNewMessagesNotice] = useState(false);
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [signedUrls, setSignedUrls] = useState({});
+  const [profileUrls, setProfileUrls] = useState({});
   const recorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const typingTimeoutRef = useRef(null);
@@ -168,6 +170,12 @@ export default function Comunicacao() {
   }, [conversas, search]);
   const arquivos = useMemo(() => mensagens.flatMap((mensagem) => (mensagem.anexos || []).map((anexo) => ({ ...anexo, mensagem }))), [mensagens]);
   const pinnedMessages = useMemo(() => mensagens.filter((mensagem) => mensagem.metadata?.pinned), [mensagens]);
+  const selectedAvatar = useMemo(() => {
+    if (!selected) return '';
+    if (selected.tipo !== 'direta') return '';
+    const other = (selected.membros || []).find((membro) => membro.usuario_id !== user?.id);
+    return profileUrls[other?.usuario_id] || '';
+  }, [selected, profileUrls, user?.id]);
 
   async function loadConversas() {
     setLoading(true);
@@ -195,6 +203,10 @@ export default function Comunicacao() {
     try {
       const rows = await listarMensagensComunicacao(conversaId);
       setMensagens(rows);
+      setSignedUrls((current) => {
+        const validIds = new Set(rows.flatMap((mensagem) => (mensagem.anexos || []).map((anexo) => anexo.id)));
+        return Object.fromEntries(Object.entries(current).filter(([id]) => validIds.has(id)));
+      });
       await marcarMensagensComoLidas(conversaId, rows, user);
     } catch (err) {
       setToast({ message: err.message || 'Falha ao carregar mensagens.', tone: 'red' });
@@ -307,12 +319,56 @@ export default function Comunicacao() {
   useEffect(() => {
     const anexos = mensagens.flatMap((mensagem) => mensagem.anexos || []);
     anexos.forEach((anexo) => {
-      if (signedUrls[anexo.id]) return;
+      if (Object.prototype.hasOwnProperty.call(signedUrls, anexo.id)) return;
       obterUrlArquivoComunicacao(anexo)
-        .then((url) => setSignedUrls((current) => ({ ...current, [anexo.id]: url })))
-        .catch(() => {});
+        .then((url) => setSignedUrls((current) => ({ ...current, [anexo.id]: url || '' })))
+        .catch(() => setSignedUrls((current) => ({ ...current, [anexo.id]: '' })));
     });
   }, [mensagens, signedUrls]);
+
+  useEffect(() => {
+    const ids = new Set();
+    if (user?.id) ids.add(user.id);
+    conversas.forEach((conversa) => {
+      (conversa.membros || []).forEach((membro) => {
+        if (membro.usuario_id) ids.add(membro.usuario_id);
+      });
+    });
+    mensagens.forEach((mensagem) => {
+      if (mensagem.autor_id) ids.add(mensagem.autor_id);
+    });
+    peopleResults.forEach((person) => {
+      if (person.id) ids.add(person.id);
+    });
+
+    const pendingIds = [...ids].filter((id) => !(id in profileUrls));
+    if (!pendingIds.length) return undefined;
+
+    let alive = true;
+    listarPerfisComunicacao(pendingIds)
+      .then(async (perfis) => {
+        const entries = await Promise.all((perfis || []).map(async (perfil) => {
+          const url = perfil.foto_url ? await resolverUrlFotoPerfil(perfil.foto_url).catch(() => '') : '';
+          return [perfil.usuario_id, url];
+        }));
+        if (!alive) return;
+        setProfileUrls((current) => {
+          const next = { ...current };
+          pendingIds.forEach((id) => {
+            if (!(id in next)) next[id] = '';
+          });
+          entries.forEach(([id, url]) => {
+            next[id] = url || '';
+          });
+          return next;
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      alive = false;
+    };
+  }, [conversas, mensagens, peopleResults, user?.id, profileUrls]);
 
   async function handleSend(event) {
     event.preventDefault();
@@ -667,7 +723,7 @@ export default function Comunicacao() {
                   {peopleResults.length ? peopleResults.map((person) => (
                     <button key={person.id} type="button" className="rounded-xl border border-cyan-300/10 bg-navy-950/55 p-3 text-left hover:border-cyan-300/25" onClick={() => openDirectConversation(person)}>
                       <div className="flex items-center gap-3">
-                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-xs font-black text-cyan-50">{initials(person.nome || person.usuario)}</span>
+                        <Avatar user={person} fotoUrl={profileUrls[person.id] || ''} size="sm" />
                         <span className="min-w-0">
                           <strong className="block truncate text-sm text-white">{person.nome || person.usuario}</strong>
                           <small className="block truncate text-xs font-bold text-slate-400">@{person.usuario} • {person.equipe || person.area_operacional || person.perfil || '-'}</small>
@@ -688,6 +744,8 @@ export default function Comunicacao() {
                 ) : filteredConversas.length ? (
                   filteredConversas.map((conversa) => {
                     const ultima = Array.isArray(conversa.ultima_mensagem) ? conversa.ultima_mensagem[0] : conversa.ultima_mensagem;
+                    const other = conversa.tipo === 'direta' ? (conversa.membros || []).find((membro) => membro.usuario_id !== user?.id) : null;
+                    const avatarUrl = other ? profileUrls[other.usuario_id] || '' : '';
                     return (
                       <button
                         key={conversa.id}
@@ -700,7 +758,7 @@ export default function Comunicacao() {
                         }}
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <Avatar user={{ nome: conversa.nome }} fotoUrl="" />
+                          <Avatar user={{ nome: conversa.nome }} fotoUrl={avatarUrl} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
                               <strong className="block truncate text-white">{conversa.nome}</strong>
@@ -745,7 +803,7 @@ export default function Comunicacao() {
                 <button className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-blue-100 xl:hidden" type="button" onClick={() => setMobileListOpen(true)} aria-label="Voltar para conversas">
                   <ArrowLeft size={20} />
                 </button>
-                <Avatar user={{ nome: selected.nome }} fotoUrl="" />
+                <Avatar user={{ nome: selected.nome }} fotoUrl={selectedAvatar} />
                 <button className="min-w-0 flex-1 text-left" type="button" onClick={() => setToast({ message: 'Detalhes da conversa em breve.', tone: 'cyan' })}>
                   <h2 className="truncate text-lg font-black text-white md:text-xl">{selected.nome}</h2>
                   <p className="truncate text-xs font-bold text-slate-300 md:text-sm">{selected.tipo === 'direta' ? 'Online' : `${selected.membros?.length || 0} participantes`}</p>
@@ -774,6 +832,7 @@ export default function Comunicacao() {
                     mensagem={mensagem}
                     mine={mensagem.autor_id === user?.id}
                     signedUrls={signedUrls}
+                    autorFotoUrl={profileUrls[mensagem.autor_id] || ''}
                     onPreviewImage={setImagePreview}
                     onOpenActions={setActionMessage}
                     onGoToMessage={scrollToMessage}
@@ -931,6 +990,8 @@ export default function Comunicacao() {
           conversas={conversas}
           selectedId={selected?.id}
           selectedTargets={shareTargets}
+          currentUserId={user?.id}
+          profileUrls={profileUrls}
           onToggle={(conversaId) => setShareTargets((current) => (current.includes(conversaId) ? current.filter((id) => id !== conversaId) : [...current, conversaId]))}
           onClose={() => setShareMessage(null)}
           onSubmit={shareSelectedMessage}
@@ -941,15 +1002,17 @@ export default function Comunicacao() {
   );
 }
 
-function Avatar({ user, fotoUrl }) {
+function Avatar({ user, fotoUrl, size = 'md' }) {
+  const sizeClass = size === 'sm' ? 'size-9 rounded-xl text-xs' : 'size-14 rounded-2xl text-lg';
+  const imageClass = size === 'sm' ? 'size-full rounded-xl object-cover' : 'size-full rounded-2xl object-cover';
   return (
-    <span className="grid size-14 shrink-0 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-lg font-black text-cyan-50">
-      {fotoUrl ? <img className="size-full rounded-2xl object-cover" src={fotoUrl} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
+    <span className={`grid shrink-0 place-items-center border border-cyan-300/20 bg-cyan-400/10 font-black text-cyan-50 ${sizeClass}`}>
+      {fotoUrl ? <img className={imageClass} src={fotoUrl} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
     </span>
   );
 }
 
-function MensagemItem({ mensagem, mine, signedUrls, onPreviewImage, onOpenActions, onGoToMessage }) {
+function MensagemItem({ mensagem, mine, signedUrls, autorFotoUrl, onPreviewImage, onOpenActions, onGoToMessage }) {
   const longPressTimerRef = useRef(null);
   const leituraCount = mensagem.leituras?.length || 0;
   const anexos = mensagem.anexos || [];
@@ -975,7 +1038,10 @@ function MensagemItem({ mensagem, mine, signedUrls, onPreviewImage, onOpenAction
       onDoubleClick={() => onOpenActions?.(mensagem)}
     >
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
-        <strong className="text-sm text-white">{mensagem.autor?.nome || mensagem.autor?.usuario || 'Sistema'}</strong>
+        <span className="flex min-w-0 items-center gap-2">
+          <Avatar user={mensagem.autor} fotoUrl={autorFotoUrl} size="sm" />
+          <strong className="truncate text-sm text-white">{mensagem.autor?.nome || mensagem.autor?.usuario || 'Sistema'}</strong>
+        </span>
         <span className="text-xs font-bold text-slate-400">{formatTime(mensagem.created_at)}</span>
       </div>
       {sharedBy && (
@@ -1043,7 +1109,7 @@ function ActionButton({ icon: Icon, label, danger = false, onClick }) {
   );
 }
 
-function ShareMessageModal({ conversas, selectedId, selectedTargets, onToggle, onClose, onSubmit, sending }) {
+function ShareMessageModal({ conversas, selectedId, selectedTargets, currentUserId, profileUrls, onToggle, onClose, onSubmit, sending }) {
   const options = conversas.filter((conversa) => conversa.id !== selectedId);
   return (
     <div className="fixed inset-0 z-[90] flex items-end bg-black/55 p-3 md:items-center md:justify-center" role="dialog" aria-modal="true">
@@ -1059,16 +1125,20 @@ function ShareMessageModal({ conversas, selectedId, selectedTargets, onToggle, o
           </button>
         </header>
         <div className="grid gap-2 overflow-auto p-3">
-          {options.map((conversa) => (
-            <label key={conversa.id} className="flex min-h-14 items-center gap-3 rounded-2xl border border-blue-200/10 bg-[#0A1633]/70 px-3 text-white">
-              <input className="size-5 accent-blue-500" type="checkbox" checked={selectedTargets.includes(conversa.id)} onChange={() => onToggle(conversa.id)} />
-              <Avatar user={{ nome: conversa.nome }} fotoUrl="" />
-              <span className="min-w-0 flex-1">
-                <strong className="block truncate text-sm">{conversa.nome}</strong>
-                <small className="block truncate text-xs font-semibold text-slate-300">{conversa.descricao || 'Conversa operacional'}</small>
-              </span>
-            </label>
-          ))}
+          {options.map((conversa) => {
+            const other = conversa.tipo === 'direta' ? (conversa.membros || []).find((membro) => membro.usuario_id !== currentUserId) : null;
+            const avatarUrl = other ? profileUrls[other.usuario_id] || '' : '';
+            return (
+              <label key={conversa.id} className="flex min-h-14 items-center gap-3 rounded-2xl border border-blue-200/10 bg-[#0A1633]/70 px-3 text-white">
+                <input className="size-5 accent-blue-500" type="checkbox" checked={selectedTargets.includes(conversa.id)} onChange={() => onToggle(conversa.id)} />
+                <Avatar user={{ nome: conversa.nome }} fotoUrl={avatarUrl} />
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm">{conversa.nome}</strong>
+                  <small className="block truncate text-xs font-semibold text-slate-300">{conversa.descricao || 'Conversa operacional'}</small>
+                </span>
+              </label>
+            );
+          })}
           {!options.length && <div className="rounded-2xl bg-[#0A1633]/70 p-4 text-sm font-bold text-slate-300">Nenhuma outra conversa disponível.</div>}
         </div>
         <footer className="border-t border-blue-200/10 p-3">

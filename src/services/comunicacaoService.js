@@ -132,6 +132,18 @@ export async function obterPerfilComunicacao(usuarioId) {
   return data || null;
 }
 
+export async function listarPerfisComunicacao(usuarioIds = []) {
+  const ids = [...new Set((usuarioIds || []).filter(Boolean))];
+  if (!ids.length) return [];
+
+  const { data, error } = await supabase
+    .from('comunicacao_perfis')
+    .select('*')
+    .in('usuario_id', ids);
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 export async function enviarFotoPerfilComunicacao(file, user) {
   if (!file) throw new Error('Selecione uma foto de perfil.');
   if (!user?.id) throw new Error('Usuário não identificado.');
@@ -442,8 +454,10 @@ export async function enviarArquivoComunicacao({ conversaId, file, corpo = '' },
 export async function obterUrlArquivoComunicacao(anexo, expiresIn = 3600) {
   if (!anexo?.bucket || !anexo?.path) return '';
   const { data, error } = await supabase.storage.from(anexo.bucket).createSignedUrl(anexo.path, expiresIn);
-  if (error) throw new Error(error.message);
-  return data?.signedUrl || '';
+  if (!error && data?.signedUrl) return data.signedUrl;
+
+  const { data: publicData } = supabase.storage.from(anexo.bucket).getPublicUrl(anexo.path);
+  return publicData?.publicUrl || '';
 }
 
 export async function marcarMensagensComoLidas(conversaId, mensagens = [], user) {
