@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ClipboardList, FileText, History, Plus, UserRound, UsersRound } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { ClipboardList, FileText, History, LogOut, Plus, Settings, UserRound, UsersRound } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { MENU_GROUPS, MENU_ITEMS } from '../../config/menu.js';
 import { canAccess } from '../../config/permissions.js';
 import { BRAND } from '../../config/brand.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useNotificacoesStore } from '../../store/notificacoesStore.js';
-
-const STORAGE_KEY = 'sigebap.sidebar.groups';
+import { resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
 
 const TECH_ITEMS = [
   { key: 'tecnico-nova-os', label: 'Nova OS', path: '/os?nova=1', icon: Plus, description: 'Abrir nova ordem' },
@@ -18,17 +17,41 @@ const TECH_ITEMS = [
   { key: 'tecnico-perfil', label: 'Meu Perfil', path: '/perfil', icon: UserRound, description: 'Dados de acesso' }
 ];
 
+function prettyRole(role) {
+  const labels = {
+    operador: 'Operador',
+    tecnico: 'Técnico',
+    cco: 'CCO',
+    supervisor: 'Supervisor',
+    gerencia: 'Gerência',
+    diretoria: 'Diretoria',
+    prefeitura: 'Prefeitura',
+    fiscal_operacional: 'Fiscal Operacional',
+    sst: 'SST',
+    administrativo: 'Administrativo',
+    almoxarifado: 'Almoxarifado',
+    financeiro: 'Financeiro'
+  };
+  return labels[role] || role || 'Perfil';
+}
+
+function initials(name = '') {
+  return String(name || 'U')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
+
 export default function Sidebar({ onNavigate }) {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const perfil = user?.perfil;
   const unreadCount = useNotificacoesStore((state) => state.unreadCount);
-  const [openGroups, setOpenGroups] = useState(() => {
-    try {
-      return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null') || Object.fromEntries(MENU_GROUPS.map((group) => [group, true]));
-    } catch {
-      return Object.fromEntries(MENU_GROUPS.map((group) => [group, true]));
-    }
-  });
+  const pararRealtime = useNotificacoesStore((state) => state.pararRealtime);
+  const [photoUrl, setPhotoUrl] = useState('');
 
   const groups = useMemo(() => {
     const items = MENU_ITEMS.filter((item) => canAccess(perfil, item.key));
@@ -39,16 +62,34 @@ export default function Sidebar({ onNavigate }) {
   }, [perfil]);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openGroups));
-  }, [openGroups]);
+    let alive = true;
+    async function resolvePhoto() {
+      if (!user?.foto_url) {
+        setPhotoUrl('');
+        return;
+      }
+      try {
+        const resolved = await resolverUrlFotoPerfil(user.foto_url);
+        if (alive) setPhotoUrl(resolved);
+      } catch {
+        if (alive) setPhotoUrl('');
+      }
+    }
+    resolvePhoto();
+    return () => {
+      alive = false;
+    };
+  }, [user?.foto_url]);
 
-  function toggleGroup(group) {
-    setOpenGroups((current) => ({ ...current, [group]: !current[group] }));
+  function handleLogout() {
+    pararRealtime();
+    logout();
+    navigate('/login', { replace: true });
   }
 
   if (perfil === 'tecnico') {
     return (
-      <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+      <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
         <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
           <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
             <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
@@ -59,7 +100,7 @@ export default function Sidebar({ onNavigate }) {
           </div>
         </div>
 
-        <nav className="grid gap-1.5">
+        <nav className="sidebar-nav">
           {TECH_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -74,18 +115,18 @@ export default function Sidebar({ onNavigate }) {
                 </span>
                 <span className="min-w-0">
                   <strong className="block truncate text-sm font-black leading-tight">{item.label}</strong>
-                  <small className="block truncate text-[11px] text-slate-300/80">{item.description}</small>
                 </span>
               </NavLink>
             );
           })}
         </nav>
+        <SidebarProfile user={user} photoUrl={photoUrl} onLogout={handleLogout} />
       </aside>
     );
   }
 
   return (
-    <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+    <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
       <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
         <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
           <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
@@ -96,22 +137,11 @@ export default function Sidebar({ onNavigate }) {
         </div>
       </div>
 
-      <nav className="grid gap-3">
+      <nav className="sidebar-nav">
         {groups.map(({ group, items }) => (
           <section key={group} className="nav-group">
-            <button
-              type="button"
-              className="nav-group-title"
-              onClick={() => toggleGroup(group)}
-            >
-              <span>{group}</span>
-              <span className="inline-flex items-center gap-2">
-                <span className="rounded-full border border-blue-200/20 bg-white/10 px-2 py-0.5 text-[10px] text-blue-50">{items.length}</span>
-                <ChevronDown size={16} className={`transition-transform ${openGroups[group] ? 'rotate-0' : '-rotate-90'}`} />
-              </span>
-            </button>
-            {openGroups[group] && (
-              <div className="grid gap-1 pt-1 animate-softIn">
+            <div className="nav-group-title">{group}</div>
+            <div className="grid gap-0.5 pt-1">
                 {items.map((item) => {
                   const Icon = item.icon;
                   const badge = item.key === 'notificacoes' ? unreadCount : 0;
@@ -132,7 +162,6 @@ export default function Sidebar({ onNavigate }) {
                       </span>
                       <span className="min-w-0">
                         <strong className="block truncate text-sm font-black leading-tight">{item.label}</strong>
-                        <small className="block truncate text-[11px] text-slate-300/80">{item.description}</small>
                       </span>
                       {badge > 0 && (
                         <span className="grid min-h-6 min-w-6 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-navy-900">
@@ -143,10 +172,36 @@ export default function Sidebar({ onNavigate }) {
                   );
                 })}
               </div>
-            )}
           </section>
         ))}
       </nav>
+      <SidebarProfile user={user} photoUrl={photoUrl} onLogout={handleLogout} />
     </aside>
+  );
+}
+
+function SidebarProfile({ user, photoUrl, onLogout }) {
+  return (
+    <footer className="sidebar-profile">
+      <NavLink to="/perfil" className="sidebar-profile-main">
+        <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-blue-500/20 text-xs font-black text-white ring-1 ring-blue-200/20">
+          {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user?.nome || 'Usuário'} /> : initials(user?.nome || user?.usuario)}
+        </span>
+        <span className="min-w-0">
+          <strong className="block truncate text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
+          <small className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">{user?.cargo || prettyRole(user?.perfil)}</small>
+        </span>
+      </NavLink>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <NavLink to="/config" className="sidebar-profile-action" title="Configurações">
+          <Settings size={16} />
+          <span>Config.</span>
+        </NavLink>
+        <button className="sidebar-profile-action" type="button" onClick={onLogout}>
+          <LogOut size={16} />
+          <span>Sair</span>
+        </button>
+      </div>
+    </footer>
   );
 }

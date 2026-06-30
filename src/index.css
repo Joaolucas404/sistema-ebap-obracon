@@ -136,23 +136,31 @@ button {
   }
 
   .nav-shell {
-    @apply border-r border-blue-200/10 p-3 shadow-xl shadow-black/20;
+    @apply flex flex-col border-r border-blue-200/10 p-3 shadow-xl shadow-black/20;
     background:
       linear-gradient(180deg, rgba(16, 34, 77, .94), rgba(10, 22, 51, .98)),
       #0A1633;
+    scrollbar-width: none;
+  }
+
+  .nav-shell::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-nav {
+    @apply min-h-0 flex-1 overflow-hidden;
   }
 
   .nav-group {
-    @apply rounded-2xl border border-blue-200/10 p-1.5 shadow-inner shadow-blue-950/20;
-    background: rgba(16, 34, 77, .42);
+    @apply border-t border-blue-200/10 py-2 first:border-t-0;
   }
 
   .nav-group-title {
-    @apply flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#D6E4FF]/80 transition hover:bg-white/5;
+    @apply px-2 pb-1.5 pt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#D6E4FF]/65;
   }
 
   .nav-item {
-    @apply relative grid min-h-[50px] grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-slate-100 transition duration-200;
+    @apply relative grid min-h-10 grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2 py-1 text-slate-100 transition duration-200;
   }
 
   .nav-item-active {
@@ -164,7 +172,19 @@ button {
   }
 
   .nav-icon {
-    @apply grid h-9 w-9 place-items-center rounded-xl border border-blue-200/10 bg-navy-950/80 text-[#D6E4FF] shadow-inner;
+    @apply grid h-8 w-8 place-items-center rounded-lg border border-blue-200/10 bg-navy-950/70 text-[#D6E4FF] shadow-inner;
+  }
+
+  .sidebar-profile {
+    @apply mt-3 border-t border-blue-200/10 pt-3;
+  }
+
+  .sidebar-profile-main {
+    @apply flex min-h-12 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-white/5;
+  }
+
+  .sidebar-profile-action {
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue-200/10 bg-white/5 px-2 text-xs font-black text-slate-200 transition hover:bg-blue-500/15;
   }
 
   .topbar-shell {
@@ -424,23 +444,7 @@ button {
 @media (min-width: 1024px) and (max-width: 1279px) {
   .desktop-shell .nav-shell {
     padding: .5rem;
-    overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(59, 130, 246, .45) transparent;
-  }
-
-  .desktop-shell .nav-shell::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .desktop-shell .nav-shell::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .desktop-shell .nav-shell::-webkit-scrollbar-thumb {
-    border: 0;
-    border-radius: 999px;
-    background: rgba(59, 130, 246, .45);
+    overflow: hidden;
   }
 
   .desktop-shell .nav-shell .login-logo-frame {
@@ -454,7 +458,7 @@ button {
   }
 
   .desktop-shell .nav-group {
-    padding: .35rem;
+    padding: .25rem 0;
   }
 
   .desktop-shell .nav-group-title {
@@ -463,8 +467,7 @@ button {
     padding: .35rem;
   }
 
-  .desktop-shell .nav-group-title > span:first-child,
-  .desktop-shell .nav-group-title .rounded-full {
+  .desktop-shell .nav-group-title {
     display: none;
   }
 
@@ -485,5 +488,24 @@ button {
   .desktop-shell .nav-item > span:nth-child(2),
   .desktop-shell .nav-item > span:nth-child(3) {
     display: none;
+  }
+
+  .desktop-shell .sidebar-profile {
+    padding-top: .5rem;
+  }
+
+  .desktop-shell .sidebar-profile-main {
+    justify-content: center;
+    padding: .35rem;
+  }
+
+  .desktop-shell .sidebar-profile-main > span:nth-child(2),
+  .desktop-shell .sidebar-profile-action span {
+    display: none;
+  }
+
+  .desktop-shell .sidebar-profile-action {
+    min-height: 2.35rem;
+    padding: .35rem;
   }
 }
