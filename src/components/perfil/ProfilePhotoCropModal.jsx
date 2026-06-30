@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Image as ImageIcon, Minus, Plus, Save, X } from 'lucide-react';
 
 export default function ProfilePhotoCropModal({ file, open, saving = false, onCancel, onConfirm }) {
@@ -78,8 +79,8 @@ export default function ProfilePhotoCropModal({ file, open, saving = false, onCa
     onConfirm?.(croppedFile);
   }
 
-  return (
-    <div className="fixed inset-0 z-[1200] grid items-start justify-items-center overflow-y-auto bg-[#0A1633]/82 p-3 pt-6 backdrop-blur-sm">
+  const modal = (
+    <div className="fixed inset-0 z-[2147483647] grid items-start justify-items-center overflow-y-auto bg-[#0A1633]/82 p-3 pt-6 backdrop-blur-sm">
       <section className="w-full max-w-lg overflow-hidden rounded-3xl border border-blue-200/20 bg-[#10224D] shadow-2xl shadow-black/40">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-blue-200/10 bg-[#10224D] px-4 py-3">
           <div>
@@ -117,6 +118,8 @@ export default function ProfilePhotoCropModal({ file, open, saving = false, onCa
       </section>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
 
 function RangeControl({ icon: Icon, rightIcon: RightIcon, label, value, min, max, step, onChange }) {
