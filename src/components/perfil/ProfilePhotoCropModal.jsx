@@ -79,9 +79,9 @@ export default function ProfilePhotoCropModal({ file, open, saving = false, onCa
   }
 
   return (
-    <div className="fixed inset-0 z-[1200] grid place-items-center bg-[#0A1633]/82 p-3 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1200] grid items-start justify-items-center overflow-y-auto bg-[#0A1633]/82 p-3 pt-6 backdrop-blur-sm">
       <section className="w-full max-w-lg overflow-hidden rounded-3xl border border-blue-200/20 bg-[#10224D] shadow-2xl shadow-black/40">
-        <header className="flex items-center justify-between border-b border-blue-200/10 px-4 py-3">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-blue-200/10 bg-[#10224D] px-4 py-3">
           <div>
             <h3 className="text-base font-black text-white">Ajustar foto</h3>
             <p className="text-xs font-semibold text-slate-300">Centralize o rosto antes de salvar.</p>
@@ -91,8 +91,8 @@ export default function ProfilePhotoCropModal({ file, open, saving = false, onCa
           </button>
         </header>
 
-        <div className="grid gap-4 p-4">
-          <div className="mx-auto grid size-[260px] place-items-center overflow-hidden rounded-full border border-blue-200/15 bg-[#0A1633]/70 sm:size-[320px]">
+        <div className="grid max-h-[calc(100dvh-180px)] gap-4 overflow-y-auto p-4">
+          <div className="mx-auto grid size-[220px] place-items-center overflow-hidden rounded-full border border-blue-200/15 bg-[#0A1633]/70 sm:size-[260px]">
             {image ? <canvas ref={canvasRef} className="size-full" /> : <ImageIcon className="text-blue-100" size={42} />}
           </div>
 
@@ -105,7 +105,7 @@ export default function ProfilePhotoCropModal({ file, open, saving = false, onCa
           {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-3 text-sm font-bold text-red-100">{error}</div>}
         </div>
 
-        <footer className="grid gap-2 border-t border-blue-200/10 p-4 sm:grid-cols-2">
+        <footer className="grid gap-2 border-t border-blue-200/10 bg-[#10224D] p-4 sm:grid-cols-2">
           <button className="secondary-button justify-center" type="button" onClick={onCancel} disabled={saving}>
             Cancelar
           </button>
