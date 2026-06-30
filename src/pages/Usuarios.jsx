@@ -46,6 +46,8 @@ const AUTO_AREA_BY_PROFILE = {
   fiscal_operacional: 'prefeitura'
 };
 
+const USERS_PER_PAGE = 10;
+
 function canEditUser(currentUser, targetUser) {
   if (currentUser?.perfil === 'diretoria' || currentUser?.perfil === 'administrador') return true;
   if (currentUser?.perfil === 'gerencia') return !['diretoria', 'gerencia', 'administrador'].includes(targetUser?.perfil);
@@ -68,6 +70,7 @@ export default function Usuarios() {
   const [form, setForm] = useState(blankForm);
   const [novaSenha, setNovaSenha] = useState('');
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
+  const [usuariosPage, setUsuariosPage] = useState(1);
   const [toast, setToast] = useState({ message: '', tone: 'cyan' });
   const [error, setError] = useState('');
 
@@ -75,6 +78,13 @@ export default function Usuarios() {
   const canApproveAccess = podeAprovarTecnicos(currentUser);
   const canDeleteUsers = currentUser?.perfil === 'diretoria' || currentUser?.perfil === 'administrador';
   const ativos = useMemo(() => usuarios.filter((usuario) => usuario.ativo).length, [usuarios]);
+  const usuariosTotalPages = useMemo(() => Math.max(1, Math.ceil(usuarios.length / USERS_PER_PAGE)), [usuarios.length]);
+  const usuariosPaginados = useMemo(() => {
+    const start = (usuariosPage - 1) * USERS_PER_PAGE;
+    return usuarios.slice(start, start + USERS_PER_PAGE);
+  }, [usuarios, usuariosPage]);
+  const usuariosStart = usuarios.length ? (usuariosPage - 1) * USERS_PER_PAGE + 1 : 0;
+  const usuariosEnd = Math.min(usuariosPage * USERS_PER_PAGE, usuarios.length);
   const perfisDisponiveis = useMemo(
     () => currentUser?.perfil === 'gerencia' ? PERFIS.filter((perfil) => !['diretoria', 'gerencia'].includes(perfil)) : PERFIS,
     [currentUser?.perfil]
@@ -101,6 +111,10 @@ export default function Usuarios() {
   useEffect(() => {
     carregarUsuarios();
   }, [currentUser?.id, currentUser?.perfil, currentUser?.area_operacional, currentUser?.area_supervisao]);
+
+  useEffect(() => {
+    if (usuariosPage > usuariosTotalPages) setUsuariosPage(usuariosTotalPages);
+  }, [usuariosPage, usuariosTotalPages]);
 
   function openCreate() {
     setForm(blankForm);
@@ -356,6 +370,13 @@ export default function Usuarios() {
 
       {canManageUsers && (
         <section className="glass-card overflow-hidden rounded-3xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-300/10 px-5 py-4">
+            <div>
+              <h2 className="text-xl font-black text-white">Usuários cadastrados</h2>
+              <p className="text-sm font-semibold text-slate-300">Exibindo 10 usuários por página para facilitar a navegação.</p>
+            </div>
+            <StatusBadge tone="cyan">{usuarios.length} usuário(s)</StatusBadge>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-[1320px] w-full border-separate border-spacing-y-2 p-3 text-left">
               <thead>
@@ -378,7 +399,7 @@ export default function Usuarios() {
                     <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={10}>Carregando usuários...</td>
                   </tr>
                 ) : usuarios.length ? (
-                  usuarios.map((usuario) => (
+                  usuariosPaginados.map((usuario) => (
                     <tr key={usuario.id}>
                       <td className="rounded-l-2xl border-y border-l border-cyan-300/10 bg-navy-950/55 px-3 py-3 font-bold text-white">{usuario.nome}</td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-200">{usuario.usuario}</td>
@@ -423,6 +444,29 @@ export default function Usuarios() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-cyan-300/10 px-5 py-4 text-sm font-bold text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Mostrando {usuariosStart}-{usuariosEnd} de {usuarios.length} usuário(s)
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <button className="secondary-button min-h-10 px-3" type="button" disabled={usuariosPage <= 1} onClick={() => setUsuariosPage((page) => Math.max(1, page - 1))}>
+                Anterior
+              </button>
+              {Array.from({ length: usuariosTotalPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  className={page === usuariosPage ? 'primary-button min-h-10 min-w-10 px-3' : 'secondary-button min-h-10 min-w-10 px-3'}
+                  type="button"
+                  onClick={() => setUsuariosPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button className="secondary-button min-h-10 px-3" type="button" disabled={usuariosPage >= usuariosTotalPages} onClick={() => setUsuariosPage((page) => Math.min(usuariosTotalPages, page + 1))}>
+                Próxima
+              </button>
+            </div>
           </div>
         </section>
       )}

@@ -423,6 +423,91 @@ function DashboardTabs({ activeTab, setActiveTab, data, loading, navigate }) {
   );
 }
 
+function MobileDashboard({ user, data, loading, error, criticidade, rankedEbaps, greeting, onRefresh, onSelectEbap, navigate }) {
+  const topEbaps = rankedEbaps.slice(0, 6);
+
+  return (
+    <div className="grid gap-4 md:hidden">
+      <section className="rounded-[28px] border border-blue-200/15 bg-[#10224D]/85 p-5 shadow-xl shadow-black/20">
+        <span className="text-xs font-black uppercase tracking-[0.18em] text-blue-200/70">Dashboard mobile</span>
+        <h1 className="mt-2 text-2xl font-black text-white">{greeting}, {user?.nome || 'Operação'}</h1>
+        <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-300">
+          Resumo rápido para acompanhamento em celular e tablet.
+        </p>
+        <button type="button" className="secondary-button mt-4 w-full" onClick={onRefresh} disabled={loading}>
+          <RefreshCcw size={17} className={loading ? 'animate-spin' : ''} />
+          Atualizar indicadores
+        </button>
+      </section>
+
+      {error && <div className="rounded-2xl border border-red-300/30 bg-red-500/15 p-4 text-sm font-bold text-red-100">{error}</div>}
+
+      <section className="grid grid-cols-2 gap-3">
+        <MiniMetric icon={ClipboardList} label="OS abertas" value={loading ? '...' : data?.kpis.osAbertas ?? 0} tone="cyan" />
+        <MiniMetric icon={ShieldAlert} label="OS críticas" value={loading ? '...' : data?.kpis.osCriticas ?? 0} tone="red" />
+        <MiniMetric icon={FileText} label="RDO pendentes" value={loading ? '...' : data?.kpis.roPendentes ?? 0} tone="orange" />
+        <MiniMetric icon={Factory} label="EBAPs críticas" value={loading ? '...' : criticidade.criticas} tone="red" />
+      </section>
+
+      <section className="grid gap-3">
+        <button type="button" className="primary-button min-h-14 justify-between px-5" onClick={() => navigate('/os?nova=1')}>
+          Abrir OS
+          <ClipboardList size={20} />
+        </button>
+        <button type="button" className="secondary-button min-h-14 justify-between px-5" onClick={() => navigate('/relatorio')}>
+          Abrir RDO
+          <FileText size={20} />
+        </button>
+      </section>
+
+      <section className="rounded-[28px] border border-blue-200/15 bg-[#10224D]/80 p-4 shadow-xl shadow-black/20">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-black text-white">EBAPs em atenção</h2>
+            <p className="text-xs font-semibold text-slate-300">Ordenadas por criticidade operacional.</p>
+          </div>
+          <StatusBadge tone="red">{criticidade.criticas}</StatusBadge>
+        </div>
+
+        <div className="grid gap-3">
+          {topEbaps.length ? topEbaps.map((ebap) => (
+            <button
+              key={ebap.id}
+              type="button"
+              className="rounded-2xl border border-blue-200/12 bg-[#0A1633]/65 p-4 text-left shadow-inner shadow-white/5"
+              onClick={() => onSelectEbap(ebap)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <strong className="block truncate text-base font-black text-white">{ebap.nome_curto || ebap.nome}</strong>
+                  <span className="mt-1 block text-xs font-bold text-slate-400">{ebap.codigo || ebap.bairro || 'EBAP'}</span>
+                </div>
+                <StatusBadge tone={ebap.criticidade?.nivel === 'critico' ? 'red' : ebap.criticidade?.nivel === 'atencao' ? 'orange' : 'cyan'}>
+                  {ebap.criticidade?.label || 'Normal'}
+                </StatusBadge>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <MiniMetric label="Crit." value={`${ebap.criticidade?.score || 0}%`} tone={ebap.criticidade?.nivel === 'critico' ? 'red' : 'orange'} />
+                <MiniMetric label="OS" value={ebap.ordensAbertas || 0} tone="cyan" />
+                <MiniMetric label="RDO" value={ebap.roPendentes || 0} tone="orange" />
+              </div>
+            </button>
+          )) : (
+            <EmptyPanel text="Nenhuma EBAP encontrada." />
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-blue-200/15 bg-[#10224D]/80 p-4 shadow-xl shadow-black/20">
+        <h2 className="text-lg font-black text-white">Últimas movimentações</h2>
+        <div className="mt-3">
+          <MovimentoList items={data?.ultimasMovimentacoes || []} navigate={navigate} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
@@ -481,7 +566,20 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="grid gap-3">
+    <>
+      <MobileDashboard
+        user={user}
+        data={data}
+        loading={loading}
+        error={error}
+        criticidade={criticidade}
+        rankedEbaps={rankedEbaps}
+        greeting={greeting}
+        onRefresh={loadDashboard}
+        onSelectEbap={setSelectedEbap}
+        navigate={navigate}
+      />
+      <div className="hidden gap-3 md:grid">
       <section className="page-surface">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -527,7 +625,8 @@ export default function Dashboard() {
 
       <DashboardTabs activeTab={activeTab} setActiveTab={setActiveTab} data={data} loading={loading} navigate={navigate} />
 
-      <EbapDetailPanel ebap={selectedEbap} onClose={() => setSelectedEbap(null)} />
     </div>
+    <EbapDetailPanel ebap={selectedEbap} onClose={() => setSelectedEbap(null)} />
+    </>
   );
 }

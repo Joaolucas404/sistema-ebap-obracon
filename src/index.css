@@ -305,3 +305,172 @@ button {
     animation: none;
   }
 }
+
+@media (max-width: 767px) {
+  .mobile-native {
+    background:
+      linear-gradient(180deg, rgba(10, 22, 51, 1) 0%, rgba(16, 34, 77, .98) 55%, rgba(10, 22, 51, 1) 100%);
+  }
+
+  .mobile-native .mobile-main {
+    overflow-x: hidden;
+  }
+
+  .mobile-native .page-surface,
+  .mobile-native .glass-card,
+  .mobile-native .premium-card,
+  .mobile-native .metric-card {
+    border-radius: 26px;
+    padding: 1rem;
+    box-shadow:
+      0 18px 42px rgba(0, 0, 0, .24),
+      inset 0 1px 0 rgba(255, 255, 255, .08);
+  }
+
+  .mobile-native .metric-card,
+  .mobile-native [class*="rounded-3xl"] {
+    border-radius: 26px;
+  }
+
+  .mobile-native .primary-button,
+  .mobile-native .secondary-button,
+  .mobile-native .danger-button {
+    min-height: 3rem;
+    border-radius: 1rem;
+  }
+
+  .mobile-native main > div,
+  .mobile-native main > section {
+    width: 100%;
+  }
+
+  .mobile-native h1,
+  .mobile-native h2 {
+    line-height: 1.12;
+  }
+
+  .mobile-native .field-label {
+    gap: .55rem;
+    font-size: .92rem;
+  }
+
+  .mobile-native .form-control {
+    min-height: 3.25rem;
+    border-radius: 1rem;
+    font-size: 1rem;
+  }
+
+  .mobile-native form .primary-button,
+  .mobile-native form .secondary-button,
+  .mobile-native form .danger-button {
+    width: 100%;
+  }
+
+  .mobile-native table {
+    min-width: 0 !important;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 .75rem;
+  }
+
+  .mobile-native thead {
+    display: none;
+  }
+
+  .mobile-native tbody,
+  .mobile-native tr,
+  .mobile-native td {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-native tr {
+    overflow: hidden;
+    border: 1px solid rgba(214, 228, 255, .14);
+    border-radius: 22px;
+    background: rgba(16, 34, 77, .84);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .18);
+  }
+
+  .mobile-native td {
+    border: 0 !important;
+    background: transparent !important;
+    padding: .75rem 1rem !important;
+  }
+
+  .mobile-native td + td {
+    border-top: 1px solid rgba(214, 228, 255, .09) !important;
+  }
+
+  .mobile-native .overflow-auto,
+  .mobile-native .overflow-x-auto {
+    overflow-x: visible;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .desktop-shell .nav-shell {
+    padding: .5rem;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, .45) transparent;
+  }
+
+  .desktop-shell .nav-shell::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .desktop-shell .nav-shell::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .desktop-shell .nav-shell::-webkit-scrollbar-thumb {
+    border: 0;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .45);
+  }
+
+  .desktop-shell .nav-shell .login-logo-frame {
+    width: 2.75rem;
+    border-radius: 1rem;
+  }
+
+  .desktop-shell .nav-shell > div:first-child strong,
+  .desktop-shell .nav-shell > div:first-child span {
+    display: none;
+  }
+
+  .desktop-shell .nav-group {
+    padding: .35rem;
+  }
+
+  .desktop-shell .nav-group-title {
+    min-height: 2.35rem;
+    justify-content: center;
+    padding: .35rem;
+  }
+
+  .desktop-shell .nav-group-title > span:first-child,
+  .desktop-shell .nav-group-title .rounded-full {
+    display: none;
+  }
+
+  .desktop-shell .nav-item {
+    min-height: 3rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0;
+    padding: .35rem;
+    border-radius: 1rem;
+  }
+
+  .desktop-shell .nav-icon {
+    height: 2.35rem;
+    width: 2.35rem;
+  }
+
+  .desktop-shell .nav-item > span:nth-child(2),
+  .desktop-shell .nav-item > span:nth-child(3) {
+    display: none;
+  }
+}

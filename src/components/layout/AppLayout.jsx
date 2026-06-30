@@ -337,9 +337,9 @@ export default function AppLayout() {
     const fiscal = isFiscalOperacional(user);
 
     return (
-      <div className="min-h-screen bg-[#0A1633] text-white">
+      <div className="mobile-native min-h-screen bg-[#0A1633] text-white">
         {!isChatRoute && <MobileHeader user={user} />}
-        <main className={isChatRoute ? 'mx-auto min-h-screen max-w-md px-0 pb-0 pt-0' : `mx-auto min-h-[calc(100vh-72px)] max-w-md px-4 ${fiscal ? 'pb-6' : 'pb-28'} pt-4`}>
+        <main className={isChatRoute ? 'mx-auto min-h-screen max-w-md px-0 pb-0 pt-0' : `mobile-main mx-auto min-h-[calc(100vh-72px)] w-full max-w-3xl px-4 ${fiscal ? 'pb-6' : 'pb-28'} pt-4`}>
           {showMobileHome ? <MobileHome user={user} /> : <Outlet />}
         </main>
         {!isChatRoute && !fiscal && <MobileBottomNav user={user} />}
@@ -351,8 +351,8 @@ export default function AppLayout() {
     <div className="app-bg">
       <div className="content-layer">
         <Topbar />
-        <div className="mx-auto grid max-w-[1680px] gap-3 lg:grid-cols-[258px_minmax(0,1fr)] 2xl:grid-cols-[270px_minmax(0,1fr)]">
-          <div>
+        <div className="desktop-shell mx-auto grid max-w-[1680px] gap-3 lg:grid-cols-[88px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)] 2xl:grid-cols-[264px_minmax(0,1fr)]">
+          <div className="min-w-0">
             <Sidebar />
           </div>
           <main className="min-w-0">
