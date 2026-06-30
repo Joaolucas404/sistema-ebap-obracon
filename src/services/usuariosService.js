@@ -43,7 +43,7 @@ const AUTO_AREA_BY_PROFILE = {
   fiscal_operacional: 'prefeitura'
 };
 
-const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, ebap_id, ebap:ebaps(id,nome,nome_curto), status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
+const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, ebap_id, ebap:ebaps!usuarios_ebap_id_fkey(id,nome,nome_curto), status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
 
 export function areaOperacionalLabel(area) {
   return AREAS_OPERACIONAIS.find((item) => item.value === area)?.label || area || '-';

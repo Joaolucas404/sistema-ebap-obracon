@@ -50,6 +50,7 @@ function isEditableReport(status) {
 export default function RelatorioDiario() {
   const user = useAuthStore((state) => state.user);
   const canEdit = user?.perfil === 'operador';
+  const operadorEbapId = canEdit ? user?.ebap_id : '';
   const [ebaps, setEbaps] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
   const [relatorio, setRelatorio] = useState(null);
@@ -114,6 +115,13 @@ export default function RelatorioDiario() {
         setPayload(draft.payload || blankPayload());
         setFotos(await listarFotosRelatorio(draft.id));
         if (draft.ebap_id) await loadEquipamentos(draft.ebap_id, draft.payload || blankPayload());
+      } else if (canEdit && operadorEbapId) {
+        const current = await criarRascunhoRelatorio({ ebapId: operadorEbapId, user });
+        setRelatorio(current);
+        await loadEquipamentos(operadorEbapId, current.payload || blankPayload());
+        setToast({ message: 'RDO iniciado automaticamente na EBAP do operador.', tone: 'green' });
+      } else if (canEdit && !operadorEbapId) {
+        setError('Seu usuário operador ainda não possui EBAP vinculada. Solicite à administração para preencher a EBAP no cadastro do usuário.');
       }
     } catch (err) {
       setError(err.message || 'Falha ao carregar RDO.');
@@ -124,7 +132,7 @@ export default function RelatorioDiario() {
 
   useEffect(() => {
     loadInitial();
-  }, [user?.id, user?.perfil]);
+  }, [user?.id, user?.perfil, operadorEbapId]);
 
   useEffect(() => {
     if (!canEdit || !relatorio?.id || !isEditableReport(relatorio.status)) return;
@@ -143,6 +151,10 @@ export default function RelatorioDiario() {
 
   async function handleSelectEbap(ebapId) {
     if (!canEdit) return;
+    if (operadorEbapId && ebapId !== operadorEbapId) {
+      setError('Operador só pode preencher RDO da EBAP vinculada ao seu cadastro.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -361,7 +373,12 @@ export default function RelatorioDiario() {
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <label className="field-label">
             EBAP
-            <select className="form-control" value={relatorio?.ebap_id || ''} onChange={(event) => handleSelectEbap(event.target.value)} disabled={!canEdit || (relatorio?.status && !isEditableReport(relatorio.status))}>
+            <select
+              className="form-control"
+              value={relatorio?.ebap_id || operadorEbapId || ''}
+              onChange={(event) => handleSelectEbap(event.target.value)}
+              disabled={!canEdit || Boolean(operadorEbapId) || (relatorio?.status && !isEditableReport(relatorio.status))}
+            >
               <option value="">Selecione uma EBAP para iniciar...</option>
               {ebaps.map((ebap) => (
                 <option key={ebap.id} value={ebap.id}>
