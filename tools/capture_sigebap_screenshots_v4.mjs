@@ -181,7 +181,7 @@ async function frameImage(page, input, output, canvas, mode) {
   html, body { margin: 0; min-width: 100%; min-height: 100%; overflow: hidden; background: transparent; }
   body { display: inline-block; padding: ${mode === 'desktop' ? 34 : 38}px; font-family: Inter, Segoe UI, Arial, sans-serif; }
   .frame { display: inline-block; padding: ${mode === 'desktop' ? 16 : 18}px; border-radius: ${mode === 'desktop' ? 34 : 44}px; background: #fff; border: 3px solid #d8e6ff; box-shadow: 0 34px 84px rgba(10,22,51,.24); }
-  img { display: block; width: ${mode === 'desktop' ? 2160 : mode === 'sidebar' ? 600 : 560}px; max-width: none; height: auto; border-radius: ${mode === 'desktop' ? 24 : 32}px; }
+  img { display: block; width: ${mode === 'desktop' ? 2160 : 1900}px; max-width: none; height: auto; border-radius: ${mode === 'desktop' ? 24 : 32}px; }
 </style></head><body><div class="frame"><img src="${dataUrl}" /></div></body></html>`, { waitUntil: 'load' });
   const frame = framePage.locator('.frame');
   await frame.screenshot({ path: output });

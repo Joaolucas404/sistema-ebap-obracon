@@ -162,7 +162,11 @@ export default function Manutencao() {
   }
 
   async function confirmImport(mode = importMode || 'mesclar') {
-    if (!preview?.eventos?.length) return;
+    if (!preview?.eventos?.length) {
+      setLocalError('Nenhum evento válido foi encontrado para importar. Confira se a planilha possui data e atividade preenchidas.');
+      setToast({ message: 'Nenhum evento válido encontrado na planilha.', tone: 'orange' });
+      return;
+    }
     const pendentes = preview.eventos.filter((evento) => !evento.area);
     if (pendentes.length) {
       setLocalError('Classifique todas as atividades sem área antes de importar.');
@@ -526,6 +530,11 @@ function ImportPreview({ preview, eventosAtuais, importMode, setImportMode, onAr
         <p className="mt-1 text-sm text-slate-300">Por área: {Object.entries(preview.resumo.porArea).map(([area, count]) => `${areaLabel(area)} (${count})`).join(' • ') || '-'}</p>
         {preview.erros.length > 0 && <p className="mt-2 text-sm font-semibold text-amber-100">{preview.erros.length} linha(s) ignorada(s) por falta de atividade ou data.</p>}
       </div>
+      {!preview.eventos.length && (
+        <div className="rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4 text-sm text-amber-50">
+          Nenhum evento válido foi encontrado. Confira se as atividades possuem uma data na mesma linha ou em uma coluna de calendário da planilha.
+        </div>
+      )}
       {hasExisting && (
         <div className="rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4">
           <strong className="text-amber-100">Já existe cronograma para {preview.mesReferencia}.</strong>
@@ -552,7 +561,7 @@ function ImportPreview({ preview, eventosAtuais, importMode, setImportMode, onAr
       </div>
       <div className="flex justify-end gap-2">
         <button className="primary-button" type="button" onClick={() => onConfirm(hasExisting ? importMode : 'mesclar')} disabled={saving || pendentes > 0 || (hasExisting && !importMode)}>
-          {saving ? 'Importando...' : 'Confirmar importação'}
+          {saving ? 'Importando...' : preview.eventos.length ? 'Confirmar importação' : 'Verificar planilha'}
         </button>
       </div>
     </div>
@@ -595,32 +604,36 @@ async function parseWorkbook(file, user, associacoes) {
   const eventos = [];
   const erros = [];
   abas.forEach(({ original, config }) => {
-    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[original], { defval: '', raw: false });
+    const sheet = workbook.Sheets[original];
+    const matrixRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false, blankrows: false });
+    const mesPlanilha = inferMesReferencia(file.name, original, matrixRows);
+    const seen = new Set();
+    const linhasComEvento = new Set();
+
+    const registrarEvento = (evento) => {
+      if (!evento?.atividade || !evento?.data_programada) return false;
+      const key = [original, evento.linha_origem, evento.data_programada, normalizarTexto(evento.atividade)].join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      eventos.push(evento);
+      linhasComEvento.add(evento.linha_origem);
+      return true;
+    };
+
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
     rows.forEach((row, rowIndex) => {
-      const atividade = valueByHeader(row, ['atividades', 'atividade']);
-      const data = parseDateValue(valueByHeader(row, ['data', 'dia', 'programada', 'programacao', 'programação']));
-      if (!atividade || !data) {
-        if (Object.values(row).some(Boolean)) erros.push({ aba: original, linha: rowIndex + 2, motivo: 'Atividade ou data não encontrada.' });
-        return;
+      registrarEvento(buildEventoFromStructuredRow(row, config, associacoes, original, rowIndex + 2, mesPlanilha));
+    });
+
+    const result = parseMatrixRows(matrixRows, config, associacoes, original, mesPlanilha, registrarEvento);
+    result.ignored.forEach((linha) => {
+      if (!linhasComEvento.has(linha)) {
+        erros.push({ aba: original, linha, motivo: 'Atividade ou data não encontrada.' });
       }
-      const areaClassificada = classificarAtividadeManutencao(atividade, associacoes) || config.area;
-      eventos.push({
-        atividade,
-        ebap: valueByHeader(row, ['ebap', 'estacao', 'estação', 'unidade']),
-        equipamento: valueByHeader(row, ['equipamento', 'ativo']),
-        equipe: valueByHeader(row, ['equipe']),
-        descricao: valueByHeader(row, ['descricao', 'descrição', 'observacao', 'observação']),
-        data_programada: data,
-        hora_programada: parseTimeValue(valueByHeader(row, ['hora', 'horario', 'horário'])),
-        area: areaClassificada,
-        tipo_evento: 'Manutenção',
-        aba_origem: original,
-        linha_origem: rowIndex + 2
-      });
     });
   });
 
-  const mesReferencia = eventos[0]?.data_programada?.slice(0, 7) || '';
+  const mesReferencia = eventos[0]?.data_programada?.slice(0, 7) || inferMesReferencia(file.name, '', []);
   return {
     fileName: file.name,
     abas: abas.map((aba) => aba.original),
@@ -635,15 +648,108 @@ async function parseWorkbook(file, user, associacoes) {
   };
 }
 
+function buildEventoFromStructuredRow(row, config, associacoes, aba, linha, mesReferencia = '') {
+  const atividade = valueByHeader(row, ['atividades', 'atividade', 'titulo', 'título', 'servico', 'serviço', 'descricao', 'descrição']);
+  const data = parseDateValue(valueByHeader(row, ['data', 'dia', 'programada', 'programacao', 'programação', 'dt']), mesReferencia);
+  if (!atividade || !data) return null;
+  return buildEvento({
+    atividade,
+    data,
+    area: classificarAtividadeManutencao(atividade, associacoes) || config.area,
+    ebap: valueByHeader(row, ['ebap', 'estacao', 'estação', 'unidade']),
+    equipamento: valueByHeader(row, ['equipamento', 'ativo']),
+    equipe: valueByHeader(row, ['equipe']),
+    descricao: valueByHeader(row, ['observacao', 'observação', 'obs']),
+    hora: parseTimeValue(valueByHeader(row, ['hora', 'horario', 'horário'])),
+    aba,
+    linha
+  });
+}
+
+function parseMatrixRows(rows, config, associacoes, aba, mesReferencia, registrarEvento) {
+  const dateByColumn = {};
+  const ignored = [];
+
+  rows.forEach((row, rowIndex) => {
+    const linha = rowIndex + 1;
+    const cells = row.map((cell) => String(cell || '').trim());
+    if (!cells.some(Boolean)) return;
+
+    let created = false;
+    cells.forEach((cell, columnIndex) => {
+      const data = parseDateValue(cell, mesReferencia);
+      if (data) dateByColumn[columnIndex] = data;
+    });
+
+    cells.forEach((cell, columnIndex) => {
+      const data = parseDateValue(cell, mesReferencia);
+      if (!data) return;
+      const atividade = pickActivityFromRow(cells, columnIndex);
+      if (!atividade) return;
+      created = registrarEvento(buildEvento({
+        atividade,
+        data,
+        area: classificarAtividadeManutencao(atividade, associacoes) || config.area,
+        ebap: extractEbapFromText(cells.join(' ')),
+        hora: parseTimeValue(cells.join(' ')),
+        aba,
+        linha
+      })) || created;
+    });
+
+    cells.forEach((cell, columnIndex) => {
+      if (!dateByColumn[columnIndex] || parseDateValue(cell, mesReferencia) || !isActivityText(cell)) return;
+      created = registrarEvento(buildEvento({
+        atividade: cell,
+        data: dateByColumn[columnIndex],
+        area: classificarAtividadeManutencao(cell, associacoes) || config.area,
+        ebap: extractEbapFromText(cell),
+        hora: parseTimeValue(cell),
+        aba,
+        linha
+      })) || created;
+    });
+
+    if (!created && isRelevantRow(cells)) ignored.push(linha);
+  });
+
+  return { ignored };
+}
+
+function buildEvento({ atividade, data, area, ebap = '', equipamento = '', equipe = '', descricao = '', hora = '', aba, linha }) {
+  return {
+    atividade: String(atividade || '').trim(),
+    ebap,
+    equipamento,
+    equipe,
+    descricao,
+    data_programada: data,
+    hora_programada: hora,
+    area,
+    tipo_evento: inferTipoEvento(atividade),
+    aba_origem: aba,
+    linha_origem: linha
+  };
+}
+
 function valueByHeader(row, candidates) {
   const entry = Object.entries(row).find(([key]) => candidates.some((candidate) => normalizarTexto(key).includes(normalizarTexto(candidate))));
   return String(entry?.[1] || '').trim();
 }
 
-function parseDateValue(value) {
+function parseDateValue(value, mesReferencia = '') {
   if (!value) return '';
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+  if (typeof value === 'number' && value > 25000) {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+  }
   const text = String(value).trim();
+  if (/^\d{1,2}$/.test(text) && mesReferencia) return `${mesReferencia}-${text.padStart(2, '0')}`;
+  if (/^\d{5}(\.\d+)?$/.test(text)) {
+    const parsed = XLSX.SSF.parse_date_code(Number(text));
+    if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+  }
   const br = text.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
   if (br) {
     const year = br[3].length === 2 ? `20${br[3]}` : br[3];
@@ -658,6 +764,73 @@ function parseTimeValue(value) {
   const text = String(value).trim();
   const match = text.match(/(\d{1,2}):(\d{2})/);
   return match ? `${match[1].padStart(2, '0')}:${match[2]}` : '';
+}
+
+function inferMesReferencia(...sources) {
+  const text = normalizarTexto(sources.flat(Infinity).join(' '));
+  const months = [
+    ['janeiro', '01'], ['jan', '01'],
+    ['fevereiro', '02'], ['fev', '02'],
+    ['marco', '03'], ['mar', '03'],
+    ['abril', '04'], ['abr', '04'],
+    ['maio', '05'], ['mai', '05'],
+    ['junho', '06'], ['jun', '06'],
+    ['julho', '07'], ['jul', '07'],
+    ['agosto', '08'], ['ago', '08'],
+    ['setembro', '09'], ['set', '09'],
+    ['outubro', '10'], ['out', '10'],
+    ['novembro', '11'], ['nov', '11'],
+    ['dezembro', '12'], ['dez', '12']
+  ];
+  const year = text.match(/\b(20\d{2})\b/)?.[1] || String(new Date().getFullYear());
+  const month = months.find(([name]) => text.includes(name))?.[1];
+  return month ? `${year}-${month}` : '';
+}
+
+function pickActivityFromRow(cells, dateColumn) {
+  return cells
+    .filter((cell, index) => index !== dateColumn && isActivityText(cell))
+    .sort((a, b) => b.length - a.length)[0] || '';
+}
+
+function isRelevantRow(cells) {
+  return cells.some((cell) => isActivityText(cell) || parseDateValue(cell));
+}
+
+function isActivityText(value) {
+  const text = String(value || '').trim();
+  if (text.length < 3 || !/[A-Za-zÀ-ÿ]/.test(text)) return false;
+  if (parseDateValue(text)) return false;
+  const normalized = normalizarTexto(text);
+  const ignored = [
+    'data', 'dia', 'hora', 'horario', 'atividade', 'atividades', 'programacao',
+    'cronograma', 'lista de cronograma', 'manutencao', 'mecanica', 'eletrica',
+    'automacao', 'noite', 'ebap', 'equipamento', 'equipe', 'responsavel',
+    'observacao', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'
+  ];
+  return !ignored.some((term) => normalized === term || normalized.startsWith(`${term}:`));
+}
+
+function inferTipoEvento(atividade) {
+  const text = normalizarTexto(atividade);
+  if (text.includes('reuniao')) return 'Reunião';
+  if (text.includes('treinamento')) return 'Treinamento';
+  if (text.includes('visita')) return 'Visita';
+  if (text.includes('inspecao')) return 'Inspeção';
+  if (text.includes('auditoria')) return 'Auditoria';
+  if (text.includes('parada')) return 'Parada Programada';
+  if (text.includes('lembrete') || text.includes('aviso')) return 'Lembrete';
+  return 'Manutenção';
+}
+
+function extractEbapFromText(value) {
+  const text = normalizarTexto(value);
+  const ebaps = [
+    'Aribiri', 'Bigossi', 'Canal da Costa', 'Cobilândia', 'Comportas',
+    'Foz da Costa', 'Guaranhuns', 'Laranja', 'Laranjeiras', 'Marilândia',
+    'Marinho', 'Sítio Batalha'
+  ];
+  return ebaps.find((name) => text.includes(normalizarTexto(name))) || '';
 }
 
 function buildCalendarDays(cursor) {
