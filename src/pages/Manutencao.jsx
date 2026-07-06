@@ -92,6 +92,7 @@ export default function Manutencao() {
     return CRONOGRAMA_AREAS.filter((item) => item.value === area);
   }, [user]);
   const canManageAny = allowedAreas.length > 0 && (podeVerTodasAreasManutencao(user) || user?.perfil === 'supervisor');
+  const eventosVisiveis = useMemo(() => eventos.filter((evento) => !isWeekdayPlaceholder(evento.atividade)), [eventos]);
 
   useEffect(() => {
     carregarTudo(user);
@@ -99,10 +100,10 @@ export default function Manutencao() {
 
   const eventosMes = useMemo(() => {
     const month = cursor.toISOString().slice(0, 7);
-    return eventos.filter((evento) => String(evento.data_programada || '').startsWith(month));
-  }, [eventos, cursor]);
+    return eventosVisiveis.filter((evento) => String(evento.data_programada || '').startsWith(month));
+  }, [eventosVisiveis, cursor]);
 
-  const agenda = useMemo(() => buildAgenda(eventos), [eventos]);
+  const agenda = useMemo(() => buildAgenda(eventosVisiveis), [eventosVisiveis]);
   const calendarDays = useMemo(() => buildCalendarDays(cursor), [cursor]);
   const byDay = useMemo(() => groupByDate(eventosMes), [eventosMes]);
 
@@ -372,13 +373,13 @@ function CalendarView({ cursor, days, byDay, onMove, onCreate, onOpen, canCreate
           const inMonth = day.getMonth() === cursor.getMonth();
           const items = byDay[key] || [];
           return (
-            <div key={key} role={canCreate ? 'button' : undefined} tabIndex={canCreate ? 0 : undefined} className={(inMonth ? 'bg-navy-950/35' : 'bg-navy-950/15 opacity-55') + ' min-h-40 rounded-2xl border border-blue-300/15 p-2 transition hover:border-blue-300/35 ' + (canCreate ? 'cursor-pointer' : '')} onClick={() => canCreate && onCreate(key)} onKeyDown={(event) => { if (canCreate && (event.key === 'Enter' || event.key === ' ')) onCreate(key); }}>
+            <div key={key} role={canCreate ? 'button' : undefined} tabIndex={canCreate ? 0 : undefined} className={(inMonth ? 'bg-navy-950/35' : 'bg-navy-950/15 opacity-55') + ' min-h-40 overflow-hidden rounded-2xl border border-blue-300/15 p-2 transition hover:border-blue-300/35 ' + (canCreate ? 'cursor-pointer' : '')} onClick={() => canCreate && onCreate(key)} onKeyDown={(event) => { if (canCreate && (event.key === 'Enter' || event.key === ' ')) onCreate(key); }}>
               <div className="mb-2 text-xs font-semibold text-slate-300">{day.getDate()}</div>
               <div className="grid gap-1.5">
-                {items.slice(0, 4).map((evento) => (
+                {items.slice(0, 3).map((evento) => (
                   <EventCard key={evento.id} evento={evento} compact onOpen={(event) => { event.stopPropagation(); onOpen(evento); }} canManage={canManage(evento)} />
                 ))}
-                {items.length > 4 && <span className="text-xs font-semibold text-slate-400">+ {items.length - 4} evento(s)</span>}
+                {items.length > 3 && <span className="rounded-lg border border-blue-300/15 px-2 py-1 text-xs font-semibold text-slate-300">+ {items.length - 3} evento(s)</span>}
               </div>
             </div>
           );
@@ -389,13 +390,34 @@ function CalendarView({ cursor, days, byDay, onMove, onCreate, onOpen, canCreate
 }
 
 function EventCard({ evento, compact = false, onOpen, canManage = false }) {
+  const equipeLabel = equipeEventoLabel(evento);
+  if (compact) {
+    return (
+      <button type="button" className={`w-full min-w-0 overflow-hidden rounded-xl border px-2.5 py-2 text-left transition hover:border-white/40 ${areaTone(evento.area)}`} onClick={onOpen}>
+        <strong className="block truncate text-sm font-semibold leading-snug text-white" title={evento.atividade}>{evento.atividade}</strong>
+        <span className="mt-0.5 block truncate text-xs text-slate-300" title={evento.ebap || 'EBAP não informada'}>{evento.ebap || 'EBAP não informada'}</span>
+        <span className="mt-1 flex min-w-0 flex-wrap gap-1">
+          {equipeLabel && (
+            <span className="inline-flex rounded-full border border-indigo-300/30 bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase leading-none text-indigo-100">
+              {equipeBadgeLabel(equipeLabel)}
+            </span>
+          )}
+          <span className="inline-flex max-w-full rounded-full border border-blue-300/25 px-2 py-0.5 text-[10px] font-semibold uppercase leading-none text-blue-100">
+            {statusCronogramaLabel(evento.status)}
+          </span>
+        </span>
+        {canManage && <span className="sr-only">Abrir detalhes</span>}
+      </button>
+    );
+  }
+
   return (
     <button type="button" className={`w-full rounded-xl border p-3 text-left transition hover:border-white/40 ${areaTone(evento.area)}`} onClick={onOpen}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <strong className={(compact ? 'text-xs' : 'text-base') + ' block font-semibold text-white'}>{evento.atividade}</strong>
           <span className="mt-1 block text-xs text-slate-300">{evento.hora_programada ? String(evento.hora_programada).slice(0, 5) + ' - ' : ''}{evento.ebap || 'EBAP não informada'}</span>
-          {!compact && <span className="mt-1 block text-xs text-slate-400">{evento.equipamento || '-'} - {evento.equipe || '-'}</span>}
+          {!compact && <span className="mt-1 block text-xs text-slate-400">{evento.equipamento || '-'} - {equipeLabel || '-'}</span>}
         </div>
         <StatusBadge status={evento.status} />
       </div>
@@ -423,7 +445,7 @@ function EventoDetails({ evento, canManage, onEdit, onCancel, onDelete, onDuplic
         <InfoLine label="Área" value={areaLabel(evento.area)} />
         <InfoLine label="EBAP" value={evento.ebap || '-'} />
         <InfoLine label="Equipamento" value={evento.equipamento || '-'} />
-        <InfoLine label="Equipe" value={evento.equipe || '-'} />
+        <InfoLine label="Equipe" value={equipeEventoLabel(evento) || '-'} />
         <InfoLine label="Data" value={formatDate(evento.data_programada)} />
         <InfoLine label="Hora" value={evento.hora_programada ? String(evento.hora_programada).slice(0, 5) : '-'} />
         <InfoLine label="Origem" value={evento.origem || 'manual'} />
@@ -658,7 +680,7 @@ function buildEventoFromStructuredRow(row, config, associacoes, aba, linha, mesR
     area: classificarAtividadeManutencao(atividade, associacoes) || config.area,
     ebap: valueByHeader(row, ['ebap', 'estacao', 'estação', 'unidade']),
     equipamento: valueByHeader(row, ['equipamento', 'ativo']),
-    equipe: valueByHeader(row, ['equipe']),
+    equipe: valueByHeader(row, ['equipe']) || inferEquipeFromSheet(aba),
     descricao: valueByHeader(row, ['observacao', 'observação', 'obs']),
     hora: parseTimeValue(valueByHeader(row, ['hora', 'horario', 'horário'])),
     aba,
@@ -691,6 +713,7 @@ function parseMatrixRows(rows, config, associacoes, aba, mesReferencia, registra
         data,
         area: classificarAtividadeManutencao(atividade, associacoes) || config.area,
         ebap: extractEbapFromText(cells.join(' ')),
+        equipe: inferEquipeFromSheet(aba),
         hora: parseTimeValue(cells.join(' ')),
         aba,
         linha
@@ -704,6 +727,7 @@ function parseMatrixRows(rows, config, associacoes, aba, mesReferencia, registra
         data: dateByColumn[columnIndex],
         area: classificarAtividadeManutencao(cell, associacoes) || config.area,
         ebap: extractEbapFromText(cell),
+        equipe: inferEquipeFromSheet(aba),
         hora: parseTimeValue(cell),
         aba,
         linha
@@ -779,6 +803,18 @@ function parseTimeValue(value) {
   return match ? `${match[1].padStart(2, '0')}:${match[2]}` : '';
 }
 
+function inferEquipeFromSheet(aba = '') {
+  return normalizarTexto(aba).includes('noite') ? 'Equipe Noite' : '';
+}
+
+function equipeEventoLabel(evento) {
+  return evento?.equipe || inferEquipeFromSheet(evento?.aba_origem || '');
+}
+
+function equipeBadgeLabel(equipe) {
+  return normalizarTexto(equipe).includes('noite') ? 'Noite' : equipe;
+}
+
 function inferMesReferencia(...sources) {
   const text = normalizarTexto(sources.flat(Infinity).join(' '));
   const months = [
@@ -821,7 +857,24 @@ function isActivityText(value) {
     'automacao', 'noite', 'ebap', 'equipamento', 'equipe', 'responsavel',
     'observacao', 'domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'
   ];
-  return !ignored.some((term) => normalized === term || normalized.startsWith(`${term}:`));
+  return !ignored.some((term) => normalized === term || normalized.startsWith(`${term}:`) || normalized.startsWith(`${term}-`) || normalized.startsWith(`${term} feira`));
+}
+
+function isWeekdayPlaceholder(value) {
+  return [
+    'segunda-feira',
+    'segunda feira',
+    'terca-feira',
+    'terca feira',
+    'quarta-feira',
+    'quarta feira',
+    'quinta-feira',
+    'quinta feira',
+    'sexta-feira',
+    'sexta feira',
+    'sabado',
+    'domingo'
+  ].includes(normalizarTexto(value));
 }
 
 function inferTipoEvento(atividade) {
