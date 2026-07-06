@@ -753,10 +753,23 @@ function parseDateValue(value, mesReferencia = '') {
   const br = text.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
   if (br) {
     const year = br[3].length === 2 ? `20${br[3]}` : br[3];
-    return `${year}-${br[2].padStart(2, '0')}-${br[1].padStart(2, '0')}`;
+    const first = Number(br[1]);
+    const second = Number(br[2]);
+    if (second > 12 && first <= 12) return buildDateString(year, first, second);
+    return buildDateString(year, second, first);
   }
   const date = new Date(text);
   return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+}
+
+function buildDateString(year, month, day) {
+  const y = Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return '';
+  const date = new Date(y, m - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return '';
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
 function parseTimeValue(value) {
