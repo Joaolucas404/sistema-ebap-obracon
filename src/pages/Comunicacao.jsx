@@ -524,6 +524,10 @@ export default function Comunicacao() {
 
   async function openDirectConversation(person) {
     try {
+      setSending(true);
+      setToast({ message: 'Abrindo conversa...', tone: 'cyan' });
+      setSelectedId('');
+      setMensagens([]);
       const conversa = await obterOuCriarConversaDireta(person.id, user);
       setConversas((current) => {
         const exists = current.some((item) => item.id === conversa.id);
@@ -534,8 +538,12 @@ export default function Comunicacao() {
       setMobileListOpen(false);
       setSearch('');
       setPeopleResults([]);
+      await loadMensagens(conversa.id);
+      setToast({ message: '', tone: 'cyan' });
     } catch (err) {
       setToast({ message: err.message || 'Falha ao abrir conversa direta.', tone: 'red' });
+    } finally {
+      setSending(false);
     }
   }
 

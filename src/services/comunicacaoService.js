@@ -214,6 +214,17 @@ async function buscarConversaDiretaExistente({ directKey, user, outro }) {
   if (chaveError) throw new Error(chaveError.message);
   if (porChave) return porChave;
 
+  const nomeInterno = `Direta:${directKey}`;
+  const { data: porNomeInterno, error: nomeInternoError } = await supabase
+    .from('comunicacao_conversas')
+    .select(CONVERSA_SELECT)
+    .eq('tipo', 'direta')
+    .eq('nome', nomeInterno)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (nomeInternoError) throw new Error(nomeInternoError.message);
+  if (porNomeInterno) return porNomeInterno;
+
   const nome = outro?.nome || outro?.usuario || '';
   if (!nome) return null;
 
@@ -347,18 +358,13 @@ export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
     .select(CONVERSA_SELECT)
     .single();
   if (error) {
-    if (error.code === '23505') {
-      const fallback = await buscarConversaDiretaExistente({ directKey, user, outro });
-      if (fallback) {
-        const membros = await garantirMembrosConversaDireta(fallback.id, user, outro);
-        return formatarConversaParaUsuario({
-          ...fallback,
-          membros: fallback.membros?.length ? fallback.membros : membros.map((membro) => ({
-            ...membro,
-            usuario: membro.usuario_id === user.id ? user : outro
-          }))
-        }, user);
-      }
+    const fallback = await buscarConversaDiretaExistente({ directKey, user, outro });
+    if (fallback) {
+      const membros = await garantirMembrosConversaDireta(fallback.id, user, outro);
+      return formatarConversaParaUsuario({
+        ...fallback,
+        membros: mergeMembrosConversa(fallback.membros, membros, user, outro)
+      }, user);
     }
     throw new Error(error.message);
   }
@@ -381,6 +387,21 @@ export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
       }
     }))
   }, user);
+}
+
+function mergeMembrosConversa(existing = [], ensured = [], user, outro) {
+  const byUser = new Map();
+  existing.forEach((membro) => {
+    if (membro?.usuario_id) byUser.set(membro.usuario_id, membro);
+  });
+  ensured.forEach((membro) => {
+    if (!membro?.usuario_id || byUser.has(membro.usuario_id)) return;
+    byUser.set(membro.usuario_id, {
+      ...membro,
+      usuario: membro.usuario_id === user.id ? user : outro
+    });
+  });
+  return [...byUser.values()];
 }
 
 export async function listarMensagensComunicacao(conversaId, limit = 80) {
