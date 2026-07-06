@@ -6,7 +6,7 @@ export const OS_STATUS = [
   { value: 'pendente_cco', label: 'Pendente CCO', tone: 'orange', perfil: 'CCO' },
   { value: 'aprovada_cco', label: 'Aprovada pelo CCO', tone: 'green', perfil: 'CCO' },
   { value: 'rejeitada_cco', label: 'Rejeitada pelo CCO', tone: 'red', perfil: 'CCO' },
-  { value: 'correcao_solicitada_cco', label: 'Correcao solicitada pelo CCO', tone: 'orange', perfil: 'CCO' },
+  { value: 'correcao_solicitada_cco', label: 'Correção solicitada pelo CCO', tone: 'orange', perfil: 'CCO' },
   { value: 'solicitada_prefeitura', label: 'Solicitada pela Prefeitura', tone: 'blue', perfil: 'Prefeitura' },
   { value: 'aguardando_supervisor', label: 'Aguardando Supervisor', tone: 'green', perfil: 'Supervisor' },
   { value: 'analise_supervisor', label: 'Em Análise do Supervisor', tone: 'green', perfil: 'Supervisor' },
@@ -141,9 +141,9 @@ function action(from, to, label, descricao, acao, requiresMotivo = false) {
   return { from, to, label, descricao, acao, requiresMotivo };
 }
 
-function applyRoleScope(query, perfil, userId, areaSupervisao = '', equipe = '', scope = '') {
+function applyRoleScope(query, perfil, userId, areaSupervisão = '', equipe = '', scope = '') {
   if (['gerencia', 'diretoria'].includes(perfil)) return query;
-  if (perfil === 'supervisor') return areaSupervisao ? query.eq('area', areaSupervisao) : query;
+  if (perfil === 'supervisor') return areaSupervisão ? query.eq('area', areaSupervisão) : query;
   if (['prefeitura', 'fiscal_operacional'].includes(perfil)) return query.eq('solicitante_id', userId);
   if (perfil === 'tecnico') {
     const own = [`solicitante_id.eq.${userId}`, `responsavel_id.eq.${userId}`, `tecnico_responsavel.eq.${userId}`];
@@ -155,7 +155,7 @@ function applyRoleScope(query, perfil, userId, areaSupervisao = '', equipe = '',
   return query.or(`solicitante_id.eq.${userId},responsavel_id.eq.${userId}`);
 }
 
-export async function listarOS({ page = 1, pageSize = 10, search = '', status = '', prioridade = '', ebapId = '', responsavelId = '', perfil, userId, areaSupervisao = '', equipe = '', scope = '' } = {}) {
+export async function listarOS({ page = 1, pageSize = 10, search = '', status = '', prioridade = '', ebapId = '', responsavelId = '', perfil, userId, areaSupervisão = '', equipe = '', scope = '' } = {}) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   let query = supabase
@@ -164,7 +164,7 @@ export async function listarOS({ page = 1, pageSize = 10, search = '', status = 
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
-  query = applyRoleScope(query, perfil, userId, areaSupervisao, equipe, scope);
+  query = applyRoleScope(query, perfil, userId, areaSupervisão, equipe, scope);
 
   if (search) {
     const value = `%${search}%`;
@@ -471,6 +471,9 @@ export async function registrarExecucaoOS(id, payload, user) {
     payload: {
       ...(atual.payload || {}),
       status_final_execucao: payload.status_final || (atual.payload || {}).status_final_execucao || null,
+      situacao_encontrada: payload.situacao_encontrada || (atual.payload || {}).situacao_encontrada || null,
+      descricao_problema: payload.descricao_problema || (atual.payload || {}).descricao_problema || null,
+      resultado_execucao: payload.resultado_execucao || (atual.payload || {}).resultado_execucao || null,
       tecnicos_participantes_ultima_execucao: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : ((atual.payload || {}).tecnicos_participantes_ultima_execucao || [])
     }
   };
@@ -484,7 +487,15 @@ export async function registrarExecucaoOS(id, payload, user) {
     status_anterior: atual.status,
     status_novo: status,
     descricao: payload.concluir ? 'Técnico concluiu a execução e enviou para validação do Supervisor.' : 'Execução técnica registrada.',
-    metadata: { ...updatePayload, etapa: status, status_final: payload.status_final || null, tecnicos_participantes: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : [] }
+    metadata: {
+      ...updatePayload,
+      etapa: status,
+      status_final: payload.status_final || null,
+      situacao_encontrada: payload.situacao_encontrada || null,
+      descricao_problema: payload.descricao_problema || null,
+      resultado_execucao: payload.resultado_execucao || null,
+      tecnicos_participantes: Array.isArray(payload.tecnicos_participantes) ? payload.tecnicos_participantes : []
+    }
   });
 
   if (payload.concluir) {
@@ -785,13 +796,13 @@ export async function obterUrlAssinadaAnexo(anexo, expiresIn = 3600) {
   return data?.signedUrl || '';
 }
 
-export async function obterDashboardOS({ perfil, userId, areaSupervisao = '', equipe = '', scope = '' } = {}) {
+export async function obterDashboardOS({ perfil, userId, areaSupervisão = '', equipe = '', scope = '' } = {}) {
   let query = supabase
     .from('ordens_servico')
     .select('id,status,prioridade,created_at,data_programada,solicitante_id,responsavel_id')
     .is('deleted_at', null);
 
-  query = applyRoleScope(query, perfil, userId, areaSupervisao, equipe, scope);
+  query = applyRoleScope(query, perfil, userId, areaSupervisão, equipe, scope);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

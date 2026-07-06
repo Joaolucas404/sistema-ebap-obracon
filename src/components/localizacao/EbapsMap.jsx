@@ -126,8 +126,8 @@ export default function EbapsMap({ ebaps, onSelect, compact = false, surface = t
         <div className="mb-2 font-black uppercase text-slate-300">Legenda</div>
         <div className="grid gap-2">
           <Legend color="#3B82F6" label="Operando" />
-          <Legend color="#FACC15" label="Atencao" />
-          <Legend color="#EF4444" label="Critica" />
+          <Legend color="#FACC15" label="Atenção" />
+          <Legend color="#EF4444" label="Crítica" />
         </div>
       </div>
     </section>

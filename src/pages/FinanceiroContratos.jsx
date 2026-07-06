@@ -15,7 +15,7 @@ import {
   mapMedicaoToForm,
   MedicaoForm
 } from '../components/financeiro/FinanceiroForms.jsx';
-import { ContratosTable, LancamentosTable, MedicoesTable } from '../components/financeiro/FinanceiroTables.jsx';
+import { ContratosTable, LancamentosTable, MediçõesTable } from '../components/financeiro/FinanceiroTables.jsx';
 import FinanceiroTimeline from '../components/financeiro/FinanceiroTimeline.jsx';
 import FinanceiroUploadModal from '../components/financeiro/FinanceiroUploadModal.jsx';
 import Modal from '../components/ui/Modal.jsx';
@@ -28,7 +28,7 @@ import { useFinanceiroStore } from '../store/financeiroStore.js';
 const tabs = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'contratos', label: 'Contratos' },
-  { key: 'medicoes', label: 'Medições' },
+  { key: 'medições', label: 'Medições' },
   { key: 'lancamentos', label: 'Lançamentos' },
   { key: 'documentos', label: 'Documentos' },
   { key: 'historico', label: 'Histórico' }
@@ -39,7 +39,7 @@ export default function FinanceiroContratos() {
   const {
     dashboard,
     contratos,
-    medicoes,
+    medições,
     lancamentos,
     documentos,
     historico,
@@ -151,7 +151,7 @@ export default function FinanceiroContratos() {
       await salvarMedicao(medicaoForm, user);
       setToast({ message: 'Medição salva.', tone: 'green' });
       closeModal();
-      setActiveTab('medicoes');
+      setActiveTab('medições');
     } catch (err) {
       setLocalError(err.message || 'Não foi possível salvar a medição.');
     }
@@ -272,7 +272,7 @@ export default function FinanceiroContratos() {
 
       {activeTab === 'dashboard' && <FinanceiroDashboard dashboard={dashboard} />}
 
-      {['contratos', 'medicoes', 'lancamentos'].includes(activeTab) && (
+      {['contratos', 'medições', 'lancamentos'].includes(activeTab) && (
         <FinanceiroFilters
           activeTab={activeTab}
           filters={filters}
@@ -298,9 +298,9 @@ export default function FinanceiroContratos() {
         />
       )}
 
-      {activeTab === 'medicoes' && (
-        <MedicoesTable
-          medicoes={medicoes}
+      {activeTab === 'medições' && (
+        <MediçõesTable
+          medições={medições}
           loading={loading}
           canManage={canManage}
           canApprove={canApprove}
@@ -362,7 +362,7 @@ export default function FinanceiroContratos() {
         <LancamentoForm
           form={lancamentoForm}
           contratos={contratos}
-          medicoes={medicoes}
+          medições={medições}
           fornecedores={fornecedores}
           ebaps={ebaps}
           saving={saving}

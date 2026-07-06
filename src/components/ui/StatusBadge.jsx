@@ -10,13 +10,13 @@ export default function StatusBadge({ children, tone = 'cyan', size = 'sm' }) {
     slate: 'border-slate-300/20 bg-slate-400/10 text-slate-100'
   };
   const sizes = {
-    sm: 'px-3 py-1 text-xs',
-    md: 'px-4 py-1.5 text-sm',
-    lg: 'px-5 py-2 text-sm'
+    sm: 'px-3 py-1 text-[13px]',
+    md: 'px-4 py-1.5 text-[13px]',
+    lg: 'px-5 py-2 text-[13px]'
   };
 
   return (
-    <span className={`inline-flex items-center rounded-full border font-black ${sizes[size] || sizes.sm} ${tones[tone] || tones.cyan}`}>
+    <span className={`ds-badge inline-flex items-center rounded-full border ${sizes[size] || sizes.sm} ${tones[tone] || tones.cyan}`}>
       {children}
     </span>
   );

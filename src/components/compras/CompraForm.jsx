@@ -36,7 +36,7 @@ export function mapCompraToForm(compra) {
           descricao: item.descricao || '',
           categoria: item.categoria || '',
           unidade: item.unidade || 'un',
-          quantidade: item.quantidade ?? 1,
+            quantidade: item.quantidade ?? 1,
           valor_unitario: item.valor_unitario ?? 0
         }))
       : [{ ...blankCompraItem }]
@@ -78,7 +78,7 @@ export default function CompraForm({ form, ebaps, itensAlmox, saving, onChange, 
         <label className="field-label">
           EBAP
           <select className="form-control" value={form.ebap_id} onChange={(event) => onChange('ebap_id', event.target.value)}>
-            <option value="">Nao vinculada</option>
+            <option value="">Não vinculada</option>
             {ebaps.map((ebap) => <option key={ebap.id} value={ebap.id}>{ebap.nome}</option>)}
           </select>
         </label>
@@ -118,7 +118,7 @@ export default function CompraForm({ form, ebaps, itensAlmox, saving, onChange, 
                 <label className="field-label">
                   Item almox.
                   <select className="form-control" value={item.almox_item_id} onChange={(event) => handleAlmoxItemChange(index, event.target.value)}>
-                    <option value="">Nao vinculado</option>
+                    <option value="">Não vinculado</option>
                     {itensAlmox.map((almox) => <option key={almox.id} value={almox.id}>{almox.codigo} - {almox.nome}</option>)}
                   </select>
                 </label>

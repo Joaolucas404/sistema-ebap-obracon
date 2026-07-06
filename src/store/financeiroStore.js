@@ -8,7 +8,7 @@ import {
   listarDocumentosFinanceiros,
   listarHistoricoFinanceiro,
   listarLancamentos,
-  listarMedicoes,
+  listarMedições,
   obterDashboardFinanceiro,
   salvarContrato,
   salvarLancamento,
@@ -29,7 +29,7 @@ const defaultFilters = {
 export const useFinanceiroStore = create((set, get) => ({
   dashboard: null,
   contratos: [],
-  medicoes: [],
+  medições: [],
   lancamentos: [],
   documentos: [],
   historico: [],
@@ -48,10 +48,10 @@ export const useFinanceiroStore = create((set, get) => ({
     const { filters } = get();
     set({ loading: true, error: '' });
     try {
-      const [dashboard, contratos, medicoes, lancamentos, documentos, historico, apoio] = await Promise.all([
+      const [dashboard, contratos, medições, lancamentos, documentos, historico, apoio] = await Promise.all([
         obterDashboardFinanceiro(),
         listarContratos(filters),
-        listarMedicoes(filters),
+        listarMedições(filters),
         listarLancamentos(filters),
         listarDocumentosFinanceiros(),
         listarHistoricoFinanceiro(),
@@ -61,7 +61,7 @@ export const useFinanceiroStore = create((set, get) => ({
       set({
         dashboard,
         contratos,
-        medicoes,
+        medições,
         lancamentos,
         documentos,
         historico,

@@ -21,7 +21,7 @@ const defaultFilters = {
 
 export const useNotificacoesStore = create((set, get) => ({
   notificacoes: [],
-  ultimas: [],
+  últimas: [],
   count: 0,
   unreadCount: 0,
   filters: defaultFilters,
@@ -38,7 +38,7 @@ export const useNotificacoesStore = create((set, get) => ({
     const { filters } = get();
     set({ loading: true, error: '' });
     try {
-      const [lista, ultimas, unreadCount] = await Promise.all([
+      const [lista, últimas, unreadCount] = await Promise.all([
         listarNotificacoes(filters, user),
         listarUltimasNotificacoes(user),
         contarNotificacoesNaoLidas(user)
@@ -46,7 +46,7 @@ export const useNotificacoesStore = create((set, get) => ({
       set({
         notificacoes: lista.data,
         count: lista.count,
-        ultimas,
+        últimas,
         unreadCount,
         loading: false
       });
@@ -58,11 +58,11 @@ export const useNotificacoesStore = create((set, get) => ({
   carregarResumo: async (user) => {
     if (!user?.id) return;
     try {
-      const [ultimas, unreadCount] = await Promise.all([
+      const [últimas, unreadCount] = await Promise.all([
         listarUltimasNotificacoes(user),
         contarNotificacoesNaoLidas(user)
       ]);
-      set({ ultimas, unreadCount });
+      set({ últimas, unreadCount });
     } catch (err) {
       set({ error: err.message || 'Falha ao carregar resumo de notificacoes.' });
     }

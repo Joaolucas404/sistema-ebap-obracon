@@ -9,7 +9,6 @@ import PdfTemplate from '../components/pdf/PdfTemplate.jsx';
 import OSComments from '../components/os/OSComments.jsx';
 import OSEquipmentSelector from '../components/os/OSEquipmentSelector.jsx';
 import OSTimeline from '../components/os/OSTimeline.jsx';
-import RelatorioTecnicoDinamico from '../components/os/RelatorioTecnicoDinamico.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import {
   atualizarOS,
@@ -74,6 +73,38 @@ const STATUS_FINAL_EXECUCAO = [
   { value: 'em_manutencao', label: 'Em manutenção' }
 ];
 
+const SITUACAO_ENCONTRADA = [
+  { value: 'operando_normalmente', label: 'Operando normalmente' },
+  { value: 'atencao', label: 'Atenção' },
+  { value: 'falha', label: 'Falha' }
+];
+
+const RESULTADO_EXECUCAO = [
+  { value: 'resolvido', label: 'Resolvido' },
+  { value: 'resolvido_parcialmente', label: 'Resolvido parcialmente' },
+  { value: 'necessita_retorno', label: 'Necessita retorno' },
+  { value: 'necessita_compra', label: 'Necessita compra' },
+  { value: 'encaminhado_outra_equipe', label: 'Encaminhado para outra equipe' }
+];
+
+function blankExecucaoOperacional() {
+  return {
+    situacao_encontrada: '',
+    descricao_problema: '',
+    anexos: [],
+    materiais_utilizados: '',
+    relatorio_tecnico: '',
+    resultado_execucao: '',
+    fotos_finais: [],
+    concluir: true,
+    tecnicos_participantes: []
+  };
+}
+
+function RelatorioTecnicoDinamico() {
+  return null;
+}
+
 function getModeloSelecionado(modelos, modeloId) {
   return modelos.find((modelo) => modelo.id === modeloId) || modelos[0] || null;
 }
@@ -83,12 +114,12 @@ function normalizeChecklistRespostaLocal(value) {
     return {
       status: value.status || '',
       observacao: value.observacao || '',
-      medicoes: value.medicoes || {}
+      medições: value.medições || {}
     };
   }
-  if (value === true) return { status: 'conforme', observacao: '', medicoes: {} };
-  if (typeof value === 'string') return { status: value, observacao: '', medicoes: {} };
-  return { status: '', observacao: '', medicoes: {} };
+  if (value === true) return { status: 'conforme', observacao: '', medições: {} };
+  if (typeof value === 'string') return { status: value, observacao: '', medições: {} };
+  return { status: '', observacao: '', medições: {} };
 }
 
 function statusChecklistLabel(status) {
@@ -117,8 +148,8 @@ function analisarChecklist(modelo, respostas = {}, fotos = {}) {
   };
 }
 
-function formatarMedicoes(medicoes = {}) {
-  return Object.entries(medicoes)
+function formatarMedições(medições = {}) {
+  return Object.entries(medições)
     .filter(([, value]) => String(value || '').trim())
     .map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`)
     .join('; ');
@@ -134,9 +165,9 @@ function gerarConclusaoTecnica({ os, modelo, relatorioTecnico, execucao }) {
   const detalhes = pontosCriticos.length
     ? `Pontos que exigem acompanhamento: ${pontosCriticos.map((item) => `${item.campo.label} (${statusChecklistLabel(item.resposta.status)}${item.resposta.observacao ? ` - ${item.resposta.observacao}` : ''})`).join('; ')}.`
     : 'Não foram identificadas não conformidades durante a execução.';
-  const medicoes = analise.itens
+  const medições = analise.itens
     .map((item) => {
-      const texto = formatarMedicoes(item.resposta.medicoes);
+      const texto = formatarMedições(item.resposta.medições);
       return texto ? `${item.campo.label}: ${texto}` : '';
     })
     .filter(Boolean);
@@ -146,7 +177,7 @@ function gerarConclusaoTecnica({ os, modelo, relatorioTecnico, execucao }) {
       `Executada intervenção técnica na OS ${os?.numero || ''} referente ao ${equipamento}.`,
       resumoChecklist,
       detalhes,
-      medicoes.length ? `Medições registradas: ${medicoes.join(' | ')}.` : '',
+      medições.length ? `Medições registradas: ${medições.join(' | ')}.` : '',
       fotos ? `Foram anexada(s) ${fotos} evidência(s) fotográfica(s) vinculada(s) ao checklist.` : '',
       `Status final informado: ${statusFinal}.`
     ].filter(Boolean).join('\n\n'),
@@ -177,7 +208,7 @@ export default function DetalheOS() {
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
-  const [execucao, setExecucao] = useState({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', status_final: 'operando', concluir: false, tecnicos_participantes: [] });
+  const [execucao, setExecucao] = useState(() => blankExecucaoOperacional());
   const [relatorioTecnico, setRelatorioTecnico] = useState({ modelo_id: '', respostas: {}, fotos: {}, observacoes: '' });
   const [encerramento, setEncerramento] = useState({ status: 'concluida_arquivada', descricao: '', motivo_cancelamento: '', impacto_equipamento: 'operando', motivo_impacto: '' });
   const [workflowAction, setWorkflowAction] = useState(null);
@@ -276,6 +307,14 @@ export default function DetalheOS() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function updateExecucao(field, value) {
+    setExecucao((current) => ({ ...current, [field]: value }));
+  }
+
+  function setExecucaoFiles(field, files) {
+    setExecucao((current) => ({ ...current, [field]: Array.from(files || []) }));
+  }
+
   function gerarConclusaoAutomatica() {
     const modelo = getModeloSelecionado(modelosRelatorio, relatorioTecnico.modelo_id);
     const conclusao = gerarConclusaoTecnica({ os, modelo, relatorioTecnico, execucao });
@@ -305,7 +344,8 @@ export default function DetalheOS() {
           ebap: os?.ebap?.nome,
           area: os?.area,
           equipamento: os?.ativo?.nome_operacional || os?.payload?.equipamento_falha || os?.equipamento?.nome,
-          status_final: execucao.status_final
+          situacao_encontrada: execucao.situacao_encontrada,
+          resultado_execucao: execucao.resultado_execucao
         }
       });
 
@@ -365,34 +405,35 @@ export default function DetalheOS() {
     setSaving(true);
     setError('');
     try {
-      let relatorioSalvo = null;
-      if (relatorioTecnico.modelo_id) {
-        relatorioSalvo = await salvarRelatorioTecnicoOS(
-          id,
-          {
-            ...relatorioTecnico,
-            ativo_id: os.ativo_id || null,
-            ativo_nome: os.ativo?.nome_operacional || os.payload?.equipamento_falha || os.equipamento?.nome || os.titulo,
-            observacoes: execucao.relatorio_tecnico || relatorioTecnico.observacoes
-          },
-          user,
-          execucao.concluir ? 'enviado_supervisor' : 'rascunho'
-        );
-
-        const fotos = Object.entries(relatorioTecnico.fotos || {}).filter(([, foto]) => foto?.file);
-        for (const [chave, foto] of fotos) {
-          await uploadAnexoOS(id, foto.file, user, foto.legenda || foto.label || chave, foto.categoria || 'relatorio_tecnico_foto');
-        }
+      if (!execucao.situacao_encontrada || !execucao.descricao_problema.trim() || !execucao.relatorio_tecnico.trim() || !execucao.resultado_execucao) {
+        throw new Error('Preencha situação encontrada, problema encontrado, execução realizada e resultado.');
       }
 
-      await registrarExecucaoOS(id, execucao, user);
+      for (const file of execucao.anexos || []) {
+        await uploadAnexoOS(id, file, user, file.name, 'execucao_anexo');
+      }
+
+      for (const file of execucao.fotos_finais || []) {
+        await uploadAnexoOS(id, file, user, 'Foto final da execução', 'foto_final_execucao');
+      }
+
+      await registrarExecucaoOS(id, {
+        situacao_encontrada: execucao.situacao_encontrada,
+        descricao_problema: execucao.descricao_problema,
+        materiais_utilizados: execucao.materiais_utilizados,
+        relatorio_tecnico: execucao.relatorio_tecnico,
+        resultado_execucao: execucao.resultado_execucao,
+        concluir: true,
+        tecnicos_participantes: execucao.tecnicos_participantes
+      }, user);
+      const relatorioSalvo = false;
       setToast({
         message: relatorioSalvo
           ? (execucao.concluir ? 'Relatório técnico enviado ao Supervisor.' : 'Rascunho técnico salvo.')
           : (execucao.concluir ? 'Execução concluída e enviada para aprovação.' : 'Execução registrada.'),
         tone: 'green'
       });
-      setExecucao({ relatorio_tecnico: '', materiais_utilizados: '', pendencias: '', status_final: 'operando', concluir: false, tecnicos_participantes: [] });
+      setExecucao(blankExecucaoOperacional());
       setModal(null);
       await loadAll();
     } catch (err) {
@@ -570,7 +611,7 @@ export default function DetalheOS() {
           title={os.numero}
           description={os.titulo}
           actions={
-            <Link className="secondary-button" to="/os?visao=minhas">
+            <Link className="secondary-button" to="/os?visão=minhas">
               <ArrowLeft size={17} />
               Voltar
             </Link>
@@ -768,8 +809,8 @@ export default function DetalheOS() {
       </section>
 
       <section className="glass-card rounded-3xl p-5">
-        <h3 className="mb-4 text-xl font-black text-white">Timeline e histórico</h3>
-        <OSTimeline historico={historico} statusAtual={os.status} />
+        <h3 className="mb-4 text-xl font-black text-white">Status e histórico</h3>
+        <OSTimeline historico={historico} statusAtual={os.status} os={os} />
       </section>
 
       <Modal open={modal === 'edit'} title="Editar OS" onClose={() => setModal(null)}>
@@ -839,7 +880,148 @@ export default function DetalheOS() {
         </form>
       </Modal>
 
-      <Modal open={modal === 'execute'} title="Registrar execução técnica" onClose={() => setModal(null)}>
+      <Modal open={modal === 'execute'} title="Concluir execução da OS" onClose={() => setModal(null)}>
+        <form className="grid gap-4" onSubmit={handleExecution}>
+          <section className="grid gap-4 rounded-3xl border border-blue-200/15 bg-[#0A1633]/65 p-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Informações da OS</h3>
+              <p className="text-sm text-slate-300">Resumo somente leitura para orientar a execução em campo.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Info label="OS" value={os.numero} />
+              <Info label="EBAP" value={os.ebap?.nome || '-'} />
+              <Info label="Equipamento" value={os.ativo?.nome_operacional || os.payload?.equipamento_falha || os.equipamento?.nome || '-'} />
+              <Info label="Área" value={areaLabel(os.area)} />
+              <Info label="Prioridade" value={prioridadeLabel(os.prioridade)} />
+              <Info label="Equipe" value={equipeTecnicaLabel(os.equipe_responsavel || os.equipe) || '-'} />
+            </div>
+          </section>
+
+          <section className="grid gap-5 rounded-3xl border border-blue-200/15 bg-[#10224D]/70 p-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Execução rápida</h3>
+              <p className="text-sm text-slate-300">Sem checklist fixo. Registre o que foi encontrado, feito e anexado.</p>
+            </div>
+
+            <div className="grid gap-3">
+              <span className="field-label">Situação encontrada</span>
+              <div className="grid gap-2 md:grid-cols-3">
+                {SITUACAO_ENCONTRADA.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={execucao.situacao_encontrada === item.value ? 'primary-button justify-center' : 'secondary-button justify-center'}
+                    onClick={() => updateExecucao('situacao_encontrada', item.value)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="field-label">
+              Descrição do problema encontrado
+              <textarea
+                className="form-control min-h-28 py-3"
+                value={execucao.descricao_problema}
+                onChange={(event) => updateExecucao('descricao_problema', event.target.value)}
+                placeholder="Descreva de forma simples o que foi encontrado no local."
+                required
+              />
+            </label>
+
+            <label className="field-label">
+              Anexos
+              <input
+                className="form-control"
+                type="file"
+                multiple
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+                onChange={(event) => setExecucaoFiles('anexos', event.target.files)}
+              />
+              <small className="text-slate-400">Fotos, vídeos, áudios ou arquivos. {execucao.anexos.length ? `${execucao.anexos.length} arquivo(s) selecionado(s).` : 'Opcional.'}</small>
+            </label>
+
+            <label className="field-label">
+              Materiais utilizados
+              <textarea
+                className="form-control min-h-24 py-3"
+                value={execucao.materiais_utilizados}
+                onChange={(event) => updateExecucao('materiais_utilizados', event.target.value)}
+                placeholder="Informe materiais usados ou deixe em branco se não houve."
+              />
+            </label>
+
+            <label className="field-label">
+              <span className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <span>O que foi executado</span>
+                <button className="secondary-button min-h-10 px-3" type="button" onClick={melhorarConclusaoTecnica} disabled={saving || aiLoading || !execucao.relatorio_tecnico.trim()}>
+                  <Sparkles size={16} />
+                  {aiLoading ? 'Melhorando...' : 'Melhorar com IA'}
+                </button>
+              </span>
+              <textarea
+                className="form-control min-h-32 py-3"
+                value={execucao.relatorio_tecnico}
+                onChange={(event) => updateExecucao('relatorio_tecnico', event.target.value)}
+                placeholder="Escreva do seu jeito. Depois use Melhorar com IA para padronizar o texto técnico."
+                required
+              />
+            </label>
+
+            <label className="field-label">
+              Resultado da execução
+              <select className="form-control" value={execucao.resultado_execucao} onChange={(event) => updateExecucao('resultado_execucao', event.target.value)} required>
+                <option value="">Selecione...</option>
+                {RESULTADO_EXECUCAO.map((resultado) => (
+                  <option key={resultado.value} value={resultado.value}>{resultado.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field-label">
+              Fotos finais
+              <input
+                className="form-control"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(event) => setExecucaoFiles('fotos_finais', event.target.files)}
+              />
+              <small className="text-slate-400">{execucao.fotos_finais.length ? `${execucao.fotos_finais.length} foto(s) selecionada(s).` : 'Opcional, mas recomendado para evidenciar a conclusão.'}</small>
+            </label>
+          </section>
+
+          {tecnicosEquipe.length > 0 && (
+            <div className="grid gap-3 rounded-2xl border border-blue-200/15 bg-[#0A1633]/55 p-4">
+              <div>
+                <strong className="text-white">Técnicos participantes</strong>
+                <p className="text-sm text-slate-300">Seleção opcional dos técnicos da {equipeTecnicaLabel(equipeExecutora)} que participaram da execução.</p>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                {tecnicosEquipe.map((tecnico) => (
+                  <label key={tecnico.id} className="flex items-center gap-3 rounded-xl border border-blue-200/10 bg-[#0A1633]/50 p-3 text-sm font-medium text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={tecnicosParticipantes.includes(tecnico.id)}
+                      onChange={(event) => setExecucao((current) => {
+                        const selected = new Set(current.tecnicos_participantes || []);
+                        if (event.target.checked) selected.add(tecnico.id); else selected.delete(tecnico.id);
+                        return { ...current, tecnicos_participantes: Array.from(selected) };
+                      })}
+                    />
+                    {tecnico.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Actions saving={saving} onCancel={() => setModal(null)} label="Concluir execução" />
+        </form>
+      </Modal>
+
+      <Modal open={false} title="Registrar execução técnica" onClose={() => setModal(null)}>
         <form className="grid gap-4" onSubmit={handleExecution}>
           <RelatorioTecnicoDinamico
             modelos={modelosRelatorio}

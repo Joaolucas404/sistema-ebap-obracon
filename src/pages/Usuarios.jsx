@@ -392,18 +392,19 @@ export default function Usuarios() {
             <StatusBadge tone="cyan">{usuarios.length} usuário(s)</StatusBadge>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-y-2 p-3 text-left xl:min-w-0">
+            <table className="w-full min-w-[1680px] table-fixed border-separate border-spacing-y-2 p-3 text-left">
               <colgroup>
-                <col className="w-[120px]" />
-                <col className="w-[86px]" />
+                <col className="w-[170px]" />
                 <col className="w-[110px]" />
-                <col className="w-[82px]" />
-                <col className="w-[100px]" />
-                <col className="w-[86px]" />
-                <col className="w-[96px]" />
-                <col className="w-[78px]" />
-                <col className="w-[108px]" />
-                <col className="w-[330px]" />
+                <col className="w-[130px]" />
+                <col className="w-[120px]" />
+                <col className="w-[150px]" />
+                <col className="w-[120px]" />
+                <col className="w-[130px]" />
+                <col className="w-[130px]" />
+                <col className="w-[110px]" />
+                <col className="w-[170px]" />
+                <col className="w-[340px]" />
               </colgroup>
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-slate-400">
@@ -423,7 +424,7 @@ export default function Usuarios() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={10}>Carregando usuários...</td>
+                    <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={11}>Carregando usuários...</td>
                   </tr>
                 ) : usuarios.length ? (
                   usuariosPaginados.map((usuario) => (
@@ -457,7 +458,7 @@ export default function Usuarios() {
                       </td>
                       <td className="border-y border-cyan-300/10 bg-navy-950/55 px-3 py-3 text-slate-300">{formatDate(usuario.ultimo_login)}</td>
                       <td className="rounded-r-2xl border-y border-r border-cyan-300/10 bg-navy-950/55 px-3 py-3">
-                        <div className="flex flex-wrap justify-end gap-2">
+                        <div className="flex flex-nowrap justify-end gap-2">
                           <button className="secondary-button min-h-10 px-3 text-sm" type="button" onClick={() => openEdit(usuario)} disabled={!canEditUser(currentUser, usuario)}>Editar</button>
                           <button className="secondary-button min-h-10 px-3 text-sm" type="button" onClick={() => openReset(usuario)} disabled={!canEditUser(currentUser, usuario)}>
                             <RotateCcw size={15} />
@@ -479,7 +480,7 @@ export default function Usuarios() {
                   ))
                 ) : (
                   <tr>
-                    <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={10}>Nenhum usuário cadastrado.</td>
+                    <td className="rounded-2xl bg-navy-950/55 px-3 py-6 text-center text-slate-300" colSpan={11}>Nenhum usuário cadastrado.</td>
                   </tr>
                 )}
               </tbody>

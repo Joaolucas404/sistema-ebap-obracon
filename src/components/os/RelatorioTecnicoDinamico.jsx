@@ -30,17 +30,17 @@ function normalizeChecklistResposta(value) {
     return {
       status: value.status || '',
       observacao: value.observacao || '',
-      medicoes: value.medicoes || {}
+      medições: value.medições || {}
     };
   }
 
-  if (value === true) return { status: 'conforme', observacao: '', medicoes: {} };
-  if (typeof value === 'string') return { status: value, observacao: '', medicoes: {} };
-  return { status: '', observacao: '', medicoes: {} };
+  if (value === true) return { status: 'conforme', observacao: '', medições: {} };
+  if (typeof value === 'string') return { status: value, observacao: '', medições: {} };
+  return { status: '', observacao: '', medições: {} };
 }
 
-function normalizeMedicoes(campo) {
-  const configured = campo?.metadata?.medicoes || campo?.opcoes?.medicoes || campo?.medicoes;
+function normalizeMedições(campo) {
+  const configured = campo?.metadata?.medições || campo?.opcoes?.medições || campo?.medições;
   const source = Array.isArray(configured) && configured.length ? configured : DEFAULT_MEDICOES;
 
   return source.map((item) => {
@@ -96,9 +96,9 @@ export default function RelatorioTecnicoDinamico({
     setResposta(chave, {
       ...current,
       ...patch,
-      medicoes: {
-        ...(current.medicoes || {}),
-        ...(patch.medicoes || {})
+      medições: {
+        ...(current.medições || {}),
+        ...(patch.medições || {})
       }
     });
   }
@@ -239,7 +239,7 @@ function ResumoCard({ label, value, tone }) {
 
 function ChecklistItem({ campo, resposta, foto, disabled, onPatch, onFoto }) {
   const precisaObservacao = resposta.status === 'atencao' || resposta.status === 'nao_conforme';
-  const medicoes = normalizeMedicoes(campo);
+  const medições = normalizeMedições(campo);
 
   return (
     <div className="grid gap-4 rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4">
@@ -287,14 +287,14 @@ function ChecklistItem({ campo, resposta, foto, disabled, onPatch, onFoto }) {
       )}
 
       <div className="grid gap-3 md:grid-cols-4">
-        {medicoes.map((medicao) => (
+        {medições.map((medicao) => (
           <label key={medicao.chave} className="field-label">
             {medicao.label}
             <div className="flex overflow-hidden rounded-xl border border-cyan-300/15 bg-navy-900/80">
               <input
                 className="w-full bg-transparent px-3 py-2 text-sm font-bold text-white outline-none"
-                value={resposta.medicoes?.[medicao.chave] || ''}
-                onChange={(event) => onPatch({ medicoes: { [medicao.chave]: event.target.value } })}
+                value={resposta.medições?.[medicao.chave] || ''}
+                onChange={(event) => onPatch({ medições: { [medicao.chave]: event.target.value } })}
                 disabled={disabled}
               />
               {medicao.unidade && <span className="border-l border-cyan-300/10 px-2 py-2 text-xs font-black text-slate-400">{medicao.unidade}</span>}

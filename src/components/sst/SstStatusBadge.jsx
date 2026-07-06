@@ -1,3 +1,5 @@
+import { labelStatus } from '../../utils/labels.js';
+
 const STATUS_TONE = {
   valido: 'border-green-300/40 bg-green-500/20 text-green-100',
   liberada: 'border-green-300/40 bg-green-500/20 text-green-100',
@@ -13,7 +15,7 @@ const STATUS_TONE = {
 };
 
 export default function SstStatusBadge({ status }) {
-  const label = String(status || '-').replaceAll('_', ' ');
+  const label = labelStatus(status);
   return (
     <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${STATUS_TONE[status] || STATUS_TONE.pendente}`}>
       {label}

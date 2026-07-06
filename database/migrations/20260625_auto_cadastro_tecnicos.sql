@@ -1,4 +1,4 @@
--- Auto cadastro de tecnicos e hierarquia de supervisao por equipe.
+-- Auto cadastro de tecnicos e hierarquia de supervisão por equipe.
 
 alter table public.usuarios
   add column if not exists equipe text,

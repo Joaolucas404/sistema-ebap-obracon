@@ -66,7 +66,7 @@ export default function OrdensServico() {
   const canCreate = podeCriarOS(user?.perfil);
   const canDelete = podeExcluirOS(user?.perfil);
   const userAreaOperacional = user?.area_operacional || user?.area_supervisao || '';
-  const tecnicoScope = user?.perfil === 'tecnico' ? searchParams.get('visao') || '' : '';
+  const tecnicoScope = user?.perfil === 'tecnico' ? searchParams.get('visão') || '' : '';
   const isTecnico = user?.perfil === 'tecnico';
   const isFiscalOperacional = user?.perfil === 'fiscal_operacional';
   const pageTitle = isTecnico
@@ -95,8 +95,8 @@ export default function OrdensServico() {
     setError('');
     try {
       const [lista, dash] = await Promise.all([
-        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional, equipe: user?.equipe, scope: tecnicoScope }),
-        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisao: userAreaOperacional, equipe: user?.equipe, scope: tecnicoScope })
+        listarOS({ ...filters, perfil: user?.perfil, userId: user?.id, areaSupervisão: userAreaOperacional, equipe: user?.equipe, scope: tecnicoScope }),
+        obterDashboardOS({ perfil: user?.perfil, userId: user?.id, areaSupervisão: userAreaOperacional, equipe: user?.equipe, scope: tecnicoScope })
       ]);
       setItems(lista.data);
       setCount(lista.count);
@@ -129,7 +129,7 @@ export default function OrdensServico() {
   useEffect(() => {
     if (searchParams.get('nova') === '1' && canCreate) {
       openCreate();
-      setSearchParams(tecnicoScope ? { visao: tecnicoScope } : {});
+      setSearchParams(tecnicoScope ? { visão: tecnicoScope } : {});
     }
   }, [searchParams, canCreate]);
 
@@ -238,13 +238,13 @@ export default function OrdensServico() {
       {isTecnico && (
         <section className="glass-card rounded-3xl p-3">
           <div className="grid gap-2 sm:grid-cols-3">
-            <button className={tecnicoScope === 'minhas' || !tecnicoScope ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visao: 'minhas' })}>
+            <button className={tecnicoScope === 'minhas' || !tecnicoScope ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visão: 'minhas' })}>
               Minhas OS
             </button>
-            <button className={tecnicoScope === 'equipe' ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visao: 'equipe' })}>
+            <button className={tecnicoScope === 'equipe' ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visão: 'equipe' })}>
               OS da Equipe
             </button>
-            <button className={tecnicoScope === 'historico' ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visao: 'historico' })}>
+            <button className={tecnicoScope === 'historico' ? 'primary-button' : 'secondary-button'} type="button" onClick={() => setSearchParams({ visão: 'historico' })}>
               Histórico
             </button>
           </div>

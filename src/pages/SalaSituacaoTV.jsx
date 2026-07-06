@@ -42,7 +42,7 @@ export default function SalaSituacaoTV() {
 
   const alertas = [
     ...(data?.ebaps || []).filter((ebap) => ebap.criticidade?.nivel === 'critico').map((ebap) => ({ tipo: 'EBAP critica', texto: ebap.nome_curto || ebap.nome })),
-    ...(data?.ultimasMovimentacoes || []).filter((item) => ['OS', 'APR', 'Medicao'].includes(item.tipo)).slice(0, 8).map((item) => ({ tipo: item.tipo, texto: `${item.titulo} - ${item.descricao || ''}` }))
+    ...(data?.últimasMovimentacoes || []).filter((item) => ['OS', 'APR', 'Medicao'].includes(item.tipo)).slice(0, 8).map((item) => ({ tipo: item.tipo, texto: `${item.titulo} - ${item.descricao || ''}` }))
   ].slice(0, 12);
 
   return (
@@ -69,7 +69,7 @@ export default function SalaSituacaoTV() {
           <TvMetric icon={Wrench} label="OS abertas" value={data?.kpis.osAbertas || 0} />
           <TvMetric icon={ShieldAlert} label="OS críticas" value={data?.kpis.osCriticas || 0} />
           <TvMetric icon={FileText} label="RDO pendentes" value={data?.kpis.roPendentes || 0} />
-          <TvMetric icon={Clock3} label="Medições pendentes" value={data?.kpis.medicoesPendentes || 0} />
+          <TvMetric icon={Clock3} label="Medições pendentes" value={data?.kpis.mediçõesPendentes || 0} />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">

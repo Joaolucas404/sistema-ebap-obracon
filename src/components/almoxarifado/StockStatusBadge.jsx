@@ -11,7 +11,7 @@ export default function StockStatusBadge({ item }) {
   }
 
   if (atual <= minimo) {
-    return <span className="rounded-full border border-orange-300/40 bg-orange-500/20 px-3 py-1 text-xs font-black text-orange-100">Estoque minimo</span>;
+    return <span className="rounded-full border border-orange-300/40 bg-orange-500/20 px-3 py-1 text-xs font-black text-orange-100">Estoque mínimo</span>;
   }
 
   return <span className="rounded-full border border-green-300/40 bg-green-500/20 px-3 py-1 text-xs font-black text-green-100">Normal</span>;

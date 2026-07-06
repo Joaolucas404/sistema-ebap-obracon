@@ -93,7 +93,7 @@ export default function CcoAnaliseOS() {
     setError('');
     try {
       await validarCcoOS({ osId: modal.os.id, acao: modal.action, motivo }, user);
-      setToast({ message: 'Validacao CCO registrada.', tone: modal.action === 'rejeitar' ? 'orange' : 'green' });
+      setToast({ message: 'Validação CCO registrada.', tone: modal.action === 'rejeitar' ? 'orange' : 'green' });
       setModal({ type: null, os: null, action: null });
       setMotivo('');
       await loadAll();
@@ -112,7 +112,7 @@ export default function CcoAnaliseOS() {
     <div className="grid gap-4">
       <PageHeader
         title="CCO - OS"
-        description="Validacao das Ordens de Servico geradas pela operacao antes de seguirem para Supervisor/Manutencao."
+        description="Validação das Ordens de Serviço geradas pela operação antes de seguirem para Supervisor/Manutenção."
         leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><ClipboardCheck size={24} /></span>}
         actions={
           <button className="secondary-button" type="button" onClick={loadAll} disabled={loading}>
@@ -151,7 +151,7 @@ export default function CcoAnaliseOS() {
         <CcoOsDetail detail={detail} />
       </Modal>
 
-      <Modal open={modal.type === 'action'} title="Validacao CCO da OS" onClose={() => setModal({ type: null, os: null, action: null })}>
+      <Modal open={modal.type === 'action'} title="Validação CCO da OS" onClose={() => setModal({ type: null, os: null, action: null })}>
         <CcoOsValidationModal
           os={modal.os}
           action={modal.action}

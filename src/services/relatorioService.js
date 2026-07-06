@@ -10,7 +10,7 @@ export const RELATORIO_STEPS = [
   { id: 'cco', title: 'Comunicação CCO' },
   { id: 'ocorrencias', title: 'Ocorrências' },
   { id: 'fotos', title: 'Fotos' },
-  { id: 'revisao', title: 'Revisão' }
+  { id: 'revisão', title: 'Revisão' }
 ];
 
 export const STATUS_OPTIONS = [
@@ -248,7 +248,7 @@ export async function obterUrlFotoRelatorio(foto) {
 }
 
 async function salvarSecoes(relatorioId, payload) {
-  const rows = RELATORIO_STEPS.filter((step) => step.id !== 'revisao').map((step, index) => ({
+  const rows = RELATORIO_STEPS.filter((step) => step.id !== 'revisão').map((step, index) => ({
     relatorio_id: relatorioId,
     codigo: step.id,
     titulo: step.title,
@@ -296,7 +296,7 @@ export function blankPayload() {
     comportas: { quantidade: 0, items: [], observacao: '' },
     eletrocentro: { sensores_possui: 'nao', sensores_quantidade: 0, climatizadores_possui: 'nao', climatizadores_quantidade: 0, items: [], observacao: '' },
     geradores: { possui: 'nao', quantidade: 0, items: [], observacao: '' },
-    cco: { comunicacao: '', supervisao: '', alarmes: '', observacao: '' },
+    cco: { comunicacao: '', supervisão: '', alarmes: '', observacao: '' },
     ocorrencias: { houve: 'nao', prioridade: 'baixa', descricao: '', conclusao: '' },
     fotos: { observacao: '' }
   };

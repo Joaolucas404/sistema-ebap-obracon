@@ -29,12 +29,12 @@ export const STATUS_LABELS = {
   aguardando_supervisor: 'Aguard. Supervisor',
   analise_supervisor: 'Analise Supervisor',
   programada: 'Programada',
-  encaminhada_tecnicos: 'Encam. Tecnicos',
-  em_execucao: 'Em execucao',
-  concluida_tecnicos: 'Concluida Tecnicos',
-  validacao_supervisor: 'Valid. Supervisor',
+  encaminhada_tecnicos: 'Encam. Técnicos',
+  em_execucao: 'Em execução',
+  concluida_tecnicos: 'Concluída Técnicos',
+  validacao_supervisor: 'Validação Supervisor',
   enviada_prefeitura: 'Enviada Prefeitura',
-  aguardando_validacao_prefeitura: 'Valid. Prefeitura',
+  aguardando_validacao_prefeitura: 'Validação Prefeitura',
   nao_conforme: 'Nao conforme',
   concluida_arquivada: 'Concluida',
   aberta: 'Aberta',
@@ -47,9 +47,9 @@ export const STATUS_LABELS = {
 };
 
 export const AREA_LABELS = {
-  mecanica: 'Mecanica',
-  eletrica: 'Eletrica',
-  automacao: 'Automacao',
+  mecanica: 'Mecânica',
+  eletrica: 'Elétrica',
+  automacao: 'Automação',
   civil: 'Civil',
   operacional: 'Operacional',
   seguranca: 'Seguranca',
@@ -121,11 +121,11 @@ function getEbapCriticidade(ebap, ordens) {
   const criticas = os.filter((ordem) => ordem.prioridade === 'critica').length;
   const emExecucao = os.filter((ordem) => ordem.status === 'em_execucao').length;
 
-  if (gerencial?.statusDashboard === 'critico') return { nivel: 'critico', score: 95, label: 'Critica' };
-  if (gerencial?.statusDashboard === 'atencao') return { nivel: 'atencao', score: 62, label: 'Atencao' };
+  if (gerencial?.statusDashboard === 'critico') return { nivel: 'critico', score: 95, label: 'Crítica' };
+  if (gerencial?.statusDashboard === 'atencao') return { nivel: 'atencao', score: 62, label: 'Atenção' };
   if (gerencial?.statusDashboard === 'normal') return { nivel: 'normal', score: 18, label: 'Normal' };
-  if (ebap.status === 'critico' || criticas > 0) return { nivel: 'critico', score: 95, label: 'Critica' };
-  if (ebap.status === 'atencao' || os.length >= 3 || emExecucao > 0) return { nivel: 'atencao', score: 62, label: 'Atencao' };
+  if (ebap.status === 'critico' || criticas > 0) return { nivel: 'critico', score: 95, label: 'Crítica' };
+  if (ebap.status === 'atencao' || os.length >= 3 || emExecucao > 0) return { nivel: 'atencao', score: 62, label: 'Atenção' };
   return { nivel: 'normal', score: 18, label: 'Normal' };
 }
 
@@ -141,7 +141,7 @@ export async function obterDashboardExecutivo() {
     ebapsOperando,
     ebapsResult,
     osChartRows,
-    ultimasOsResult,
+    últimasOsResult,
     ultimosRelatoriosResult
   ] = await Promise.all([
     countRows(
@@ -206,7 +206,7 @@ export async function obterDashboardExecutivo() {
   ]);
 
   if (ebapsResult.error) throw new Error(ebapsResult.error.message);
-  if (ultimasOsResult.error) throw new Error(ultimasOsResult.error.message);
+  if (últimasOsResult.error) throw new Error(últimasOsResult.error.message);
   if (ultimosRelatoriosResult.error) throw new Error(ultimosRelatoriosResult.error.message);
 
   const ebaps = ebapsResult.data || [];
@@ -217,15 +217,15 @@ export async function obterDashboardExecutivo() {
     aprPendentes,
     estoqueCritico,
     comprasPendentes,
-    medicoesPendentes,
+    mediçõesPendentes,
     contratosAtivos,
     valorMedidoMesRows,
     comprasPorStatusRows,
     roPorEbapRows,
     preventivasRows,
-    ultimasCompras,
-    ultimasApr,
-    ultimasMedicoes
+    últimasCompras,
+    últimasApr,
+    últimasMedições
   ] = await Promise.all([
     safeCountRows(supabase.from('relatorios_diarios').select('id', { count: 'exact', head: true }).in('status', ['pendente_validacao_cco', 'rascunho', 'correcao_solicitada']).is('deleted_at', null)),
     safeCountRows(supabase.from('apr').select('id', { count: 'exact', head: true }).in('status', ['rascunho', 'em_analise']).is('deleted_at', null)),
@@ -255,12 +255,12 @@ export async function obterDashboardExecutivo() {
     return acc;
   }, {})).sort((a, b) => b.total - a.total);
   const preventivasPorSituacao = countBy(preventivasRows, 'status');
-  const ultimasMovimentacoes = [
-    ...(ultimasOsResult.data || []).map((row) => ({ tipo: 'OS', titulo: row.numero, descricao: row.titulo, data: row.created_at, path: `/os/${row.id}` })),
+  const últimasMovimentacoes = [
+    ...(últimasOsResult.data || []).map((row) => ({ tipo: 'OS', titulo: row.numero, descricao: row.titulo, data: row.created_at, path: `/os/${row.id}` })),
     ...(ultimosRelatoriosResult.data || []).map((row) => ({ tipo: 'RDO', titulo: row.codigo, descricao: row.ebap?.nome || row.status, data: row.created_at, path: '/relatorio' })),
-    ...ultimasCompras.map((row) => ({ tipo: 'Compra', titulo: row.numero, descricao: `${row.area || '-'} - ${row.status}`, data: row.created_at, path: '/compras' })),
-    ...ultimasApr.map((row) => ({ tipo: 'APR', titulo: row.codigo, descricao: row.atividade || row.status, data: row.created_at, path: '/sst' })),
-    ...ultimasMedicoes.map((row) => ({ tipo: 'Medicao', titulo: row.numero || row.codigo, descricao: row.status, data: row.created_at, path: '/financeiro-contrato' }))
+    ...últimasCompras.map((row) => ({ tipo: 'Compra', titulo: row.numero, descricao: `${row.area || '-'} - ${row.status}`, data: row.created_at, path: '/compras' })),
+    ...últimasApr.map((row) => ({ tipo: 'APR', titulo: row.codigo, descricao: row.atividade || row.status, data: row.created_at, path: '/sst' })),
+    ...últimasMedições.map((row) => ({ tipo: 'Medicao', titulo: row.numero || row.codigo, descricao: row.status, data: row.created_at, path: '/financeiro-contrato' }))
   ].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0)).slice(0, 15);
 
   return {
@@ -274,7 +274,7 @@ export async function obterDashboardExecutivo() {
       aprPendentes,
       estoqueCritico,
       comprasPendentes,
-      medicoesPendentes,
+      mediçõesPendentes,
       contratosAtivos,
       valorMedidoMes,
       valorAprovado,
@@ -294,8 +294,8 @@ export async function obterDashboardExecutivo() {
     roPorEbap,
     comprasPorStatus,
     preventivasPorSituacao,
-    ultimasMovimentacoes,
-    ultimasOs: ultimasOsResult.data || [],
+    últimasMovimentacoes,
+    últimasOs: últimasOsResult.data || [],
     ultimosRelatorios: ultimosRelatoriosResult.data || []
   };
 }

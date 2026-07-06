@@ -1,11 +1,11 @@
 import { supabase } from '../lib/supabase.js';
+import { criarOS } from './osService.js';
 import { EQUIPES_TECNICAS, equipeTecnicaLabel } from './usuariosService.js';
 
 export const MANUTENCAO_AREAS = [
   { value: 'mecanica', label: 'Mecânica' },
   { value: 'eletrica', label: 'Elétrica' },
-  { value: 'automacao', label: 'Automação' },
-  { value: 'operacional', label: 'Operação' }
+  { value: 'automacao', label: 'Automação' }
 ];
 
 export const MANUTENCAO_FREQUENCIAS = [
@@ -51,13 +51,6 @@ export const CHECKLISTS_PADRAO = {
     'Inspecionar CLP/IHM/inversores',
     'Validar alarmes e intertravamentos',
     'Registrar ajustes realizados'
-  ],
-  operacional: [
-    'Verificar condicao operacional geral',
-    'Inspecionar limpeza e acesso',
-    'Validar disponibilidade do equipamento',
-    'Registrar ocorrencias operacionais',
-    'Comunicar pendencias ao supervisor'
   ]
 };
 
@@ -178,7 +171,7 @@ export async function listarOsManutencao(limit = 500, user = null) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  return sincronizarStatusCronogramaComOs(data || []);
 }
 
 export function filtrarOsCalendario(osRows = [], filters = {}) {
@@ -301,4 +294,380 @@ export async function gerarOsManutencaoVencidas(user) {
 
   if (error) throw error;
   return data || 0;
+}
+
+export const CRONOGRAMA_AREAS = [
+  { value: 'mecanica', label: 'Mecânica' },
+  { value: 'eletrica', label: 'Elétrica' },
+  { value: 'automacao', label: 'Automação' }
+];
+
+export const CRONOGRAMA_STATUS = [
+  { value: 'programada', label: 'Programada' },
+  { value: 'os_gerada', label: 'OS Gerada' },
+  { value: 'em_execucao', label: 'Em execução' },
+  { value: 'concluida', label: 'Concluída' },
+  { value: 'atrasada', label: 'Atrasada' },
+  { value: 'reprogramada', label: 'Reprogramada' },
+  { value: 'cancelada', label: 'Cancelada' }
+];
+
+export const CRONOGRAMA_TIPOS_EVENTO = [
+  'Manutenção',
+  'Lembrete',
+  'Aviso',
+  'Reunião',
+  'Treinamento',
+  'DDS',
+  'Feriado',
+  'Visita',
+  'Inspeção',
+  'Auditoria',
+  'Parada Programada',
+  'Outro'
+];
+
+export const CRONOGRAMA_ABAS_VALIDAS = [
+  { nome: 'Prog automação', area: 'automacao' },
+  { nome: 'Prog elétrica', area: 'eletrica' },
+  { nome: 'Prog mecânica', area: 'mecanica' },
+  { nome: 'Prog elétrica - Noite', area: 'eletrica' },
+  { nome: 'Prog mecânica - Noite', area: 'mecanica' }
+];
+
+export const CRONOGRAMA_AREA_TERMS = {
+  mecanica: ['bomba', 'motor', 'gerador', 'comporta', 'rastelo', 'redutor', 'rolamento', 'eixo', 'acoplamento', 'lubrificação', 'lubrificacao', 'válvula', 'valvula', 'tubulação', 'tubulacao', 'limpeza mecânica', 'limpeza mecanica'],
+  eletrica: ['painel', 'disjuntor', 'contator', 'relé', 'rele', 'inversor', 'transformador', 'cabo', 'alimentação', 'alimentacao', 'iluminação', 'iluminacao', 'quadro elétrico', 'quadro eletrico', 'ccm', 'barramento'],
+  automacao: ['clp', 'supervisório', 'supervisorio', 'ihm', 'instrumentação', 'instrumentacao', 'sensor', 'transmissor', 'regulador de nível', 'regulador de nivel', 'câmera', 'camera', 'cftv', 'rede', 'internet', 'switch', 'rádio', 'radio', 'fibra óptica', 'fibra optica', 'antena', 'comunicação', 'comunicacao', 'telemetria', 'scada', 'plc', 'modem', 'conversor', 'encoder']
+};
+
+export function normalizarTexto(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function areaLabel(area) {
+  return CRONOGRAMA_AREAS.find((item) => item.value === area)?.label || area || '-';
+}
+
+export function statusCronogramaLabel(status) {
+  return CRONOGRAMA_STATUS.find((item) => item.value === status)?.label || status || '-';
+}
+
+export function areaDoUsuarioManutencao(user) {
+  const raw = normalizarTexto(user?.area_supervisao || user?.area_operacional || user?.setor || user?.area || '');
+  if (raw.includes('mecan')) return 'mecanica';
+  if (raw.includes('eletr')) return 'eletrica';
+  if (raw.includes('autom')) return 'automacao';
+  return '';
+}
+
+export function podeVerTodasAreasManutencao(user) {
+  return ['gerencia', 'diretoria', 'administrador', 'admin'].includes(user?.perfil);
+}
+
+export function podeEditarCronograma(user, area = '') {
+  if (podeVerTodasAreasManutencao(user)) return true;
+  if (user?.perfil !== 'supervisor') return false;
+  return !area || areaDoUsuarioManutencao(user) === area;
+}
+
+export function abasPermitidasManutencao(user) {
+  if (podeVerTodasAreasManutencao(user)) return CRONOGRAMA_ABAS_VALIDAS;
+  if (user?.perfil === 'supervisor') {
+    const area = areaDoUsuarioManutencao(user);
+    return CRONOGRAMA_ABAS_VALIDAS.filter((aba) => aba.area === area);
+  }
+  return [];
+}
+
+export function classificarAtividadeManutencao(atividade, associacoes = {}) {
+  const normalizada = normalizarTexto(atividade);
+  if (associacoes[normalizada]) return associacoes[normalizada];
+  for (const [area, termos] of Object.entries(CRONOGRAMA_AREA_TERMS)) {
+    if (termos.some((term) => normalizada.includes(normalizarTexto(term)))) return area;
+  }
+  return '';
+}
+
+export function resumoCronograma(eventos = []) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const proximos7 = new Date();
+  proximos7.setDate(proximos7.getDate() + 7);
+  const seteDias = proximos7.toISOString().slice(0, 10);
+  const ativos = eventos.filter((evento) => !['cancelada', 'concluida'].includes(evento.status));
+  return {
+    total: eventos.length,
+    programadas: eventos.filter((evento) => evento.status === 'programada').length,
+    osGeradas: eventos.filter((evento) => evento.status === 'os_gerada').length,
+    emExecucao: eventos.filter((evento) => evento.status === 'em_execucao').length,
+    atrasadas: ativos.filter((evento) => evento.data_programada < hoje || evento.status === 'atrasada').length,
+    proximos7: ativos.filter((evento) => evento.data_programada >= hoje && evento.data_programada <= seteDias).length
+  };
+}
+
+export async function listarAssociacoesAtividades() {
+  const { data, error } = await supabase
+    .from('manutencao_classificacao_atividade')
+    .select('atividade_normalizada,area');
+
+  if (error) throw error;
+  return (data || []).reduce((acc, row) => ({ ...acc, [row.atividade_normalizada]: row.area }), {});
+}
+
+export async function listarCronogramaManutencao(user, filters = {}) {
+  let query = supabase
+    .from('cronograma_manutencao')
+    .select('*')
+    .is('deleted_at', null)
+    .order('data_programada', { ascending: true })
+    .order('hora_programada', { ascending: true, nullsFirst: false });
+
+  if (!podeVerTodasAreasManutencao(user)) {
+    const area = areaDoUsuarioManutencao(user);
+    if (area) query = query.eq('area', area);
+    else query = query.eq('area', '__sem_acesso__');
+  }
+  if (filters.area) query = query.eq('area', filters.area);
+  if (filters.status) query = query.eq('status', filters.status);
+  if (filters.ebap) query = query.ilike('ebap', `%${filters.ebap}%`);
+  if (filters.inicio) query = query.gte('data_programada', filters.inicio);
+  if (filters.fim) query = query.lte('data_programada', filters.fim);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function listarImportacoesCronograma(user) {
+  let query = supabase
+    .from('cronograma_manutencao_importacoes')
+    .select('*')
+    .is('deleted_at', null)
+    .order('criado_em', { ascending: false })
+    .limit(100);
+
+  if (!podeVerTodasAreasManutencao(user)) {
+    const area = areaDoUsuarioManutencao(user);
+    if (area) query = query.eq('area', area);
+    else query = query.eq('area', '__sem_acesso__');
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function salvarEventoCronograma(payload, user) {
+  if (!podeEditarCronograma(user, payload.area)) throw new Error('Usuário sem permissão para editar este evento.');
+  const row = {
+    supervisor_id: payload.supervisor_id || (user?.perfil === 'supervisor' ? user.id : null),
+    area: payload.area,
+    equipe: payload.equipe || null,
+    categoria: payload.categoria || null,
+    ebap: payload.ebap || null,
+    equipamento: payload.equipamento || null,
+    atividade: payload.atividade,
+    descricao: payload.descricao || null,
+    data_programada: payload.data_programada,
+    hora_programada: payload.hora_programada || null,
+    status: payload.status || 'programada',
+    tipo_evento: payload.tipo_evento || 'Manutenção',
+    origem: payload.origem || 'manual',
+    arquivo_importado: payload.arquivo_importado || null,
+    aba_origem: payload.aba_origem || null,
+    linha_origem: payload.linha_origem || null,
+    os_id: payload.os_id || null,
+    criado_por: payload.criado_por || user?.id || null
+  };
+
+  const query = payload.id
+    ? supabase.from('cronograma_manutencao').update(row).eq('id', payload.id).select('*').single()
+    : supabase.from('cronograma_manutencao').insert(row).select('*').single();
+
+  const { data, error } = await query;
+  if (error) throw error;
+  await salvarAssociacaoClassificacao(data.atividade, data.area, user);
+  return data;
+}
+
+export async function cancelarEventoCronograma(evento, user) {
+  if (!podeEditarCronograma(user, evento.area)) throw new Error('Usuário sem permissão para cancelar este evento.');
+  const { data, error } = await supabase
+    .from('cronograma_manutencao')
+    .update({ status: 'cancelada' })
+    .eq('id', evento.id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function excluirEventoCronograma(evento, user) {
+  if (!podeEditarCronograma(user, evento.area)) throw new Error('Usuário sem permissão para excluir este evento.');
+  const { error } = await supabase
+    .from('cronograma_manutencao')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', evento.id);
+  if (error) throw error;
+}
+
+export async function duplicarEventoCronograma(evento, user) {
+  const { id, criado_em, atualizado_em, os_id, importacao_id, ...copy } = evento;
+  return salvarEventoCronograma({ ...copy, status: 'programada', origem: 'manual' }, user);
+}
+
+export async function salvarImportacaoCronograma({ arquivo, mesReferencia, modo, eventos, resumo }, user) {
+  const areas = [...new Set(eventos.map((evento) => evento.area).filter(Boolean))];
+  const areaImportacao = areas.length === 1 ? areas[0] : null;
+  const abas = [...new Set(eventos.map((evento) => evento.aba_origem).filter(Boolean))];
+
+  if (modo === 'substituir' && mesReferencia) {
+    let deleteQuery = supabase
+      .from('cronograma_manutencao')
+      .update({ deleted_at: new Date().toISOString() })
+      .is('deleted_at', null)
+      .gte('data_programada', `${mesReferencia}-01`)
+      .lte('data_programada', `${mesReferencia}-31`);
+    if (areaImportacao) deleteQuery = deleteQuery.eq('area', areaImportacao);
+    const { error: deleteError } = await deleteQuery;
+    if (deleteError) throw deleteError;
+  }
+
+  const { data: importacao, error: importError } = await supabase
+    .from('cronograma_manutencao_importacoes')
+    .insert({
+      arquivo,
+      mes_referencia: mesReferencia || null,
+      abas_importadas: abas,
+      total_eventos: eventos.length,
+      area: areaImportacao,
+      usuario_id: user?.id || null,
+      modo,
+      resumo
+    })
+    .select('*')
+    .single();
+  if (importError) throw importError;
+
+  const rows = eventos.map((evento) => ({
+    supervisor_id: user?.perfil === 'supervisor' ? user.id : null,
+    area: evento.area,
+    equipe: evento.equipe || null,
+    categoria: evento.categoria || null,
+    ebap: evento.ebap || null,
+    equipamento: evento.equipamento || null,
+    atividade: evento.atividade,
+    descricao: evento.descricao || null,
+    data_programada: evento.data_programada,
+    hora_programada: evento.hora_programada || null,
+    status: 'programada',
+    tipo_evento: evento.tipo_evento || 'Manutenção',
+    origem: 'importacao',
+    arquivo_importado: arquivo,
+    aba_origem: evento.aba_origem,
+    linha_origem: evento.linha_origem,
+    importacao_id: importacao.id,
+    criado_por: user?.id || null
+  }));
+
+  const { data, error } = await supabase.from('cronograma_manutencao').insert(rows).select('*');
+  if (error) throw error;
+  await Promise.all(rows.map((row) => salvarAssociacaoClassificacao(row.atividade, row.area, user)));
+  return { importacao, eventos: data || [] };
+}
+
+export async function salvarAssociacaoClassificacao(atividade, area, user) {
+  const atividadeNormalizada = normalizarTexto(atividade);
+  if (!atividadeNormalizada || !area) return null;
+  const { data, error } = await supabase
+    .from('manutencao_classificacao_atividade')
+    .upsert({
+      atividade_normalizada: atividadeNormalizada,
+      atividade_exemplo: atividade,
+      area,
+      criado_por: user?.id || null,
+      atualizado_em: new Date().toISOString()
+    }, { onConflict: 'atividade_normalizada' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function gerarOsDoEventoCronograma(evento, user) {
+  if (!podeEditarCronograma(user, evento.area)) throw new Error('Usuário sem permissão para gerar OS deste evento.');
+  if (evento.os_id) return evento.os_id;
+
+  const os = await criarOS({
+    origem: 'operacao',
+    titulo: evento.atividade,
+    descricao: evento.descricao || `OS gerada a partir do planejamento de manutenção: ${evento.atividade}`,
+    area: evento.area,
+    equipe_responsavel: evento.equipe || null,
+    equipamento_falha: evento.equipamento || evento.atividade,
+    tipo_manutencao: 'preventiva',
+    prioridade: 'media',
+    data_programada: evento.data_programada,
+    hora_programada: evento.hora_programada || null,
+    payload: {
+      cronograma_manutencao_id: evento.id,
+      ebap_texto: evento.ebap || null,
+      equipamento_texto: evento.equipamento || null,
+      origem_planejamento: evento.origem
+    }
+  }, user);
+
+  const { data, error } = await supabase
+    .from('cronograma_manutencao')
+    .update({ os_id: os.id, status: 'os_gerada' })
+    .eq('id', evento.id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function sincronizarStatusCronogramaComOs(eventos) {
+  const osIds = [...new Set(eventos.map((evento) => evento.os_id).filter(Boolean))];
+  if (!osIds.length) return eventos.map(aplicarAtrasoCronograma);
+
+  const { data, error } = await supabase
+    .from('ordens_servico')
+    .select('id,status')
+    .in('id', osIds);
+  if (error) throw error;
+
+  const osById = new Map((data || []).map((os) => [os.id, os.status]));
+  const updates = [];
+  const normalized = eventos.map((evento) => {
+    const statusOs = osById.get(evento.os_id);
+    const status = statusOs ? statusCronogramaPorOs(statusOs) : evento.status;
+    const next = aplicarAtrasoCronograma({ ...evento, status });
+    if (next.status !== evento.status && !['cancelada', 'reprogramada'].includes(evento.status)) {
+      updates.push(supabase.from('cronograma_manutencao').update({ status: next.status }).eq('id', evento.id));
+    }
+    return next;
+  });
+
+  if (updates.length) await Promise.all(updates);
+  return normalized;
+}
+
+function statusCronogramaPorOs(statusOs) {
+  if (MANUTENCAO_FINAL_OS_STATUS.includes(statusOs)) return 'concluida';
+  if (['em_execucao', 'pausada', 'concluida_tecnicos'].includes(statusOs)) return 'em_execucao';
+  return 'os_gerada';
+}
+
+function aplicarAtrasoCronograma(evento) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  if (evento.data_programada < hoje && ['programada', 'os_gerada'].includes(evento.status)) {
+    return { ...evento, status: 'atrasada' };
+  }
+  return evento;
 }

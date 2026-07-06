@@ -17,13 +17,13 @@ export default function FinanceiroFilters({ filters, fornecedores, ebaps, contra
           Status
           <select className="form-control" value={filters.status} onChange={(event) => onChange({ status: event.target.value })}>
             <option value="">Todos</option>
-            {(activeTab === 'medicoes' ? MEDICAO_STATUS : activeTab === 'lancamentos' ? LANCAMENTO_STATUS : CONTRATO_STATUS).map((status) => (
+            {(activeTab === 'medições' ? MEDICAO_STATUS : activeTab === 'lancamentos' ? LANCAMENTO_STATUS : CONTRATO_STATUS).map((status) => (
               <option key={status.value} value={status.value}>{status.label}</option>
             ))}
           </select>
         </label>
 
-        {activeTab === 'medicoes' && (
+        {activeTab === 'medições' && (
           <label className="field-label">
             Prefeitura
             <select className="form-control" value={filters.prefeituraStatus} onChange={(event) => onChange({ prefeituraStatus: event.target.value })}>
@@ -53,7 +53,7 @@ export default function FinanceiroFilters({ filters, fornecedores, ebaps, contra
           </label>
         )}
 
-        {(activeTab === 'medicoes' || activeTab === 'lancamentos') && (
+        {(activeTab === 'medições' || activeTab === 'lancamentos') && (
           <label className="field-label">
             Contrato
             <select className="form-control" value={filters.contratoId} onChange={(event) => onChange({ contratoId: event.target.value })}>

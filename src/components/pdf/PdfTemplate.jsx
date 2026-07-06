@@ -10,7 +10,7 @@ const labelMaps = {
   },
   status: {
     rascunho: 'Rascunho',
-    pendente_validacao_cco: 'Pendente validacao CCO',
+    pendente_validacao_cco: 'Pendente validação CCO',
     validado_cco: 'Validado CCO',
     rejeitado_cco: 'Rejeitado CCO',
     correcao_solicitada: 'Correcao solicitada',
@@ -18,12 +18,12 @@ const labelMaps = {
     aguardando_supervisor: 'Aguardando Supervisor',
     analise_supervisor: 'Em analise do Supervisor',
     programada: 'Programada',
-    encaminhada_tecnicos: 'Encaminhada para Tecnicos',
-    em_execucao: 'Em execucao',
-    concluida_tecnicos: 'Concluida pelos Tecnicos',
-    validacao_supervisor: 'Em validacao do Supervisor',
+    encaminhada_tecnicos: 'Encaminhada para Técnicos',
+    em_execucao: 'Em execução',
+    concluida_tecnicos: 'Concluída pelos Técnicos',
+    validacao_supervisor: 'Em validação do Supervisor',
     enviada_prefeitura: 'Enviada para Prefeitura',
-    aguardando_validacao_prefeitura: 'Aguardando validacao da Prefeitura',
+    aguardando_validacao_prefeitura: 'Aguardando validação da Prefeitura',
     concluida_arquivada: 'Concluida / Arquivada',
     operando: 'Operando',
     atencao: 'Atenção',
@@ -36,7 +36,7 @@ const labelMaps = {
     baixa: 'Baixa',
     media: 'Media',
     alta: 'Alta',
-    critica: 'Critica'
+    critica: 'Crítica'
   }
 };
 
@@ -141,14 +141,14 @@ function technicalChecklistItems(relatorioTecnico, photos = []) {
         label,
         status: resposta.status,
         observacao: resposta.observacao || '',
-        medicoes: resposta.medicoes || {},
+        medições: resposta.medições || {},
         foto
       };
     });
 }
 
-function formatMedicoes(medicoes = {}) {
-  const entries = Object.entries(medicoes).filter(([, value]) => String(value || '').trim());
+function formatMedições(medições = {}) {
+  const entries = Object.entries(medições).filter(([, value]) => String(value || '').trim());
   if (!entries.length) return '-';
   return entries.map(([key, value]) => `${pretty(key)}: ${value}`).join('\n');
 }
@@ -245,7 +245,7 @@ function Checklist({ payload = {} }) {
                       <td>{item.nome || item.descricao || '-'}</td>
                       <td>{pretty(item.status)}</td>
                       <td>{item.observacao || '-'}</td>
-                      <td>{item.solicitar_os ? 'Sim' : 'Nao'}</td>
+                      <td>{item.solicitar_os ? 'Sim' : 'Não'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -657,7 +657,7 @@ function PdfStyles() {
 }
 
 export default function PdfTemplate({ type, documentNumber, emittedAt, qrCode, data }) {
-  const title = type === 'ro' ? 'RDO - Relatorio Diario Operacional' : 'Ordem de Servico';
+  const title = type === 'ro' ? 'RDO - Relatório Diário Operacional' : 'Ordem de Serviço';
   const originCode = data?.codigo || data?.numero || data?.relatorio?.codigo || data?.os?.numero;
 
   return (
@@ -690,7 +690,7 @@ export default function PdfTemplate({ type, documentNumber, emittedAt, qrCode, d
 
           <div className="pdf-signatures">
             <div>Responsavel pela emissao</div>
-            <div>Validacao / Supervisao</div>
+            <div>Validação / Supervisão</div>
             <div>Arquivo / Consulta</div>
           </div>
         </main>
@@ -724,13 +724,13 @@ function RoDocument({ data }) {
 
       <Section title="Comunicacao CCO e ocorrencias">
         <p className="pdf-text">Comunicacao: {pretty(payload?.cco?.comunicacao)}</p>
-        <p className="pdf-text">Supervisao: {pretty(payload?.cco?.supervisao)}</p>
+        <p className="pdf-text">Supervisão: {pretty(payload?.cco?.supervisao)}</p>
         <p className="pdf-text">Alarmes: {pretty(payload?.cco?.alarmes)}</p>
         <p className="pdf-text">Ocorrencias: {payload?.ocorrencias?.descricao || '-'}</p>
         <p className="pdf-text">Conclusao: {payload?.ocorrencias?.conclusao || relatorio.conclusao_operador || '-'}</p>
       </Section>
 
-      <Section title="Validacao CCO">
+      <Section title="Validação CCO">
         <Timeline items={validacoes} />
       </Section>
 
@@ -749,7 +749,7 @@ function OsDocument({ data }) {
   const checklistItems = technicalChecklistItems(relatorioTecnico, data?.fotos || []);
   const tecnico = {
     diagnostico: respostas.diagnostico || respostas['diagnóstico'] || respostas.descricao_falha || os.payload?.equipamento_falha || os.descricao,
-    servico: respostas.servico_executado || respostas['serviço_executado'] || respostas.execucao || os.relatorio_tecnico,
+    servico: respostas.servico_executado || respostas['servico_executado'] || respostas.execucao || os.relatorio_tecnico,
     materiais: respostas.materiais_utilizados || os.materiais_utilizados,
     pendencias: respostas.pendencias || os.pendencias,
     statusFinal: pretty(osFinalEquipmentStatus(os), 'status')
@@ -803,7 +803,7 @@ function OsDocument({ data }) {
                   <span className={`pdf-status-${item.status}`}>{pretty(item.status, 'status')}</span>
                 </header>
                 <p><strong>Observação:</strong> {item.observacao || '-'}</p>
-                <p><strong>Medições:</strong>{'\n'}{formatMedicoes(item.medicoes)}</p>
+                <p><strong>Medições:</strong>{'\n'}{formatMedições(item.medições)}</p>
                 <p><strong>Foto vinculada:</strong> {item.foto ? (item.foto.legenda || item.foto.nome_original || 'Sim') : 'Não'}</p>
               </article>
             ))}

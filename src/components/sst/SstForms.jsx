@@ -153,7 +153,7 @@ export function EpiForm({ form, saving, onChange, onSubmit, onCancel }) {
         <Input label="Validade do CA" type="date" value={form.validade_ca || ''} onChange={(value) => onChange('validade_ca', value)} />
         <Input label="Categoria" value={form.categoria} onChange={(value) => onChange('categoria', value)} />
         <Input label="Fabricante" value={form.fabricante} onChange={(value) => onChange('fabricante', value)} />
-        <Input label="Estoque minimo" type="number" min="0" value={form.estoque_minimo} onChange={(value) => onChange('estoque_minimo', value)} />
+        <Input label="Estoque mínimo" type="number" min="0" value={form.estoque_minimo} onChange={(value) => onChange('estoque_minimo', value)} />
         <label className="flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4 text-sm font-black text-slate-100">
           <input className="size-4 accent-green-500" type="checkbox" checked={form.ativo !== false} onChange={(event) => onChange('ativo', event.target.checked)} />
           EPI ativo
@@ -337,7 +337,7 @@ export function InspecaoForm({ form, funcionarios, ebaps, ordensServico, aprs, a
         </Select>
       </div>
       <Textarea label="Resultado" value={form.resultado} onChange={(value) => onChange('resultado', value)} />
-      <Textarea label="Nao conformidades" value={form.nao_conformidades} onChange={(value) => onChange('nao_conformidades', value)} />
+      <Textarea label="Não conformidades" value={form.nao_conformidades} onChange={(value) => onChange('nao_conformidades', value)} />
       <Textarea label="Recomendacoes" value={form.recomendacoes} onChange={(value) => onChange('recomendacoes', value)} />
       <Textarea label="Observacoes" value={form.observacoes} onChange={(value) => onChange('observacoes', value)} />
       <Actions saving={saving} onCancel={onCancel} label="Salvar inspecao" />

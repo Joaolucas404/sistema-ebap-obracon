@@ -35,7 +35,7 @@ export const RELATORIO_GERENCIAL_EBAPS = {
       comportaRastelo: '2/2'
     },
     motivo:
-      'Bomba no 02 em manutencao/garantia SEDURB/USIPLAN e em processo de reinstalacao. Rele de supervisao de alta tensao inoperante desde a ocorrencia de queima da Bomba no 01.'
+      'Bomba no 02 em manutencao/garantia SEDURB/USIPLAN e em processo de reinstalacao. Rele de supervisão de alta tensao inoperante desde a ocorrencia de queima da Bomba no 01.'
   },
   'canal-da-costa': {
     unidade: 'CANAL DA COSTA',
@@ -49,7 +49,7 @@ export const RELATORIO_GERENCIAL_EBAPS = {
       comportaRastelo: '2/4'
     },
     motivo:
-      'Bombas apresentaram falhas severas e vem sendo retiradas para substituicao. Previsao de instalacao da ultima bomba existente em 11/05/2026; bombas novas em fabricacao com previsoes para junho/2026 e agosto/2026.'
+      'Bombas apresentaram falhas severas e vem sendo retiradas para substituicao. Previsão de instalacao da ultima bomba existente em 11/05/2026; bombas novas em fabricacao com previsoes para junho/2026 e agosto/2026.'
   },
   cobilandia: {
     unidade: 'COBILANDIA',

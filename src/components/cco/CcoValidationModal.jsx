@@ -76,7 +76,7 @@ export default function CcoValidationModal({ open, action, report, loading = fal
 
         <label className="field-label">
           Observacoes
-          <textarea className="form-control min-h-24" value={form.observacoes} onChange={(event) => setField('observacoes', event.target.value)} placeholder="Observacoes da validacao CCO." />
+          <textarea className="form-control min-h-24" value={form.observacoes} onChange={(event) => setField('observacoes', event.target.value)} placeholder="Observações da validação CCO." />
         </label>
 
         <label className="field-label">

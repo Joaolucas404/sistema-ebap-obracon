@@ -72,7 +72,7 @@ export default function ComprasTable({ compras, loading, canManage, canApprove, 
                       </button>
                     )}
                     {canManage && compra.status === 'em_cotacao' && (
-                      <button className="secondary-button min-h-10 px-3" type="button" onClick={() => onStatus(compra, 'aguardando_aprovacao')} title="Enviar para aprovacao">
+                      <button className="secondary-button min-h-10 px-3" type="button" onClick={() => onStatus(compra, 'aguardando_aprovacao')} title="Enviar para aprovação">
                         <Check size={16} />
                       </button>
                     )}

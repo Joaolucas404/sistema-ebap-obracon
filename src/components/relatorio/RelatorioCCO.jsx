@@ -19,7 +19,7 @@ export default function RelatorioCCO({ data, onChange }) {
         </label>
         <label className="field-label">
           Supervisório
-          <select className="form-control" value={data.supervisao || ''} onChange={(event) => setField('supervisao', event.target.value)}>
+          <select className="form-control" value={data.supervisao || ''} onChange={(event) => setField('supervisão', event.target.value)}>
             <option value="">Selecione...</option>
             <option value="normal">Normal</option>
             <option value="com_alarmes">Com alarmes</option>

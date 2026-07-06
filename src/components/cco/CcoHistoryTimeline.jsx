@@ -43,7 +43,7 @@ export default function CcoHistoryTimeline({ validacoes = [], auditoria = [] }) 
   if (!events.length) {
     return (
       <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 text-sm text-slate-300">
-        Nenhum evento de validacao registrado.
+        Nenhum evento de validação registrado.
       </div>
     );
   }

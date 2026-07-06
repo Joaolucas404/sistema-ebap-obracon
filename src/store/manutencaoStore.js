@@ -1,81 +1,113 @@
 import { create } from 'zustand';
 import {
-  gerarOsManutencaoVencidas,
+  cancelarEventoCronograma,
+  duplicarEventoCronograma,
+  excluirEventoCronograma,
+  gerarOsDoEventoCronograma,
+  listarAssociacoesAtividades,
+  listarCronogramaManutencao,
   listarEbapsManutencao,
-  listarEquipamentosManutencao,
-  listarExecucoesManutencao,
-  listarOsManutencao,
-  listarPlanosManutencao,
-  listarResponsaveisManutencao,
-  obterDashboardManutencao,
-  registrarExecucaoManutencao,
-  salvarPlanoManutencao
+  listarImportacoesCronograma,
+  resumoCronograma,
+  salvarEventoCronograma,
+  salvarImportacaoCronograma
 } from '../services/manutencaoService.js';
 
 export const useManutencaoStore = create((set, get) => ({
   dashboard: null,
-  planos: [],
-  execucoes: [],
-  osManutencao: [],
+  eventos: [],
+  importacoes: [],
+  associacoes: {},
   ebaps: [],
-  equipamentos: [],
-  responsaveis: [],
   loading: false,
   saving: false,
   error: '',
 
-  carregarTudo: async (user = null) => {
+  carregarTudo: async (user = null, filters = {}) => {
     set({ loading: true, error: '' });
     try {
-      const [dashboard, planos, execucoes, osManutencao, ebaps, equipamentos, responsaveis] = await Promise.all([
-        obterDashboardManutencao(),
-        listarPlanosManutencao({ ativo: true }),
-        listarExecucoesManutencao(),
-        listarOsManutencao(500, user),
-        listarEbapsManutencao(),
-        listarEquipamentosManutencao(),
-        listarResponsaveisManutencao()
+      const [eventos, importacoes, associacoes, ebaps] = await Promise.all([
+        listarCronogramaManutencao(user, filters),
+        listarImportacoesCronograma(user),
+        listarAssociacoesAtividades(),
+        listarEbapsManutencao()
       ]);
-
-      set({ dashboard, planos, execucoes, osManutencao, ebaps, equipamentos, responsaveis, loading: false });
+      set({ eventos, importacoes, associacoes, ebaps, dashboard: resumoCronograma(eventos), loading: false });
     } catch (err) {
-      set({ error: err.message || 'Falha ao carregar manutencao.', loading: false });
+      set({ error: err.message || 'Falha ao carregar planejamento de manutenção.', loading: false });
     }
   },
 
-  salvarPlano: async (payload, user) => {
+  salvarEvento: async (payload, user) => {
     set({ saving: true, error: '' });
     try {
-      await salvarPlanoManutencao(payload, user);
-      await get().carregarTudo();
+      const evento = await salvarEventoCronograma(payload, user);
+      await get().carregarTudo(user);
       set({ saving: false });
+      return evento;
     } catch (err) {
-      set({ error: err.message || 'Falha ao salvar plano.', saving: false });
+      set({ error: err.message || 'Falha ao salvar evento.', saving: false });
       throw err;
     }
   },
 
-  registrarExecucao: async (payload, user) => {
+  importarEventos: async (payload, user) => {
     set({ saving: true, error: '' });
     try {
-      await registrarExecucaoManutencao(payload, user);
-      await get().carregarTudo();
+      await salvarImportacaoCronograma(payload, user);
+      await get().carregarTudo(user);
       set({ saving: false });
     } catch (err) {
-      set({ error: err.message || 'Falha ao registrar execucao.', saving: false });
+      set({ error: err.message || 'Falha ao importar cronograma.', saving: false });
       throw err;
     }
   },
 
-  gerarOsVencidas: async (user) => {
+  cancelarEvento: async (evento, user) => {
     set({ saving: true, error: '' });
     try {
-      const count = await gerarOsManutencaoVencidas(user);
-      await get().carregarTudo();
+      await cancelarEventoCronograma(evento, user);
+      await get().carregarTudo(user);
       set({ saving: false });
-      return count;
     } catch (err) {
-      set({ error: err.message || 'Falha ao gerar OS de manutencao.', saving: false });
+      set({ error: err.message || 'Falha ao cancelar evento.', saving: false });
+      throw err;
+    }
+  },
+
+  excluirEvento: async (evento, user) => {
+    set({ saving: true, error: '' });
+    try {
+      await excluirEventoCronograma(evento, user);
+      await get().carregarTudo(user);
+      set({ saving: false });
+    } catch (err) {
+      set({ error: err.message || 'Falha ao excluir evento.', saving: false });
+      throw err;
+    }
+  },
+
+  duplicarEvento: async (evento, user) => {
+    set({ saving: true, error: '' });
+    try {
+      await duplicarEventoCronograma(evento, user);
+      await get().carregarTudo(user);
+      set({ saving: false });
+    } catch (err) {
+      set({ error: err.message || 'Falha ao duplicar evento.', saving: false });
+      throw err;
+    }
+  },
+
+  gerarOsEvento: async (evento, user) => {
+    set({ saving: true, error: '' });
+    try {
+      const updated = await gerarOsDoEventoCronograma(evento, user);
+      await get().carregarTudo(user);
+      set({ saving: false });
+      return updated;
+    } catch (err) {
+      set({ error: err.message || 'Falha ao gerar OS do evento.', saving: false });
       throw err;
     }
   }

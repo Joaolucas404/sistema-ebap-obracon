@@ -81,7 +81,7 @@ export default function PlanoManutencaoForm({ form, ebaps, equipamentos, saving,
           {['baixa', 'media', 'alta', 'critica'].map((prioridade) => <option key={prioridade} value={prioridade}>{prioridade}</option>)}
         </Select>
 
-        <Input label="Proxima execucao" type="date" value={form.proxima_execucao} onChange={(value) => onChange('proxima_execucao', value)} required />
+        <Input label="Próxima execução" type="date" value={form.proxima_execucao} onChange={(value) => onChange('proxima_execucao', value)} required />
 
         <label className="flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4 text-sm font-black text-slate-100">
           <input className="size-4 accent-green-500" type="checkbox" checked={form.ativo !== false} onChange={(event) => onChange('ativo', event.target.checked)} />

@@ -207,7 +207,7 @@ export default function RelatorioDiario() {
   async function visualizarRelatorioAnterior(item) {
     setRelatorio(item);
     setPayload(item.payload || blankPayload());
-    setCurrentStep('revisao');
+    setCurrentStep('revisão');
     setFotos(await listarFotosRelatorio(item.id));
     if (item.ebap_id) await loadEquipamentos(item.ebap_id, item.payload || blankPayload());
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -533,8 +533,8 @@ function getStepPendencias(stepId, payload, fotos) {
   if (stepId === 'cco') return validateCco(payload?.cco);
   if (stepId === 'ocorrencias') return validateOcorrencias(payload?.ocorrencias);
   if (stepId === 'fotos') return validateFotos(payload, fotos);
-  if (stepId === 'revisao') {
-    const previousSteps = RELATORIO_STEPS.filter((step) => step.id !== 'revisao');
+  if (stepId === 'revisão') {
+    const previousSteps = RELATORIO_STEPS.filter((step) => step.id !== 'revisão');
     const pending = previousSteps.flatMap((step) => getStepPendencias(step.id, payload, fotos));
     return pending.length ? ['Conclua todas as etapas anteriores para revisar o RDO.'] : [];
   }

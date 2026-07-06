@@ -47,7 +47,7 @@ export default function AlmoxItemForm({ form, locais, saving, onChange, onSubmit
             className="form-control"
             value={form.categoria}
             onChange={(event) => onChange('categoria', event.target.value)}
-            placeholder="Ex.: Eletrica, Mecanica, EPI"
+            placeholder="Ex.: Elétrica, Mecânica, EPI"
             minLength={2}
             maxLength={80}
             required
@@ -78,7 +78,7 @@ export default function AlmoxItemForm({ form, locais, saving, onChange, onSubmit
         </label>
 
         <label className="field-label">
-          Estoque minimo
+          Estoque mínimo
           <input
             className="form-control"
             type="number"

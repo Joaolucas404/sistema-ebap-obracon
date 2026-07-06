@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGEBAP - Documento Executivo Corporativo v4.0</title>
+  <style>
+    @page { size: A4 landscape; margin: 0; }
+    :root {
+      --bg: #050f26; --panel: #0c1c43; --panel2: #102b63; --line: rgba(173, 205, 255, .22);
+      --blue: #2563eb; --blue2: #60a5fa; --text: #f8fbff; --muted: #bfd2f6; --soft: #dbeafe;
+      --amber: #f59e0b; --red: #ef4444; --cyan: #22d3ee; --green: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #020817; color: var(--text);
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 16px; line-height: 1.5;
+    }
+    .page {
+      width: 297mm; height: 210mm; max-height: 210mm; page-break-after: always; position: relative; overflow: hidden;
+      padding: 18mm 22mm; background:
+        linear-gradient(90deg, rgba(37,99,235,.09) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(37,99,235,.08) 1px, transparent 1px),
+        radial-gradient(circle at 85% 12%, rgba(37, 99, 235, .42), transparent 36%),
+        radial-gradient(circle at 12% 88%, rgba(96, 165, 250, .22), transparent 28%),
+        linear-gradient(135deg, #06122c 0%, #081b44 47%, #102b63 100%);
+      background-size: 42px 42px, 42px 42px, auto, auto, auto;
+    }
+    .page::after { content: "SIGEBAP v4.0"; position: absolute; bottom: 10mm; right: 18mm; color: rgba(219,234,254,.48); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+    .cover {
+      padding: 0; display: grid; grid-template-columns: 1.05fr .95fr;
+      background-image: linear-gradient(90deg, rgba(4,15,40,.96), rgba(7,25,62,.86)), url("../public/brand/morro-do-moreno.jpg");
+      background-size: cover; background-position: center;
+    }
+    .cover-left { padding: 22mm 22mm; display: flex; flex-direction: column; justify-content: space-between; min-height: 210mm; }
+    .logo-wrap { display: flex; align-items: center; gap: 18px; }
+    .logo-wrap img { width: 124px; height: auto; filter: drop-shadow(0 18px 30px rgba(0,0,0,.45)); }
+    .brand-title { font-size: 18px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .cover h1 { margin: 18mm 0 0; font-size: 68px; line-height: .88; letter-spacing: -.04em; }
+    .cover h1 span { display: block; color: var(--blue2); }
+    .cover .subtitle { margin-top: 18px; max-width: 760px; font-size: 26px; line-height: 1.24; color: var(--soft); font-weight: 600; }
+    .cover .version { margin-top: 26px; display: inline-flex; width: fit-content; border: 1px solid rgba(147,197,253,.36); background: rgba(15,35,83,.74); border-radius: 999px; padding: 10px 16px; font-weight: 700; color: #dbeafe; }
+    .authors { align-self: end; margin: 22mm 22mm 22mm 0; padding: 22px; width: 450px; border: 1px solid var(--line); border-radius: 30px; background: rgba(10,25,60,.72); backdrop-filter: blur(12px); box-shadow: 0 30px 90px rgba(0,0,0,.35); }
+    .authors h2 { margin: 0 0 18px; font-size: 18px; color: var(--blue2); text-transform: uppercase; letter-spacing: .16em; }
+    .author { padding: 16px 0; border-top: 1px solid rgba(191,219,254,.16); }
+    .author b { display: block; font-size: 19px; }
+    .author span { display: block; color: var(--muted); font-size: 13px; }
+    h2 { margin: 0; font-size: 40px; line-height: 1.05; letter-spacing: -.03em; }
+    h3 { margin: 0 0 10px; font-size: 20px; }
+    .lead { margin: 10px 0 0; color: var(--soft); font-size: 20px; max-width: 820px; }
+    .kicker, .chapter-kicker { color: #93c5fd; letter-spacing: .28em; text-transform: uppercase; font-size: 13px; font-weight: 800; }
+    .toc-grid { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 36px; }
+    .toc-line { display: grid; grid-template-columns: 42px 1fr 42px; gap: 10px; align-items: baseline; border-bottom: 1px dotted rgba(191,219,254,.28); padding: 9px 0; color: var(--soft); }
+    .toc-line b { color: white; font-size: 18px; }
+    .executive-grid { margin-top: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .metric, .info-card, .feature-card {
+      border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(145deg, rgba(21, 48, 105, .82), rgba(8, 23, 56, .88));
+      padding: 16px; box-shadow: 0 18px 45px rgba(0,0,0,.22);
+    }
+    .metric strong { display: block; font-size: 38px; line-height: 1; }
+    .metric span { display: block; margin-top: 8px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.split { display: grid; grid-template-columns: .94fr 1.06fr; gap: 22px; align-items: center; height: 100%; }
+.chapter-icon { width: fit-content; margin-bottom: 14px; color: #bfdbfe; background: rgba(37,99,235,.22); border: 1px solid rgba(147,197,253,.32); border-radius: 18px; padding: 12px 16px; font-size: 14px; font-weight: 800; }
+.info-grid { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.info-card p { margin: 0; color: var(--soft); }
+.info-card.wide { grid-column: 1 / -1; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips span { border: 1px solid rgba(147,197,253,.28); border-radius: 999px; background: rgba(37,99,235,.16); padding: 7px 10px; color: #dbeafe; font-size: 13px; font-weight: 700; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; }
+.flow-step { display: flex; align-items: center; gap: 8px; color: var(--soft); font-weight: 700; }
+.flow-step span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: var(--blue); color: white; font-size: 12px; }
+.module-page .split { align-items: start; }
+.module-page h2 { font-size: 38px; margin: 12px 0 10px; }
+.module-page .lead { font-size: 18px; line-height: 1.34; max-width: 520px; }
+.module-page .chapter-icon { margin-bottom: 10px; padding: 10px 14px; border-radius: 16px; }
+.module-page .info-grid { margin-top: 12px; gap: 8px; }
+.module-page .info-card { padding: 14px 16px; border-radius: 18px; }
+.module-page .info-card h3 { font-size: 18px; margin-bottom: 10px; }
+.module-page .chips { gap: 6px; }
+.module-page .chips span { font-size: 12px; padding: 6px 9px; }
+.module-page .flow { gap: 6px; }
+.module-page .flow-step { font-size: 13px; gap: 6px; }
+.module-page .flow-step span { width: 20px; height: 20px; font-size: 11px; }
+    .figure-block { margin: 0; break-inside: avoid; width: 100%; }
+    .editorial-capture { width: 88%; margin: 0 auto; border-radius: 28px; overflow: hidden; }
+    .editorial-capture img { display: block; width: 100%; height: auto; object-fit: contain; }
+    .desktop-capture { max-width: 980px; }
+    .mobile-capture { width: 56%; max-width: 520px; }
+    .module-page .editorial-capture { width: 92%; }
+    .gallery .editorial-capture { width: 94%; }
+    .gallery .mobile-capture { width: 52%; }    figcaption { margin-top: 10px; color: #cbdafe; font-size: 13px; text-align: center; }
+    .diagram-block { margin: 18px 0 0; }
+    .diagram-block img { width: 100%; border-radius: 24px; box-shadow: 0 22px 60px rgba(0,0,0,.28); }
+    .diagram-block figcaption { text-align: left; }
+    .cards-3 { margin-top: 18px; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .feature-card b { display: block; font-size: 22px; margin-bottom: 6px; }
+    .feature-card p { margin: 0; color: var(--muted); }
+    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    .gallery .figure-block:nth-child(3) { grid-column: 1 / -1; width: 66%; margin-inline: auto; }
+    .roadmap { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-top: 32px; }
+    .road { border: 1px solid var(--line); border-radius: 24px; padding: 20px; background: rgba(13,31,75,.68); }
+    .road b { display: block; font-size: 22px; }
+    .road span { color: var(--muted); }
+    .appendix-list { columns: 3; column-gap: 28px; margin-top: 22px; color: var(--soft); }
+    .appendix-list li { break-inside: avoid; margin-bottom: 8px; }
+.module-page { display: flex; flex-direction: column; gap: 12px; }
+.module-header { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; align-items: end; }
+.module-header h2 { font-size: 34px; margin: 8px 0 6px; }
+.module-header .lead { font-size: 16px; line-height: 1.3; max-width: 700px; margin-top: 0; }
+.module-permission { border: 1px solid var(--line); border-radius: 20px; padding: 14px 16px; background: rgba(13,31,75,.68); }
+.module-permission h3 { font-size: 16px; margin-bottom: 6px; }
+.module-permission p { margin: 0; color: var(--soft); font-size: 14px; line-height: 1.35; }
+.module-summary { display: grid; grid-template-columns: 1fr 1.05fr 1fr; gap: 10px; }
+.module-summary .info-card { padding: 12px 14px; border-radius: 18px; min-height: 92px; }
+.module-summary .info-card h3 { font-size: 16px; margin-bottom: 8px; }
+.module-summary .chips span { font-size: 11px; padding: 5px 8px; }
+.module-summary .flow-step { font-size: 11px; gap: 5px; }
+.module-summary .flow-step span { width: 18px; height: 18px; font-size: 10px; }
+.module-figure { flex: 1; display: grid; place-items: center; min-height: 0; }
+.module-figure .figure-block { width: 100%; }
+.module-figure .editorial-capture { width: 88%; max-width: 980px; }
+.module-figure .mobile-capture { width: 34%; max-width: 360px; }
+.module-figure .editorial-capture { width: auto; max-width: 94%; max-height: 82mm; display: flex; justify-content: center; align-items: center; }
+.module-figure .editorial-capture img { width: auto; max-width: 100%; max-height: 82mm; height: auto; object-fit: contain; }
+.module-figure .mobile-capture { width: auto; max-width: 40%; max-height: 82mm; }
+.module-figure .mobile-capture img { max-height: 82mm; }
+.gallery .editorial-capture { width: auto; max-width: 94%; max-height: 92mm; display: flex; justify-content: center; align-items: center; }
+.gallery .editorial-capture img { width: auto; max-width: 100%; max-height: 92mm; height: auto; object-fit: contain; }
+.gallery .mobile-capture { max-height: 130mm; }
+.gallery .mobile-capture img { max-height: 130mm; }
+    .no-break { break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <section class="page cover">
+    <div class="cover-left">
+      <div class="logo-wrap">
+        <img src="../public/brand/uniao-obracon-logo.png" alt="Logo União Obracon" />
+        <div><div class="brand-title">Consórcio União Obracon</div><div style="color:#bfdbfe">Documento institucional executivo</div></div>
+      </div>
+      <div>
+        <h1>SIGEBAP <span>4.0</span></h1>
+        <p class="subtitle">Sistema Integrado de Gestão das Estações Elevatórias de Águas Pluviais</p>
+        <div class="version">Documento Executivo Corporativo · Versão 4.0 · 06/07/2026</div>
+      </div>
+      <div style="color:#bfdbfe;max-width:720px">Material institucional para apresentação à Gerência e Diretoria, com visão executiva, arquitetura, módulos, fluxos operacionais e mockups profissionais das telas.</div>
+    </div>
+    <aside class="authors">
+      <h2>Autores</h2>
+      <div class="author"><b>João Lucas Soares Almeida</b><span>Idealizador · Analista de Sistemas · Arquiteto de Software · Desenvolvedor Full Stack</span></div>
+      <div class="author"><b>Alex Gomes de Matos Martins</b><span>Idealizador Operacional · Especialista Operacional · Gerência Técnica</span></div>
+    </aside>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Sumário executivo</div>
+    <h2>Conteúdo do documento</h2>
+    <p class="lead">Organização editorial para leitura executiva, técnica e operacional.</p>
+    <div class="toc-grid">
+      <div class="toc-line"><b>01</b><span>Introdução</span><b>03</b></div><div class="toc-line"><b>02</b><span>História do Projeto</span><b>04</b></div><div class="toc-line"><b>03</b><span>Arquitetura do Sistema</span><b>05</b></div><div class="toc-line"><b>04</b><span>Perfis e Governança</span><b>06</b></div><div class="toc-line"><b>05</b><span>Dashboard Executivo</span><b>07</b></div><div class="toc-line"><b>06</b><span>Agenda Operacional</span><b>08</b></div><div class="toc-line"><b>07</b><span>Ordens de Serviço</span><b>09</b></div><div class="toc-line"><b>08</b><span>RDO</span><b>10</b></div><div class="toc-line"><b>09</b><span>Ativos e Sala de Situação</span><b>11</b></div><div class="toc-line"><b>10</b><span>Mapa Operacional</span><b>12</b></div><div class="toc-line"><b>11</b><span>Gestão e Suprimentos</span><b>13</b></div><div class="toc-line"><b>12</b><span>Comunicação</span><b>14</b></div><div class="toc-line"><b>13</b><span>Experiência Mobile</span><b>15</b></div><div class="toc-line"><b>14</b><span>Roadmap</span><b>16</b></div><div class="toc-line"><b>15</b><span>Galeria de Mockups</span><b>17</b></div><div class="toc-line"><b>16</b><span>Conclusão</span><b>24</b></div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Introdução</div>
+    <h2>Uma plataforma operacional para gestão das EBAPs</h2>
+    <p class="lead">O SIGEBAP consolida operação, manutenção, comunicação, documentação e governança das Estações Elevatórias de Águas Pluviais em uma única plataforma corporativa.</p>
+    <div class="executive-grid">
+      <div class="metric"><strong>11</strong><span>EBAPs estruturadas</span></div>
+      <div class="metric"><strong>120+</strong><span>ativos operacionais</span></div>
+      <div class="metric"><strong>360°</strong><span>rastreabilidade</span></div>
+      <div class="metric"><strong>1</strong><span>fonte da verdade</span></div>
+    </div>
+    <div class="cards-3">
+      <div class="feature-card"><b>Operação</b><p>RDO, CCO, Sala de Situação, comunicação e acompanhamento em campo.</p></div>
+      <div class="feature-card"><b>Manutenção</b><p>OS, ativos, planejamento, agenda e histórico técnico integrado.</p></div>
+      <div class="feature-card"><b>Gestão</b><p>Compras, almoxarifado, administrativo, indicadores e documentação executiva.</p></div>
+    </div>
+    
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/login-desktop.png" alt="Tela de acesso institucional do SIGEBAP." /></div>
+      <figcaption><b>Figura 1.1</b> – Tela de acesso institucional do SIGEBAP.</figcaption>
+    </figure>
+  </section>
+
+  <section class="page">
+    <div class="kicker">História do Projeto</div>
+    <h2>Da necessidade operacional ao produto corporativo</h2>
+    <p class="lead">O SIGEBAP nasce da operação real das EBAPs, evoluindo de controles dispersos para uma plataforma integrada, auditável e orientada a decisão.</p>
+    <div class="roadmap">
+      <div class="road"><b>Diagnóstico</b><span>Identificação de lacunas em rastreabilidade, comunicação, RDO, OS e ativos.</span></div>
+      <div class="road"><b>Estruturação</b><span>Criação da arquitetura integrada com Supabase, módulos operacionais e perfis.</span></div>
+      <div class="road"><b>Modernização</b><span>Design System, mobile nativo, dashboards executivos e documentação corporativa.</span></div>
+      <div class="road"><b>Escala</b><span>Base preparada para indicadores, sala de situação, automações e BI.</span></div>
+    </div>
+    
+    <figure class="diagram-block">
+      <img src="assets/diagramas/roadmap-v4.svg" alt="Linha do tempo executiva do SIGEBAP." />
+      <figcaption>Linha do tempo executiva do SIGEBAP.</figcaption>
+    </figure>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Arquitetura</div>
+    <h2>Arquitetura operacional integrada</h2>
+    <p class="lead">A plataforma utiliza React, Supabase, Storage, Realtime e geração documental para conectar módulos sem duplicidade de informação.</p>
+    
+    <figure class="diagram-block">
+      <img src="assets/diagramas/arquitetura-v4.svg" alt="Arquitetura lógica do SIGEBAP." />
+      <figcaption>Arquitetura lógica do SIGEBAP.</figcaption>
+    </figure>
+    <div class="cards-3">
+      <div class="feature-card"><b>Frontend React</b><p>Interface web e mobile com rotas protegidas e componentes oficiais do UI Kit.</p></div>
+      <div class="feature-card"><b>Supabase</b><p>Banco, autenticação de aplicação, políticas RLS, arquivos e realtime.</p></div>
+      <div class="feature-card"><b>Governança</b><p>Perfis, permissões, histórico, auditoria e documentos PDF.</p></div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Perfis</div>
+    <h2>Governança por perfil de acesso</h2>
+    <p class="lead">Cada usuário visualiza somente o que faz sentido para sua função, reduzindo complexidade e aumentando segurança operacional.</p>
+    <div class="cards-3">
+      <div class="feature-card"><b>Operador</b><p>RDO, abertura de OS, comunicação e acompanhamento da EBAP.</p></div>
+      <div class="feature-card"><b>Técnico</b><p>Execução de OS, anexos, evidências, materiais e conclusão técnica.</p></div>
+      <div class="feature-card"><b>Supervisor</b><p>Fila de OS, validação, planejamento, equipe e agenda por área.</p></div>
+      <div class="feature-card"><b>CCO</b><p>Validação de RDO e OS operacionais, comunicação e visão de situação.</p></div>
+      <div class="feature-card"><b>Gerência e Diretoria</b><p>Dashboards, indicadores, riscos, histórico e visão consolidada.</p></div>
+      <div class="feature-card"><b>Prefeitura e Fiscal</b><p>Abertura ou acompanhamento simplificado conforme perfil autorizado.</p></div>
+    </div>
+    
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/navegacao-sistema.png" alt="Navegação principal do SIGEBAP." /></div>
+      <figcaption><b>Figura 1.2</b> – Navegação principal do SIGEBAP.</figcaption>
+    </figure>
+  </section>
+
+  
+    <section class="page module-page" id="mod-0">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 05</div>
+          <div class="chapter-icon">Módulo 01</div>
+          <h2>Dashboard Executivo</h2>
+          <p class="lead">Permitir leitura executiva da operação em menos de 10 segundos.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Diretoria, Gerência, Supervisão e perfis autorizados.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>KPIs gerais</span><span>Prioridades operacionais</span><span>Atividades recentes</span><span>Atalhos por perfil</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Acesso ao sistema</div><div class="flow-step"><span>2</span>Consolidação de indicadores</div><div class="flow-step"><span>3</span>Ranqueamento de riscos</div><div class="flow-step"><span>4</span>Decisão gerencial</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Visão rápida</span><span>Menos dependência de planilhas</span><span>Foco em risco e decisão</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/dashboard-executivo.png" alt="Dashboard Executivo no SIGEBAP." /></div>
+      <figcaption><b>Figura 1.3</b> – Dashboard Executivo no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-1">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 06</div>
+          <div class="chapter-icon">Módulo 02</div>
+          <h2>Agenda Operacional</h2>
+          <p class="lead">Transformar planejamento e programação em rotina operacional acompanhável.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Supervisor por área; Gerência, Diretoria e Administração com visão global; CCO em leitura quando aplicável.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Importação XLS</span><span>Leitura de abas</span><span>Planejamento por supervisor</span><span>Criação manual por dia</span><span>Arrastar e editar atividades</span><span>Eventos e lembretes</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Planejamento importado ou criado</div><div class="flow-step"><span>2</span>Supervisor revisa</div><div class="flow-step"><span>3</span>Atividade recebe área, equipe e EBAP</div><div class="flow-step"><span>4</span>Evento pode gerar OS</div><div class="flow-step"><span>5</span>Execução é acompanhada</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Agenda real de operação</span><span>Redução de planilhas paralelas</span><span>Visão por Mecânica, Elétrica e Automação</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/agenda-operacional.png" alt="Agenda Operacional no SIGEBAP." /></div>
+      <figcaption><b>Figura 2.1</b> – Agenda Operacional no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-2">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 07</div>
+          <div class="chapter-icon">Módulo 03</div>
+          <h2>Ordens de Serviço</h2>
+          <p class="lead">Ser a central única para abertura, execução, validação e rastreabilidade das OS.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Operação, Técnico, Supervisor, CCO, Fiscal Operacional, Prefeitura, Gerência e Diretoria conforme escopo.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>KPIs da carteira</span><span>Pesquisa e filtros</span><span>Nova OS</span><span>Detalhe operacional</span><span>Histórico compacto</span><span>Anexos</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Solicitação</div><div class="flow-step"><span>2</span>Triagem</div><div class="flow-step"><span>3</span>Supervisão</div><div class="flow-step"><span>4</span>Execução técnica</div><div class="flow-step"><span>5</span>Validação</div><div class="flow-step"><span>6</span>Encerramento</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Rastreabilidade</span><span>Padronização</span><span>Fila única de acompanhamento</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/ordens-servico.png" alt="Ordens de Serviço no SIGEBAP." /></div>
+      <figcaption><b>Figura 2.2</b> – Ordens de Serviço no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-3">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 08</div>
+          <div class="chapter-icon">Módulo 04</div>
+          <h2>RDO</h2>
+          <p class="lead">Registrar diariamente a condição operacional das EBAPs com evidências.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Operador preenche; CCO valida; Gerência e Diretoria acompanham.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Fluxo mobile first</span><span>Status rápidos</span><span>Fotos obrigatórias</span><span>Auto save</span><span>Validação CCO</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Operador inicia RDO</div><div class="flow-step"><span>2</span>Preenche etapas</div><div class="flow-step"><span>3</span>Anexa evidências</div><div class="flow-step"><span>4</span>Envia ao CCO</div><div class="flow-step"><span>5</span>CCO aprova</div><div class="flow-step"><span>6</span>Sistema consolida</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Rastreabilidade diária</span><span>Menos retrabalho</span><span>Evidência operacional confiável</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture mobile-capture"><img src="assets/screenshots/mobile-rdo.png" alt="RDO no SIGEBAP." /></div>
+      <figcaption><b>Figura 3.2</b> – RDO no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-4">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 09</div>
+          <div class="chapter-icon">Módulo 05</div>
+          <h2>Ativos</h2>
+          <p class="lead">Manter a fonte única de verdade dos equipamentos das EBAPs.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Operação, Supervisão, Manutenção, Gerência e Diretoria conforme atribuições.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Status por equipamento</span><span>Agrupamento por EBAP</span><span>Histórico</span><span>Integração com OS</span><span>Indicadores operacionais</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Ativo é consultado</div><div class="flow-step"><span>2</span>OS ou RDO altera situação</div><div class="flow-step"><span>3</span>Histórico é gravado</div><div class="flow-step"><span>4</span>Dashboards e sala de situação refletem o status</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Controle patrimonial operacional</span><span>Histórico técnico</span><span>Base para indicadores</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/ativos.png" alt="Ativos no SIGEBAP." /></div>
+      <figcaption><b>Figura 4.2</b> – Ativos no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-5">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 10</div>
+          <div class="chapter-icon">Módulo 06</div>
+          <h2>Sala de Situação</h2>
+          <p class="lead">Concentrar EBAPs críticas, ocorrências e prioridades de resposta.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>CCO, Supervisão, Gerência e Diretoria.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Riscos destacados</span><span>Prioridades por unidade</span><span>Visão para CCO e gestão</span><span>Consolidação operacional</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Dados chegam de OS, RDO e Ativos</div><div class="flow-step"><span>2</span>Sistema calcula criticidade</div><div class="flow-step"><span>3</span>Equipe prioriza resposta</div><div class="flow-step"><span>4</span>Gestão acompanha impacto</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Resposta rápida</span><span>Gestão de crise</span><span>Priorização objetiva</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/sala-situacao.png" alt="Sala de Situação no SIGEBAP." /></div>
+      <figcaption><b>Figura 4.1</b> – Sala de Situação no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-6">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 11</div>
+          <div class="chapter-icon">Módulo 07</div>
+          <h2>Mapa Operacional</h2>
+          <p class="lead">Exibir localização e situação das EBAPs em visão geográfica.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Perfis operacionais e de gestão autorizados.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Mapa das unidades</span><span>Status por ponto</span><span>Link de localização</span><span>Contexto geográfico</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Usuário abre mapa</div><div class="flow-step"><span>2</span>Seleciona unidade</div><div class="flow-step"><span>3</span>Consulta status e localização</div><div class="flow-step"><span>4</span>Aciona rotina operacional</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Leitura territorial</span><span>Apoio ao deslocamento</span><span>Visão executiva geográfica</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/mapa-operacional.png" alt="Mapa Operacional no SIGEBAP." /></div>
+      <figcaption><b>Figura 4.3</b> – Mapa Operacional no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-7">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 12</div>
+          <div class="chapter-icon">Módulo 08</div>
+          <h2>Comunicação</h2>
+          <p class="lead">Manter comunicação operacional registrada e auditável dentro do SIGEBAP.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Cada usuário visualiza suas conversas e grupos autorizados.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Conversas</span><span>Grupos</span><span>Arquivos</span><span>Áudio</span><span>Pesquisa de pessoas</span><span>Presença</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Usuário localiza pessoa ou grupo</div><div class="flow-step"><span>2</span>Envia mensagem, mídia ou áudio</div><div class="flow-step"><span>3</span>Leituras são registradas</div><div class="flow-step"><span>4</span>Histórico permanece no sistema</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Alternativa corporativa ao WhatsApp</span><span>Rastreabilidade</span><span>Comunicação vinculada à operação</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/chat.png" alt="Comunicação no SIGEBAP." /></div>
+      <figcaption><b>Figura 6.2</b> – Comunicação no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+    <section class="page module-page" id="mod-8">
+      <div class="module-header">
+        <div>
+          <div class="chapter-kicker">Capítulo 13</div>
+          <div class="chapter-icon">Módulo 09</div>
+          <h2>Gestão e Suprimentos</h2>
+          <p class="lead">Apoiar compras, almoxarifado e administração em processos conectados à operação.</p>
+        </div>
+        <div class="module-permission"><h3>Permissões</h3><p>Perfis administrativos, almoxarifado, financeiro, gerência e diretoria.</p></div>
+      </div>
+      <div class="module-summary">
+        <div class="info-card"><h3>Funcionalidades</h3><div class="chips"><span>Solicitações de compra</span><span>Controle de estoque</span><span>Frota</span><span>Documentos</span><span>Alertas administrativos</span></div></div>
+        <div class="info-card"><h3>Fluxo operacional</h3><div class="flow"><div class="flow-step"><span>1</span>Demanda nasce da operação</div><div class="flow-step"><span>2</span>Compra ou estoque é acionado</div><div class="flow-step"><span>3</span>Administração acompanha</div><div class="flow-step"><span>4</span>Gestão consolida</div></div></div>
+        <div class="info-card"><h3>Benefícios</h3><div class="chips"><span>Menos controles paralelos</span><span>Integração com OS</span><span>Visibilidade de pendências</span></div></div>
+      </div>
+      <div class="module-figure">
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/compras.png" alt="Gestão e Suprimentos no SIGEBAP." /></div>
+      <figcaption><b>Figura 5.3</b> – Gestão e Suprimentos no SIGEBAP.</figcaption>
+    </figure></div>
+    </section>
+
+  <section class="page">
+    <div class="kicker">Fluxos principais</div>
+    <h2>Rastreabilidade de ponta a ponta</h2>
+    <p class="lead">Os fluxos foram desenhados para evitar informações paralelas e manter histórico auditável desde o campo até a gestão.</p>
+    
+    <figure class="diagram-block">
+      <img src="assets/diagramas/fluxo-os-v4.svg" alt="Fluxo executivo das Ordens de Serviço." />
+      <figcaption>Fluxo executivo das Ordens de Serviço.</figcaption>
+    </figure>
+    
+    <figure class="diagram-block">
+      <img src="assets/diagramas/fluxo-rdo-v4.svg" alt="Fluxo de RDO com evidências e validação CCO." />
+      <figcaption>Fluxo de RDO com evidências e validação CCO.</figcaption>
+    </figure>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Experiência Mobile</div>
+    <h2>Aplicativo operacional para campo</h2>
+    <p class="lead">A versão mobile não replica o desktop. Ela prioriza botões grandes, fotos, áudio, checklist, status rápidos e navegação inferior.</p>
+    <div class="gallery">
+      
+    <figure class="figure-block">
+      <div class="editorial-capture mobile-capture"><img src="assets/screenshots/mobile-operador.png" alt="Experiência mobile para Operador." /></div>
+      <figcaption><b>Figura 7.2</b> – Experiência mobile para Operador.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture mobile-capture"><img src="assets/screenshots/mobile-tecnico.png" alt="Experiência mobile para Técnico." /></div>
+      <figcaption><b>Figura 7.4</b> – Experiência mobile para Técnico.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture mobile-capture"><img src="assets/screenshots/mobile-fiscal-operacional.png" alt="Experiência mobile para Fiscal Operacional." /></div>
+      <figcaption><b>Figura 8.3</b> – Experiência mobile para Fiscal Operacional.</figcaption>
+    </figure>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Galeria executiva</div>
+    <h2>Mockups das principais telas</h2>
+    <p class="lead">Todas as imagens foram capturadas novamente após a correção de encoding e aplicadas em frames visuais profissionais.</p>
+    <div class="gallery">
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/nova-os.png" alt="Abertura de nova Ordem de Serviço." /></div>
+      <figcaption><b>Figura 2.3</b> – Abertura de nova Ordem de Serviço.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/detalhes-os.png" alt="Detalhamento e histórico da OS." /></div>
+      <figcaption><b>Figura 2.4</b> – Detalhamento e histórico da OS.</figcaption>
+    </figure>
+    </div>
+  </section>
+  <section class="page">
+    <div class="gallery">
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/cco-rdo.png" alt="Validação CCO de Relatórios Diários." /></div>
+      <figcaption><b>Figura 3.3</b> – Validação CCO de Relatórios Diários.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/cco-os.png" alt="Validação CCO de Ordens de Serviço." /></div>
+      <figcaption><b>Figura 3.4</b> – Validação CCO de Ordens de Serviço.</figcaption>
+    </figure>
+    </div>
+  </section>
+  <section class="page">
+    <div class="gallery">
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/planejamento.png" alt="Planejamento de Manutenção." /></div>
+      <figcaption><b>Figura 4.4</b> – Planejamento de Manutenção.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/agenda-calendario.png" alt="Calendário operacional de atividades." /></div>
+      <figcaption><b>Figura 5.1</b> – Calendário operacional de atividades.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/importacao-xls.png" alt="Importação XLS para cronograma." /></div>
+      <figcaption><b>Figura 5.2</b> – Importação XLS para cronograma.</figcaption>
+    </figure>
+    </div>
+  </section>
+  <section class="page">
+    <div class="gallery">
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/almoxarifado.png" alt="Gestão de Almoxarifado." /></div>
+      <figcaption><b>Figura 5.4</b> – Gestão de Almoxarifado.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/administrativo.png" alt="Módulo Administrativo." /></div>
+      <figcaption><b>Figura 6.1</b> – Módulo Administrativo.</figcaption>
+    </figure>
+      
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/alertas.png" alt="Central de Alertas." /></div>
+      <figcaption><b>Figura 6.3</b> – Central de Alertas.</figcaption>
+    </figure>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Roadmap</div>
+    <h2>Próximas versões</h2>
+    <p class="lead">A plataforma está preparada para crescer com novas camadas de automação, indicadores e integração executiva.</p>
+    <div class="roadmap">
+      <div class="road"><b>Concluído</b><span>Dashboard, OS, RDO, CCO, Ativos, Chat, Mobile, UI Kit e documentação.</span></div>
+      <div class="road"><b>Em desenvolvimento</b><span>Agenda operacional avançada, calendário e simplificação de execução técnica.</span></div>
+      <div class="road"><b>Próximas versões</b><span>Indicadores analíticos, BI, automações e relatórios executivos recorrentes.</span></div>
+      <div class="road"><b>Visão futura</b><span>Sala de Situação integrada, previsibilidade operacional e inteligência de manutenção.</span></div>
+    </div>
+    
+    <figure class="diagram-block">
+      <img src="assets/diagramas/roadmap-v4.svg" alt="Roadmap corporativo do SIGEBAP." />
+      <figcaption>Roadmap corporativo do SIGEBAP.</figcaption>
+    </figure>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Apêndice</div>
+    <h2>Inventário visual capturado</h2>
+    <p class="lead">Lista das capturas novas utilizadas como base visual do documento.</p>
+    <ol class="appendix-list">
+      <li><b>login-desktop</b><br><span>Login institucional do SIGEBAP.</span></li><li><b>navegacao-sistema</b><br><span>Navegação principal do SIGEBAP.</span></li><li><b>dashboard-executivo</b><br><span>Dashboard Executivo do SIGEBAP.</span></li><li><b>dashboard-supervisor</b><br><span>Dashboard Supervisor e fila operacional.</span></li><li><b>agenda-operacional</b><br><span>Agenda Operacional para planejamento diário.</span></li><li><b>ordens-servico</b><br><span>Central de Ordens de Serviço.</span></li><li><b>nova-os</b><br><span>Abertura de nova Ordem de Serviço.</span></li><li><b>detalhes-os</b><br><span>Detalhes da OS com histórico e rastreabilidade.</span></li><li><b>rdo-desktop</b><br><span>RDO em ambiente desktop.</span></li><li><b>mobile-rdo</b><br><span>RDO em experiência mobile.</span></li><li><b>cco-rdo</b><br><span>Validação de RDO pelo CCO.</span></li><li><b>cco-os</b><br><span>Validação de OS pelo CCO.</span></li><li><b>sala-situacao</b><br><span>Sala de Situação das EBAPs.</span></li><li><b>ativos</b><br><span>Central operacional de Ativos.</span></li><li><b>mapa-operacional</b><br><span>Mapa Operacional das EBAPs.</span></li><li><b>planejamento</b><br><span>Planejamento de Manutenção.</span></li><li><b>agenda-calendario</b><br><span>Calendário de atividades programadas.</span></li><li><b>importacao-xls</b><br><span>Importação XLS para cronograma de manutenção.</span></li><li><b>compras</b><br><span>Módulo de Compras.</span></li><li><b>almoxarifado</b><br><span>Módulo de Almoxarifado.</span></li><li><b>administrativo</b><br><span>Administrativo, RH, DP e frota.</span></li><li><b>chat</b><br><span>Chat Corporativo.</span></li><li><b>alertas</b><br><span>Central de Alertas.</span></li><li><b>configuracoes</b><br><span>Configurações administrativas.</span></li><li><b>ui-kit</b><br><span>SIGEBAP UI Kit.</span></li><li><b>mobile-operador</b><br><span>Tela mobile do perfil Operador.</span></li><li><b>mobile-supervisor</b><br><span>Tela mobile do perfil Supervisor.</span></li><li><b>mobile-tecnico</b><br><span>Tela mobile do perfil Técnico.</span></li><li><b>mobile-cco</b><br><span>Tela mobile do perfil CCO.</span></li><li><b>mobile-prefeitura</b><br><span>Tela mobile do perfil Prefeitura.</span></li><li><b>mobile-fiscal-operacional</b><br><span>Tela mobile do Fiscal Operacional.</span></li>
+    </ol>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Conclusão</div>
+    <h2>Um produto corporativo para operação, gestão e decisão</h2>
+    <p class="lead">O SIGEBAP consolida a operação das EBAPs em uma plataforma única, com rastreabilidade, visão executiva, comunicação interna e base técnica preparada para evolução contínua.</p>
+    <div class="executive-grid">
+      <div class="metric"><strong>Governança</strong><span>Perfis, permissões e histórico</span></div>
+      <div class="metric"><strong>Operação</strong><span>RDO, OS, CCO e ativos</span></div>
+      <div class="metric"><strong>Gestão</strong><span>KPIs, prioridades e indicadores</span></div>
+      <div class="metric"><strong>Escala</strong><span>Base pronta para automação</span></div>
+    </div>
+    
+    <figure class="figure-block">
+      <div class="editorial-capture desktop-capture"><img src="assets/screenshots/ui-kit.png" alt="UI Kit do SIGEBAP como base de consistência visual." /></div>
+      <figcaption><b>Figura 7.1</b> – UI Kit do SIGEBAP como base de consistência visual.</figcaption>
+    </figure>
+  </section>
+</body>
+</html>

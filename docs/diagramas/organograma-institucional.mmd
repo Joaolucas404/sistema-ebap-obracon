@@ -1,0 +1,19 @@
+flowchart TD
+  Diretoria["Diretoria"]
+  Gerencia["Gerência"]
+  Supervisao["Supervisão"]
+  Automacao["Automação"]
+  Eletrica["Elétrica"]
+  Mecanica["Mecânica"]
+  Tecnicos["Técnicos"]
+  Operadores["Operadores"]
+  CCO["CCO"]
+  Prefeitura["Prefeitura"]
+  Diretoria --> Gerencia --> Supervisao
+  Supervisao --> Automacao
+  Supervisao --> Eletrica
+  Supervisao --> Mecanica
+  Automacao --> Tecnicos
+  Eletrica --> Tecnicos
+  Mecanica --> Tecnicos
+  Tecnicos --> Operadores --> CCO --> Prefeitura

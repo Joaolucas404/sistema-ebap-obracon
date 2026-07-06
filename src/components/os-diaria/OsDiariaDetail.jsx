@@ -43,8 +43,8 @@ export default function OsDiariaDetail({ detail }) {
       </section>
 
       <section className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
-        <h4 className="mb-3 text-lg font-black text-white">Historico</h4>
-        <OSTimeline historico={historico} statusAtual={os.status} />
+        <h4 className="mb-3 text-lg font-black text-white">Histórico</h4>
+        <OSTimeline historico={historico} statusAtual={os.status} os={os} />
       </section>
     </div>
   );

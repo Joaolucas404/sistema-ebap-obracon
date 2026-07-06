@@ -107,7 +107,7 @@ export default function Almoxarifado() {
       setToast({ message: itemForm.id ? 'Item atualizado com sucesso.' : 'Item cadastrado com sucesso.', tone: 'green' });
       closeModal();
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel salvar o item.');
+      setLocalError(err.message || 'Não foi possível salvar o item.');
     }
   }
 
@@ -120,7 +120,7 @@ export default function Almoxarifado() {
       setToast({ message: 'Movimentacao registrada com sucesso.', tone: 'green' });
       closeModal();
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel registrar a movimentacao.');
+      setLocalError(err.message || 'Não foi possível registrar a movimentação.');
     }
   }
 
@@ -132,7 +132,7 @@ export default function Almoxarifado() {
       await desativarItem(item.id, user);
       setToast({ message: 'Item desativado.', tone: 'orange' });
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel desativar o item.');
+      setLocalError(err.message || 'Não foi possível desativar o item.');
     }
   }
 
@@ -144,7 +144,7 @@ export default function Almoxarifado() {
     <div className="grid gap-4">
       <PageHeader
         title="Almoxarifado"
-        description="Controle de materiais, estoque minimo, entradas, saidas e historico de movimentacoes conectado ao Supabase."
+        description="Controle de materiais, estoque mínimo, entradas, saídas e histórico de movimentações conectado ao Supabase."
         leading={
           <span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100">
             <Warehouse size={24} />

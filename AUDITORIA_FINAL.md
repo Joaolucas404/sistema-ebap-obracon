@@ -361,7 +361,7 @@ Tambem ha pontos importantes de performance, governanca de dados, lint bloqueado
    - Compras
    - Financeiro
    - Contratos
-   - Medicoes
+   - Medições
    - SST
    - APR
    - EPI

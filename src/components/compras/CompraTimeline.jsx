@@ -50,7 +50,7 @@ export default function CompraTimeline({ compra, historico = [] }) {
                     <td className="py-2 text-slate-300">{item.quantidade}</td>
                     <td className="py-2 text-slate-300">{item.unidade}</td>
                     <td className="py-2 text-slate-300">{formatCurrency(item.valor_unitario)}</td>
-                    <td className="py-2 text-slate-300">{item.recebido ? 'Sim' : 'Nao'}</td>
+                    <td className="py-2 text-slate-300">{item.recebido ? 'Sim' : 'Não'}</td>
                   </tr>
                 ))}
               </tbody>

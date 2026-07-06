@@ -1,56 +1,39 @@
 import {
   Activity,
-  Archive,
-  BarChart3,
   BellRing,
   Boxes,
   Building2,
-  ClipboardCheck,
-  ClipboardList,
+  CalendarDays,
   FileCog,
   FileText,
-  HardHat,
-  HelpCircle,
   LayoutDashboard,
   MapPin,
   MessageCircle,
   PackageCheck,
-  Settings,
   ShieldCheck,
   ShoppingCart,
-  UserCog,
-  Users,
-  WalletCards,
   Wrench
 } from 'lucide-react';
 
-export const MENU_GROUPS = ['OPERAÇÃO', 'INFRAESTRUTURA', 'GESTÃO', 'COMUNICAÇÃO', 'ADMINISTRAÇÃO'];
+export const MENU_GROUPS = ['OPERAÇÃO', 'INFRAESTRUTURA', 'PLANEJAMENTO', 'GESTÃO', 'COMUNICAÇÃO'];
 
 export const MENU_ITEMS = [
-  { key: 'dashboard', group: 'OPERAÇÃO', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visão geral das EBAPs' },
-  { key: 'dashboardOS', group: 'OPERAÇÃO', label: 'Dashboard de OS', path: '/dashboard-os', icon: BarChart3, description: 'Indicadores de ordens de serviço' },
-  { key: 'os', group: 'OPERAÇÃO', label: 'Ordens de Serviço', path: '/os', icon: Wrench, description: 'Abertura e acompanhamento' },
-  { key: 'supervisao', group: 'OPERAÇÃO', label: 'Supervisão', path: '/supervisao', icon: UserCog, description: 'Fila dos supervisores por área' },
-  { key: 'salaSituacaoEbaps', group: 'OPERAÇÃO', label: 'Sala de Situação', path: '/sala-situacao-ebaps', icon: FileCog, description: 'Fila e validações das EBAPs' },
-  { key: 'relatorio', group: 'OPERAÇÃO', label: 'RDO', path: '/relatorio', icon: FileText, description: 'Relatório Diário Operacional' },
-  { key: 'ccoRelatoriosDiarios', group: 'OPERAÇÃO', label: 'CCO - RDO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Validação dos RDOs' },
-  { key: 'ccoAnaliseOS', group: 'OPERAÇÃO', label: 'CCO - OS', path: '/cco-analise-os', icon: ClipboardCheck, description: 'Análise de OS da operação' },
-  { key: 'osDiaria', group: 'OPERAÇÃO', label: 'OS Diárias', path: '/os-diaria', icon: ClipboardList, description: 'Execução técnica' },
-  { key: 'ativos', group: 'INFRAESTRUTURA', label: 'Ativos', path: '/ativos', icon: PackageCheck, description: 'Equipamentos e histórico operacional' },
-  { key: 'localizacaoEbaps', group: 'INFRAESTRUTURA', label: 'Localização EBAPs', path: '/localizacao-ebaps', icon: MapPin, description: 'Mapa e links das unidades' },
-  { key: 'manutencao', group: 'INFRAESTRUTURA', label: 'Planos de Manutenção', path: '/manutencao', icon: Activity, description: 'Calendário, planos e programação' },
-  { key: 'compras', group: 'GESTÃO', label: 'Compras', path: '/compras', icon: ShoppingCart, description: 'Solicitações e aprovações' },
-  { key: 'almoxarifado', group: 'GESTÃO', label: 'Almoxarifado', path: '/almoxarifado', icon: Boxes, description: 'Estoque e rastreabilidade' },
-  { key: 'administrativo', group: 'GESTÃO', label: 'Contratos', path: '/administrativo', icon: Building2, description: 'Contratos, DP/RH e documentos' },
-  { key: 'financeiroContrato', group: 'GESTÃO', label: 'Financeiro', path: '/financeiro-contrato', icon: WalletCards, description: 'Medições e custos' },
-  { key: 'comunicacao', group: 'COMUNICAÇÃO', label: 'Chat Corporativo', path: '/comunicacao', icon: MessageCircle, description: 'Conversas, grupos e arquivos' },
-  { key: 'notificacoes', group: 'COMUNICAÇÃO', label: 'Alertas', path: '/notificacoes', icon: BellRing, description: 'Central de notificações' },
-  { key: 'sst', group: 'ADMINISTRAÇÃO', label: 'SST', path: '/sst', icon: HardHat, description: 'Segurança do trabalho' },
-  { key: 'orientacoes', group: 'ADMINISTRAÇÃO', label: 'Orientações', path: '/orientacoes', icon: HelpCircle, description: 'Procedimentos operacionais' },
-  { key: 'usuarios', group: 'ADMINISTRAÇÃO', label: 'Usuários', path: '/usuarios', icon: Users, description: 'Administração de acessos' },
-  { key: 'modelosRelatorio', group: 'ADMINISTRAÇÃO', label: 'Modelos de Relatório', path: '/administrativo/modelos-relatorio', icon: FileCog, description: 'Padrões dos relatórios técnicos' },
-  { key: 'config', group: 'ADMINISTRAÇÃO', label: 'Configurações', path: '/config', icon: Settings, description: 'Preferências e cadastros' },
-  { key: 'relatorios', group: 'ADMINISTRAÇÃO', label: 'Relatórios', path: '/relatorios', icon: FileText, description: 'Consolidados e filtros' },
-  { key: 'arquivoRelatorios', group: 'ADMINISTRAÇÃO', label: 'Arquivo PDF', path: '/arquivo-relatorios', icon: Archive, description: 'Rastreabilidade de documentos' },
-  { key: 'acervoOperador', group: 'ADMINISTRAÇÃO', label: 'Acervo Operador', path: '/acervo-operador', icon: Boxes, description: 'Histórico de RDO e OS' }
+  { key: 'dashboard', group: 'OPERAÇÃO', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Visão executiva' },
+  { key: 'agendaOperacional', group: 'OPERAÇÃO', label: 'Agenda Operacional', path: '/agenda-operacional', icon: CalendarDays, description: 'Trabalho diário' },
+  { key: 'os', group: 'OPERAÇÃO', label: 'Ordens de Serviço', path: '/os', icon: Wrench, description: 'Central de OS' },
+  { key: 'relatorio', group: 'OPERAÇÃO', label: 'RDO', path: '/relatorio', icon: FileText, description: 'Relatório diário' },
+  { key: 'salaSituacaoEbaps', group: 'OPERAÇÃO', label: 'Sala de Situação', path: '/sala-situacao-ebaps', icon: FileCog, description: 'Visão operacional' },
+  { key: 'ccoRelatoriosDiarios', group: 'OPERAÇÃO', label: 'CCO', path: '/cco-relatorios-diarios', icon: ShieldCheck, description: 'Fila de validação' },
+
+  { key: 'ativos', group: 'INFRAESTRUTURA', label: 'Ativos', path: '/ativos', icon: PackageCheck, description: 'Equipamentos' },
+  { key: 'localizacaoEbaps', group: 'INFRAESTRUTURA', label: 'Mapa Operacional', path: '/localizacao-ebaps', icon: MapPin, description: 'Localização das EBAPs' },
+
+  { key: 'manutencao', group: 'PLANEJAMENTO', label: 'Planejamento de Manutenção', path: '/manutencao', icon: Activity, description: 'Planos e importações' },
+
+  { key: 'compras', group: 'GESTÃO', label: 'Compras', path: '/compras', icon: ShoppingCart, description: 'Solicitações' },
+  { key: 'almoxarifado', group: 'GESTÃO', label: 'Almoxarifado', path: '/almoxarifado', icon: Boxes, description: 'Estoque' },
+  { key: 'administrativo', group: 'GESTÃO', label: 'Administrativo', path: '/administrativo', icon: Building2, description: 'RH, DP e frota' },
+
+  { key: 'comunicacao', group: 'COMUNICAÇÃO', label: 'Chat Corporativo', path: '/comunicacao', icon: MessageCircle, description: 'Conversas e grupos' },
+  { key: 'notificacoes', group: 'COMUNICAÇÃO', label: 'Alertas', path: '/notificacoes', icon: BellRing, description: 'Notificações' }
 ];

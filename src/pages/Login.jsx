@@ -3,7 +3,7 @@ import { CheckCircle2, Lock, LogIn, User, UserPlus } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loginWithUsuarioSenha } from '../services/authService.js';
 import { EQUIPES_TECNICAS, solicitarAcessoTecnico } from '../services/usuariosService.js';
-import { START_ROUTE_BY_ROLE } from '../config/permissions.js';
+import { START_ROUTE_BY_ROLE, normalizePerfil } from '../config/permissions.js';
 import { BRAND } from '../config/brand.js';
 import Modal from '../components/ui/Modal.jsx';
 import { useAuthStore } from '../store/authStore.js';
@@ -53,7 +53,7 @@ export default function Login() {
     try {
       const user = await loginWithUsuarioSenha(form.usuario, form.senha);
       setSession(user);
-      const destination = location.state?.from?.pathname || START_ROUTE_BY_ROLE[user.perfil] || '/dashboard';
+      const destination = location.state?.from?.pathname || START_ROUTE_BY_ROLE[normalizePerfil(user.perfil)] || '/dashboard';
       navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || 'Não foi possível entrar.');

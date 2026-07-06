@@ -5,7 +5,7 @@ export const COMPRA_STATUS = [
   { value: 'enviada', label: 'Enviada' },
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'em_cotacao', label: 'Em cotacao' },
-  { value: 'aguardando_aprovacao', label: 'Aguardando aprovacao' },
+  { value: 'aguardando_aprovacao', label: 'Aguardando aprovação' },
   { value: 'aprovada', label: 'Aprovada' },
   { value: 'reprovada', label: 'Reprovada' },
   { value: 'comprada', label: 'Comprada' },
@@ -17,13 +17,13 @@ export const COMPRA_PRIORIDADES = [
   { value: 'normal', label: 'Normal' },
   { value: 'alta', label: 'Alta' },
   { value: 'urgente', label: 'Urgente' },
-  { value: 'critica', label: 'Critica' }
+  { value: 'critica', label: 'Crítica' }
 ];
 
 export const COMPRA_AREAS = [
-  { value: 'mecanica', label: 'Mecanica' },
-  { value: 'eletrica', label: 'Eletrica' },
-  { value: 'automacao', label: 'Automacao' },
+  { value: 'mecanica', label: 'Mecânica' },
+  { value: 'eletrica', label: 'Elétrica' },
+  { value: 'automacao', label: 'Automação' },
   { value: 'operacao', label: 'Operacao' },
   { value: 'sst', label: 'SST' },
   { value: 'administrativo', label: 'Administrativo' },

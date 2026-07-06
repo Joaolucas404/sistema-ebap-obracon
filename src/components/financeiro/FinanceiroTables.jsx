@@ -45,15 +45,15 @@ export function ContratosTable({ contratos, loading, canManage, canApprove, onEd
   );
 }
 
-export function MedicoesTable({ medicoes, loading, canManage, canApprove, onEdit, onApprove, onDelete, onUpload, onView }) {
+export function MediçõesTable({ medições, loading, canManage, canApprove, onEdit, onApprove, onDelete, onUpload, onView }) {
   if (loading) return <Empty label="Carregando medições..." />;
-  if (!medicoes.length) return <Empty label="Nenhuma medição encontrada." />;
+  if (!medições.length) return <Empty label="Nenhuma medição encontrada." />;
 
   return (
     <section className="glass-card overflow-hidden rounded-3xl">
       <TableHeader columns={['Medição', 'Contrato', 'Competência', 'Valores', 'Fiscalização', 'Ações']} />
       <div className="divide-y divide-cyan-300/10">
-        {medicoes.map((medicao) => (
+        {medições.map((medicao) => (
           <div key={medicao.id} className="grid gap-3 p-4 text-sm text-slate-200 lg:grid-cols-[1fr_1fr_0.8fr_1fr_1fr_1.4fr] lg:items-center">
             <Cell title="Medição">
               <strong className="block text-base text-white">{medicao.numero || medicao.codigo}</strong>

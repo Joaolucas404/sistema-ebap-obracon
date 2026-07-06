@@ -136,7 +136,7 @@ export default function Compras() {
       closeModal();
       setActiveTab('solicitacoes');
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel salvar a solicitacao.');
+      setLocalError(err.message || 'Não foi possível salvar a solicitação.');
     }
   }
 
@@ -148,7 +148,7 @@ export default function Compras() {
       closeModal();
       setActiveTab('fornecedores');
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel salvar o fornecedor.');
+      setLocalError(err.message || 'Não foi possível salvar o fornecedor.');
     }
   }
 
@@ -164,7 +164,7 @@ export default function Compras() {
       setToast({ message: 'Compra movimentada.', tone: 'green' });
       closeModal();
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel movimentar a compra.');
+      setLocalError(err.message || 'Não foi possível movimentar a compra.');
     }
   }
 
@@ -179,7 +179,7 @@ export default function Compras() {
       setToast({ message: actionForm.aprovado ? 'Compra aprovada.' : 'Compra reprovada.', tone: actionForm.aprovado ? 'green' : 'orange' });
       closeModal();
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel registrar aprovacao.');
+      setLocalError(err.message || 'Não foi possível registrar aprovação.');
     }
   }
 
@@ -190,7 +190,7 @@ export default function Compras() {
       setToast({ message: 'Compra recebida e estoque atualizado.', tone: 'green' });
       closeModal();
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel receber a compra.');
+      setLocalError(err.message || 'Não foi possível receber a compra.');
     }
   }
 
@@ -202,7 +202,7 @@ export default function Compras() {
     <div className="grid gap-4">
       <PageHeader
         title="Compras"
-        description="Solicitacoes, cotacoes, aprovacao gerencial, recebimento e integracao com almoxarifado."
+        description="Solicitações, cotações, aprovação gerencial, recebimento e integração com almoxarifado."
         leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><ShoppingCart size={24} /></span>}
         actions={
           <>
@@ -296,7 +296,7 @@ export default function Compras() {
             <label className="field-label">
               Fornecedor
               <select className="form-control" value={actionForm.fornecedor_id} onChange={(event) => setActionForm((current) => ({ ...current, fornecedor_id: event.target.value }))}>
-                <option value="">Nao informado</option>
+                <option value="">Não informado</option>
                 {fornecedores.map((fornecedor) => <option key={fornecedor.id} value={fornecedor.id}>{fornecedor.nome}</option>)}
               </select>
             </label>

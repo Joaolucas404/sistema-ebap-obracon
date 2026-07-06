@@ -29,8 +29,8 @@ values
   ('cco_os.validate','Validar OS no CCO','cco','/cco-analise-os','approve'),
   ('os.read','Ler OS','os','/os','read'),
   ('os.write','Criar/Editar OS','os','/os','write'),
-  ('supervisao.read','Supervisão por Área','os','/supervisao','read'),
-  ('supervisao.manage','Gerenciar Supervisão por Área','os','/supervisao','write'),
+  ('supervisão.read','Supervisão por Área','os','/supervisão','read'),
+  ('supervisão.manage','Gerenciar Supervisão por Área','os','/supervisão','write'),
   ('manutencao.manage','Gerenciar Manutenção','manutencao','/manutencao','write'),
   ('sala_situacao.manage','Sala de Situação','manutencao','/sala-situacao-ebaps','write'),
   ('os_diaria.execute','Executar OS Diária','os','/os-diaria','write'),
@@ -63,8 +63,8 @@ join public.permissoes pe on (
   or (p.codigo = 'gerencia' and pe.codigo <> 'orientacoes.delete')
   or (p.codigo = 'operador' and pe.codigo in ('dashboard.read','relatorio.read','relatorio.write','cco_ro.read','acervo.read','orientacoes.read'))
   or (p.codigo = 'tecnico' and pe.codigo in ('dashboard.read','os.read','os.write','os_diaria.execute','arquivo.read','orientacoes.read'))
-  or (p.codigo = 'cco' and pe.codigo in ('dashboard.read','cco_ro.read','cco_ro.validate','cco_os.validate','supervisao.read','orientacoes.read'))
-  or (p.codigo = 'supervisor' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','supervisao.read','supervisao.manage','relatorio.read','cco_ro.read','manutencao.manage','sala_situacao.manage','os_diaria.execute','arquivo.read','orientacoes.read','orientacoes.create'))
+  or (p.codigo = 'cco' and pe.codigo in ('dashboard.read','cco_ro.read','cco_ro.validate','cco_os.validate','supervisão.read','orientacoes.read'))
+  or (p.codigo = 'supervisor' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','supervisão.read','supervisão.manage','relatorio.read','cco_ro.read','manutencao.manage','sala_situacao.manage','os_diaria.execute','arquivo.read','orientacoes.read','orientacoes.create'))
   or (p.codigo = 'prefeitura' and pe.codigo in ('dashboard.read','dashboard_os.read','os.read','os.write','localizacao_ebaps.read','relatorios.read','financeiro.manage','orientacoes.read'))
   or (p.codigo = 'sst' and pe.codigo in ('dashboard.read','sst.manage','orientacoes.read'))
   or (p.codigo = 'administrativo' and pe.codigo in ('dashboard.read','administrativo.manage','orientacoes.read'))

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Clock3, Image, LogOut, UserRound } from 'lucide-react';
+import { Camera, Clock3, Image, LogOut, Settings, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MENU_ITEMS } from '../../config/menu.js';
 import NotificationBadgeButton from '../notificacoes/NotificationBadgeButton.jsx';
@@ -45,7 +45,7 @@ export default function Topbar() {
   const logout = useAuthStore((state) => state.logout);
   const updateUser = useAuthStore((state) => state.updateUser);
   const {
-    ultimas,
+    últimas,
     unreadCount,
     saving,
     carregarResumo,
@@ -158,69 +158,62 @@ export default function Topbar() {
 
   return (
     <header className="topbar-shell">
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-blue-300/25 bg-blue-500/15 text-xs font-black text-blue-100 shadow-lg shadow-black/20 ring-1 ring-white/10">
-          EB
-        </div>
-        <div className="min-w-0">
-          <strong className="block truncate text-xs font-black uppercase tracking-[0.08em] 2xl:text-sm">Sistema Operacional EBAPs</strong>
-          <span className="mt-0.5 block truncate text-xs font-semibold text-[#D6E4FF]/80">Consórcio União Obracon</span>
-        </div>
+      <div className="topbar-title">
+        <h1>{current?.label || 'EBAPS'}</h1>
+        <p>{current?.description || 'Controle operacional integrado'}</p>
       </div>
 
-      <div className="grid gap-2 md:grid-cols-[auto_minmax(240px,1fr)] md:items-center">
-        <div className="min-w-0 md:text-center">
-        <h1 className="text-lg font-black tracking-wide text-white md:text-xl">{current?.label || 'EBAPS'}</h1>
-        <p className="hidden text-xs font-medium text-slate-300 2xl:block">{current?.description || 'Controle operacional integrado'}</p>
-        </div>
+      <div className="topbar-search">
         <GlobalSearch />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 md:justify-end">
+      <div className="topbar-actions">
         <span className="status-chip">
           <Clock3 size={15} />
           <span className="hidden sm:inline">{clock.date}</span>
           {clock.time}
         </span>
+
+        <NotificationBadgeButton count={unreadCount} onClick={() => setNotificationsOpen(true)} />
+
+        <button type="button" className="topbar-icon-button" onClick={() => navigate('/config')} title="Configurações">
+          <Settings size={18} />
+        </button>
+
         <div className="relative">
-          <button
-            type="button"
-            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-200/25 bg-white/10 px-2.5 py-1 text-left text-xs font-black text-[#D6E4FF] transition hover:border-blue-200/45 hover:bg-white/15"
-            onClick={() => setProfileMenuOpen((open) => !open)}
-            title="Opções do perfil"
-          >
-            <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-blue-500/20 text-[10px] text-white ring-1 ring-blue-200/20">
+          <button type="button" className="topbar-user-button" onClick={() => setProfileMenuOpen((open) => !open)} title="Opções do perfil">
+            <span className="topbar-user-avatar">
               {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user.nome || 'Usuário'} onError={() => setPhotoUrl('')} /> : initials(user?.nome || user?.usuario)}
             </span>
-            <span className="grid min-w-0 leading-tight">
-              <strong className="max-w-[140px] truncate text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
-              <small className="truncate text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{prettyRole(user?.perfil)}</small>
+            <span className="topbar-user-text">
+              <strong>{user?.nome || user?.usuario || 'Usuário'}</strong>
+              <small>{prettyRole(user?.perfil)}</small>
             </span>
           </button>
 
           <input ref={profilePhotoInputRef} className="hidden" type="file" accept="image/*" onChange={handleProfilePhoto} />
 
           {profileMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] z-[999] w-72 overflow-hidden rounded-3xl border border-blue-200/20 bg-[#10224D] p-2 shadow-2xl shadow-black/35">
+            <div className="absolute right-0 top-[calc(100%+10px)] z-[999] w-72 overflow-hidden rounded-2xl border border-blue-200/20 bg-[#10224D] p-2 shadow-2xl shadow-black/35">
               <div className="flex items-center gap-3 border-b border-blue-200/10 p-3">
                 <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-blue-500/20 text-sm font-black text-white ring-1 ring-blue-200/20">
                   {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user.nome || 'Perfil'} /> : initials(user?.nome || user?.usuario)}
                 </span>
                 <span className="min-w-0">
-                  <strong className="block truncate text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
-                  <small className="block truncate text-xs font-bold uppercase tracking-wide text-slate-400">{prettyRole(user?.perfil)}</small>
+                  <strong className="block text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
+                  <small className="block text-xs font-bold uppercase tracking-wide text-slate-400">{prettyRole(user?.perfil)}</small>
                 </span>
               </div>
               <div className="grid gap-1 p-1">
-                <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-slate-100 hover:bg-white/10" type="button" onClick={() => { setProfileMenuOpen(false); navigate('/perfil'); }}>
+                <button className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-black text-slate-100 hover:bg-white/10" type="button" onClick={() => { setProfileMenuOpen(false); navigate('/perfil'); }}>
                   <UserRound size={18} className="text-blue-100" />
                   Meu perfil
                 </button>
-                <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-slate-100 hover:bg-white/10" type="button" onClick={() => profilePhotoInputRef.current?.click()} disabled={savingPhoto}>
+                <button className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-black text-slate-100 hover:bg-white/10" type="button" onClick={() => profilePhotoInputRef.current?.click()} disabled={savingPhoto}>
                   {photoUrl ? <Image size={18} className="text-blue-100" /> : <Camera size={18} className="text-blue-100" />}
                   {savingPhoto ? 'Enviando foto...' : photoUrl ? 'Alterar foto' : 'Adicionar foto'}
                 </button>
-                <button className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-left text-sm font-black text-red-100 hover:bg-red-500/10" type="button" onClick={handleLogout}>
+                <button className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-black text-red-100 hover:bg-red-500/10" type="button" onClick={handleLogout}>
                   <LogOut size={18} />
                   Sair
                 </button>
@@ -228,8 +221,8 @@ export default function Topbar() {
             </div>
           )}
         </div>
-        <NotificationBadgeButton count={unreadCount} onClick={() => setNotificationsOpen(true)} />
-        <button type="button" className="secondary-button min-h-10 px-3" onClick={handleLogout}>
+
+        <button type="button" className="topbar-logout-button" onClick={handleLogout}>
           <LogOut size={17} />
           Sair
         </button>
@@ -237,7 +230,7 @@ export default function Topbar() {
 
       <NotificationsPanel
         open={notificationsOpen}
-        notifications={ultimas}
+        notifications={últimas}
         unreadCount={unreadCount}
         saving={saving}
         onClose={() => setNotificationsOpen(false)}

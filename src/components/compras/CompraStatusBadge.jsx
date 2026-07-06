@@ -1,3 +1,5 @@
+import { labelStatus } from '../../utils/labels.js';
+
 const tones = {
   solicitada: 'border-cyan-300/40 bg-cyan-500/15 text-cyan-100',
   em_cotacao: 'border-yellow-300/40 bg-yellow-500/15 text-yellow-100',
@@ -12,8 +14,8 @@ const tones = {
 export function formatCompraStatus(status) {
   const labels = {
     solicitada: 'Solicitada',
-    em_cotacao: 'Em cotacao',
-    aguardando_aprovacao: 'Aguardando aprovacao',
+    em_cotacao: 'Em cotação',
+    aguardando_aprovacao: 'Aguardando aprovação',
     aprovada: 'Aprovada',
     reprovada: 'Reprovada',
     comprada: 'Comprada',
@@ -21,7 +23,7 @@ export function formatCompraStatus(status) {
     cancelada: 'Cancelada'
   };
 
-  return labels[status] || String(status || '-').replaceAll('_', ' ');
+  return labels[status] || labelStatus(status);
 }
 
 export default function CompraStatusBadge({ status }) {

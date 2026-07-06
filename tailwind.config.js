@@ -3,26 +3,29 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'Segoe UI', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+      },
       colors: {
         navy: {
-          950: '#0A1633',
-          900: '#10224D',
-          800: '#16356B',
-          700: '#1D4ED8'
+          950: 'rgb(var(--sig-color-bg) / <alpha-value>)',
+          900: 'rgb(var(--sig-color-surface) / <alpha-value>)',
+          800: 'rgb(var(--sig-color-surface-hover) / <alpha-value>)',
+          700: 'rgb(var(--sig-color-primary-dark) / <alpha-value>)'
         },
         ebap: {
-          cyan: '#FFFFFF',
-          blue: '#2563EB',
-          red: '#ef4444',
-          orange: '#f59e0b',
-          yellow: '#f59e0b',
-          indigo: '#6366F1'
+          cyan: 'rgb(var(--sig-color-text) / <alpha-value>)',
+          blue: 'rgb(var(--sig-color-primary) / <alpha-value>)',
+          red: 'rgb(var(--sig-color-critical) / <alpha-value>)',
+          orange: 'rgb(var(--sig-color-warning) / <alpha-value>)',
+          yellow: 'rgb(var(--sig-color-warning) / <alpha-value>)',
+          indigo: 'rgb(var(--sig-color-maintenance) / <alpha-value>)'
         }
       },
       boxShadow: {
-        glass: '0 22px 58px rgba(10,22,51,.34), inset 0 1px rgba(255,255,255,.08)',
-        card: '0 16px 38px rgba(10,22,51,.24), inset 0 1px rgba(255,255,255,.08)',
-        glow: '0 0 0 1px rgba(59,130,246,.18), 0 18px 45px rgba(37,99,235,.12)'
+        glass: 'var(--sig-shadow-glass)',
+        card: 'var(--sig-shadow-card)',
+        glow: 'var(--sig-shadow-glow)'
       },
       keyframes: {
         softIn: {

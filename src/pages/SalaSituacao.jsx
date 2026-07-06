@@ -90,19 +90,19 @@ export default function SalaSituacao() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard icon={ShieldAlert} label="OS criticas" value={loading ? '...' : kpis.osCriticas || 0} helper="Prioridade critica aberta" tone="red" />
+        <KpiCard icon={ShieldAlert} label="OS críticas" value={loading ? '...' : kpis.osCriticas || 0} helper="Prioridade crítica aberta" tone="red" />
         <KpiCard icon={Wrench} label="Aguard. supervisor" value={loading ? '...' : kpis.osAguardandoSupervisor || 0} helper="Fila de decisao" tone="orange" />
         <KpiCard icon={FileText} label="RDO pendentes" value={loading ? '...' : kpis.roPendentes || 0} helper="Validacao CCO" tone="cyan" />
         <KpiCard icon={AlertTriangle} label="Alertas SST" value={loading ? '...' : kpis.alertasSst || 0} helper="APR/APT em atencao" tone="orange" />
-        <KpiCard icon={PackageX} label="Estoque critico" value={loading ? '...' : kpis.estoqueCritico || 0} helper="Abaixo do minimo" tone="red" />
+        <KpiCard icon={PackageX} label="Estoque crítico" value={loading ? '...' : kpis.estoqueCritico || 0} helper="Abaixo do mínimo" tone="red" />
         <KpiCard icon={ShoppingCart} label="Compras aprovacao" value={loading ? '...' : kpis.comprasAprovacao || 0} helper="Aguardando decisao" tone="orange" />
-        <KpiCard icon={MapPin} label="EBAPs criticas" value={loading ? '...' : kpis.ebapsCriticas || 0} helper="Status operacional critico" tone="red" />
-        <KpiCard icon={ClipboardCheck} label="Movimentacoes" value={loading ? '...' : filas.ultimasMovimentacoes?.length || 0} helper="Eventos recentes" tone="green" />
+        <KpiCard icon={MapPin} label="EBAPs críticas" value={loading ? '...' : kpis.ebapsCriticas || 0} helper="Status operacional crítico" tone="red" />
+        <KpiCard icon={ClipboardCheck} label="Movimentacoes" value={loading ? '...' : filas.últimasMovimentacoes?.length || 0} helper="Eventos recentes" tone="green" />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="grid gap-4">
-          <QueuePanel title="OS criticas" items={filas.osCriticas} empty="Nenhuma OS critica aberta." path={(item) => `/os/${item.id}`} />
+          <QueuePanel title="OS críticas" items={filas.osCriticas} empty="Nenhuma OS crítica aberta." path={(item) => `/os/${item.id}`} />
           <QueuePanel title="OS aguardando Supervisor" items={filas.osAguardandoSupervisor} empty="Nenhuma OS aguardando supervisor." path={(item) => `/os/${item.id}`} />
           <QueuePanel title="RDO pendentes de validacao" items={filas.roPendentes} empty="Nenhum RDO pendente." path={() => '/cco-relatorios-diarios'} />
         </div>
@@ -125,19 +125,19 @@ export default function SalaSituacao() {
 
       <section className="grid gap-4 xl:grid-cols-3">
         <SimplePanel title="Alertas SST" items={filas.alertasSst} empty="Nenhum alerta SST." path={() => '/sst'} />
-        <SimplePanel title="Estoque critico" items={filas.estoqueCritico} empty="Nenhum item critico." path={() => '/almoxarifado'} render={(item) => `${item.nome} - ${item.estoque_atual || 0}/${item.estoque_minimo || 0} ${item.unidade || ''}`} />
+        <SimplePanel title="Estoque crítico" items={filas.estoqueCritico} empty="Nenhum item crítico." path={() => '/almoxarifado'} render={(item) => `${item.nome} - ${item.estoque_atual || 0}/${item.estoque_minimo || 0} ${item.unidade || ''}`} />
         <SimplePanel title="Compras aguardando aprovacao" items={filas.comprasAprovacao} empty="Nenhuma compra aguardando aprovacao." path={() => '/compras'} />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <SimplePanel title="EBAPs criticas" items={filas.ebapsCriticas} empty="Nenhuma EBAP critica." path={() => '/localizacao-ebaps'} render={(item) => `${item.nome} - ${item.os_abertas || 0} OS abertas`} />
+        <SimplePanel title="EBAPs críticas" items={filas.ebapsCriticas} empty="Nenhuma EBAP crítica." path={() => '/localizacao-ebaps'} render={(item) => `${item.nome} - ${item.os_abertas || 0} OS abertas`} />
         <section className="premium-card p-5">
           <div className="mb-4 flex items-center gap-2">
             <ClipboardCheck className="text-cyan-100" size={20} />
             <h3 className="text-lg font-black text-white">Ultimas movimentacoes</h3>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {(filas.ultimasMovimentacoes || []).length ? filas.ultimasMovimentacoes.map((item, index) => (
+            {(filas.últimasMovimentacoes || []).length ? filas.últimasMovimentacoes.map((item, index) => (
               <button key={`${item.tipo}-${item.titulo}-${index}`} type="button" className="rounded-2xl border border-cyan-300/15 bg-navy-950/55 p-4 text-left shadow-inner transition hover:-translate-y-0.5 hover:border-cyan-200/60" onClick={() => navigate(item.path)}>
                 <span className="text-xs font-black uppercase text-cyan-100">{item.tipo}</span>
                 <strong className="mt-1 block text-white">{item.titulo}</strong>

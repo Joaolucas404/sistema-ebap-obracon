@@ -160,7 +160,7 @@ values
   ('grupo','Automação A','Grupo operacional da equipe Automação A','automacao_a','automacao','{"seed":true}'::jsonb),
   ('grupo','Automação E','Grupo operacional da equipe Automação E','automacao_e','automacao','{"seed":true}'::jsonb),
   ('grupo','CCO','Comunicação entre CCO e operação',null,'cco','{"seed":true}'::jsonb),
-  ('grupo','Supervisão','Comunicação dos supervisores',null,'supervisao','{"seed":true}'::jsonb),
+  ('grupo','Supervisão','Comunicação dos supervisores',null,'supervisão','{"seed":true}'::jsonb),
   ('grupo','Gerência','Comunicação gerencial',null,'gerencia','{"seed":true}'::jsonb),
   ('grupo','Diretoria','Comunicação da diretoria',null,'diretoria','{"seed":true}'::jsonb)
 on conflict (tipo, nome) do nothing;

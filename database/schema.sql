@@ -50,7 +50,7 @@ create table public.usuarios (
   perfil_id uuid references public.perfis(id) on delete set null,
   setor text,
   area_operacional text,
-  area_supervisao text,
+  area_supervisão text,
   cargo text,
   telefone text,
   ativo boolean not null default true,
@@ -501,7 +501,7 @@ create table public.financeiro_lancamentos (
   id uuid primary key default gen_random_uuid(),
   contrato_id uuid references public.contratos(id) on delete set null,
   compra_id uuid references public.compras(id) on delete set null,
-  tipo text not null check (tipo in ('custo','pagamento','previsao','glosa','reembolso')),
+  tipo text not null check (tipo in ('custo','pagamento','previsão','glosa','reembolso')),
   descricao text not null,
   valor numeric(14,2) not null,
   vencimento date,
@@ -512,7 +512,7 @@ create table public.financeiro_lancamentos (
   updated_at timestamptz not null default now()
 );
 
-create table public.medicoes (
+create table public.medições (
   id uuid primary key default gen_random_uuid(),
   contrato_id uuid references public.contratos(id) on delete set null,
   codigo text not null unique,
@@ -699,7 +699,7 @@ begin
     'relatorios_diarios','relatorio_diario_secoes','relatorio_diario_itens',
     'validacoes_cco','ordens_servico','comentarios','arquivo_pdf',
     'almoxarifado_locais','almoxarifado_itens','compras','compra_aprovacoes',
-    'fornecedores','contratos','financeiro_lancamentos','medicoes',
+    'fornecedores','contratos','financeiro_lancamentos','medições',
     'sst_colaboradores','sst_apr','sst_epi','sst_epi_entregas',
     'sst_treinamentos','sst_treinamento_colaboradores','sst_inspecoes',
     'sst_ocorrencias','sst_planos_acao'

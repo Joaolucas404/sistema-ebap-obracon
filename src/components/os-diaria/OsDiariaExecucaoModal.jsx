@@ -39,7 +39,7 @@ export default function OsDiariaExecucaoModal({
 
       {(action === 'iniciar' || requiresFull) && (
         <section className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
-          <h4 className="mb-3 font-black text-white">Checklist de execucao</h4>
+          <h4 className="mb-3 font-black text-white">Checklist de execução</h4>
           <div className="grid gap-2">
             {checklist.map((item) => (
               <label key={item} className="flex items-center gap-3 rounded-xl bg-navy-950/45 p-3 text-sm font-bold text-slate-200">

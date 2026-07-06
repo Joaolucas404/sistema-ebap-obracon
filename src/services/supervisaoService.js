@@ -287,7 +287,7 @@ async function notificarSupervisao(os, user, meta) {
     modulo: 'os',
     prioridade: os.prioridade === 'critica' ? 'critica' : os.prioridade === 'alta' ? 'alta' : 'normal',
     acao_url: `/os/${os.id}`,
-    metadata: { origem: 'supervisao', acao: meta.acao, usuario_id: user?.id || null }
+    metadata: { origem: 'supervisão', acao: meta.acao, usuario_id: user?.id || null }
   };
 
   const { error } = await supabase.from('notificacoes').insert(row);

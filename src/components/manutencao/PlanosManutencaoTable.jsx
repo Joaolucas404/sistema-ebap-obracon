@@ -25,12 +25,12 @@ export default function PlanosManutencaoTable({ planos, canManage, onEdit, onExe
               </div>
               <h3 className="mt-3 text-lg font-black text-white">{plano.nome}</h3>
               <p className="text-sm text-slate-300">{plano.ebap?.nome || 'Sem EBAP'} | {plano.equipamento?.nome || 'Sem equipamento'} | {plano.area}</p>
-              <p className="mt-2 text-sm text-slate-400">Frequencia: {plano.frequencia} | Proxima: {formatDate(plano.proxima_execucao)} | Responsavel: {plano.responsavel?.nome || '-'}</p>
+              <p className="mt-2 text-sm text-slate-400">Frequência: {plano.frequencia} | Próxima: {formatDate(plano.proxima_execucao)} | Responsável: {plano.responsavel?.nome || '-'}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button className="secondary-button min-h-10" type="button" onClick={() => onExecute(plano)} disabled={!canManage}>
                 <PlayCircle size={16} />
-                Execucao
+                Execução
               </button>
               <button className="secondary-button min-h-10" type="button" onClick={() => onEdit(plano)} disabled={!canManage}>
                 <Edit3 size={16} />

@@ -135,7 +135,7 @@ Dependencias:
 - SST.
 - Manutencao.
 
-## Fase 17 - Prefeitura Fiscalizacao, Contratos e Medicoes
+## Fase 17 - Prefeitura Fiscalizacao, Contratos e Medições
 
 Prioridade: ALTA
 
@@ -147,7 +147,7 @@ Escopo:
 
 - Tela `/financeiro-contrato` real.
 - Contratos.
-- Medicoes.
+- Medições.
 - Fiscalizacao prefeitura.
 - Aceite, glosa, anexos e PDFs.
 - Dashboard contratual.
@@ -276,7 +276,7 @@ Motivo:
 
 Escopo:
 
-- PDF para APR/APT, EPI, compras, contratos, medicoes, manutencao.
+- PDF para APR/APT, EPI, compras, contratos, medições, manutencao.
 - Hash criptografico.
 - Assinatura digital.
 - Versionamento.

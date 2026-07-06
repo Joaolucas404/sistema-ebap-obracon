@@ -1,3 +1,5 @@
+import { labelStatus } from '../../utils/labels.js';
+
 const TONES = {
   preventiva: 'border-green-300/35 bg-green-500/15 text-green-100',
   preditiva: 'border-cyan-300/35 bg-cyan-500/15 text-cyan-100',
@@ -14,7 +16,7 @@ const TONES = {
 export default function ManutencaoStatusBadge({ value }) {
   return (
     <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${TONES[value] || TONES.pendente}`}>
-      {String(value || '-').replaceAll('_', ' ')}
+      {labelStatus(value)}
     </span>
   );
 }

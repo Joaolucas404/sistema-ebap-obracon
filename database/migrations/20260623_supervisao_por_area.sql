@@ -1,5 +1,5 @@
 alter table public.usuarios
-  add column if not exists area_supervisao text;
+  add column if not exists area_supervisão text;
 
 alter table public.ordens_servico
   add column if not exists supervisor_responsavel uuid references public.usuarios(id) on delete set null,
@@ -55,11 +55,11 @@ on conflict (area) do update set
   updated_at = now();
 
 update public.usuarios u
-   set area_supervisao = sa.area,
+   set area_supervisão = sa.area,
        updated_at = now()
   from public.supervisor_areas sa
  where u.perfil = 'supervisor'
-   and u.area_supervisao is null
+   and u.area_supervisão is null
    and lower(coalesce(u.setor, '')) in (sa.area, lower(sa.nome));
 
 update public.ordens_servico os
@@ -92,13 +92,13 @@ update public.ordens_servico os
    and os.area = sa.area
    and (os.supervisor_responsavel is null or os.historico_roteamento = '[]'::jsonb);
 
-create index if not exists idx_usuarios_area_supervisao
-  on public.usuarios(area_supervisao) where deleted_at is null;
+create index if not exists idx_usuarios_area_supervisão
+  on public.usuarios(area_supervisão) where deleted_at is null;
 
 create index if not exists idx_supervisor_areas_area
   on public.supervisor_areas(area) where deleted_at is null;
 
-create index if not exists idx_ordens_servico_supervisao_area_status
+create index if not exists idx_ordens_servico_supervisão_area_status
   on public.ordens_servico(area, status_supervisor, status) where deleted_at is null;
 
 create index if not exists idx_ordens_servico_supervisor_responsavel

@@ -1,0 +1,42 @@
+
+  <svg xmlns="http://www.w3.org/2000/svg" width="1320" height="420" viewBox="0 0 1320 420">
+    <defs>
+      <linearGradient id="bg" x1="0" x2="1"><stop offset="0" stop-color="#061836"/><stop offset="1" stop-color="#123c85"/></linearGradient>
+      <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="#1d4ed8" stroke-width="1" opacity=".22"/></pattern>
+    </defs>
+    <rect width="1320" height="420" rx="34" fill="url(#bg)"/>
+    <rect width="1320" height="420" rx="34" fill="url(#grid)"/>
+    <text x="60" y="84" font-family="Inter, Arial" font-size="34" font-weight="850" fill="#fff">Arquitetura lógica do SIGEBAP</text>
+    <text x="60" y="122" font-family="Inter, Arial" font-size="18" fill="#bfdbfe">Fluxo operacional consolidado para governança, rastreabilidade e tomada de decisão.</text>
+    
+      <rect x="60" y="170" width="219" height="124" rx="24" fill="#10245a" stroke="#3b82f6" opacity=".95"/>
+      <circle cx="98" cy="212" r="18" fill="#2563eb"/>
+      <text x="98" y="219" text-anchor="middle" font-family="Inter, Arial" font-size="17" font-weight="800" fill="#fff">1</text>
+      <text x="130" y="218" font-family="Inter, Arial" font-size="22" font-weight="800" fill="#fff">React</text>
+      <text x="88" y="258" font-family="Inter, Arial" font-size="17" fill="#bfdbfe">Interface web e mobile</text>
+      <path d="M 286 232 L 297 232" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path d="M 287 220 L 299 232 L 287 244" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="305" y="170" width="219" height="124" rx="24" fill="#10245a" stroke="#3b82f6" opacity=".95"/>
+      <circle cx="343" cy="212" r="18" fill="#2563eb"/>
+      <text x="343" y="219" text-anchor="middle" font-family="Inter, Arial" font-size="17" font-weight="800" fill="#fff">2</text>
+      <text x="375" y="218" font-family="Inter, Arial" font-size="22" font-weight="800" fill="#fff">Supabase</text>
+      <text x="333" y="258" font-family="Inter, Arial" font-size="17" fill="#bfdbfe">Dados, autenticação e storage</text>
+      <path d="M 531 232 L 542 232" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path d="M 532 220 L 544 232 L 532 244" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="550" y="170" width="219" height="124" rx="24" fill="#10245a" stroke="#3b82f6" opacity=".95"/>
+      <circle cx="588" cy="212" r="18" fill="#2563eb"/>
+      <text x="588" y="219" text-anchor="middle" font-family="Inter, Arial" font-size="17" font-weight="800" fill="#fff">3</text>
+      <text x="620" y="218" font-family="Inter, Arial" font-size="22" font-weight="800" fill="#fff">Realtime</text>
+      <text x="578" y="258" font-family="Inter, Arial" font-size="17" fill="#bfdbfe">Chat, presença e atualizações</text>
+      <path d="M 776 232 L 787 232" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path d="M 777 220 L 789 232 L 777 244" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="795" y="170" width="219" height="124" rx="24" fill="#10245a" stroke="#3b82f6" opacity=".95"/>
+      <circle cx="833" cy="212" r="18" fill="#2563eb"/>
+      <text x="833" y="219" text-anchor="middle" font-family="Inter, Arial" font-size="17" font-weight="800" fill="#fff">4</text>
+      <text x="865" y="218" font-family="Inter, Arial" font-size="22" font-weight="800" fill="#fff">PDF</text>
+      <text x="823" y="258" font-family="Inter, Arial" font-size="17" fill="#bfdbfe">Relatórios e documentos</text>
+      <path d="M 1021 232 L 1032 232" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path d="M 1022 220 L 1034 232 L 1022 244" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="1040" y="170" width="219" height="124" rx="24" fill="#10245a" stroke="#3b82f6" opacity=".95"/>
+      <circle cx="1078" cy="212" r="18" fill="#2563eb"/>
+      <text x="1078" y="219" text-anchor="middle" font-family="Inter, Arial" font-size="17" font-weight="800" fill="#fff">5</text>
+      <text x="1110" y="218" font-family="Inter, Arial" font-size="22" font-weight="800" fill="#fff">Vercel</text>
+      <text x="1068" y="258" font-family="Inter, Arial" font-size="17" fill="#bfdbfe">Publicação e operação</text>
+      
+  </svg>

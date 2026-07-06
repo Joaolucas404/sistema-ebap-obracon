@@ -1,0 +1,233 @@
+[
+  {
+    "name": "login-desktop",
+    "route": "/login",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\login-desktop.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "login-mobile",
+    "route": "/login",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\login-mobile.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "navegacao-sistema",
+    "route": "/dashboard",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\navegacao-sistema.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "dashboard-executivo",
+    "route": "/dashboard",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\dashboard-executivo.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "agenda-operacional",
+    "route": "/agenda-operacional",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\agenda-operacional.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "ordens-servico",
+    "route": "/os",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\ordens-servico.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "dashboard-supervisor",
+    "route": "/supervisao",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\dashboard-supervisor.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "sala-situacao",
+    "route": "/sala-situacao-ebaps",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\sala-situacao.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "rdo-desktop",
+    "route": "/relatorio",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\rdo-desktop.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "cco-rdo",
+    "route": "/cco-relatorios-diarios",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\cco-rdo.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "cco-os",
+    "route": "/cco-analise-os",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\cco-os.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "ativos",
+    "route": "/ativos",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\ativos.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "mapa-operacional",
+    "route": "/localizacao-ebaps",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mapa-operacional.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "planejamento",
+    "route": "/manutencao",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\planejamento.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "compras",
+    "route": "/compras",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\compras.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "almoxarifado",
+    "route": "/almoxarifado",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\almoxarifado.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "administrativo",
+    "route": "/administrativo",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\administrativo.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "chat",
+    "route": "/comunicacao",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\chat.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "alertas",
+    "route": "/notificacoes",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\alertas.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "configuracoes",
+    "route": "/config",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\configuracoes.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "ui-kit",
+    "route": "/config/ui-kit",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\ui-kit.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "nova-os",
+    "route": "/os",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\nova-os.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "detalhes-os",
+    "route": "/os/b774c39f-403b-4349-ac47-4cf906049827",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\detalhes-os.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "agenda-calendario",
+    "route": "/manutencao",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\agenda-calendario.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "importacao-xls",
+    "route": "/manutencao",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\importacao-xls.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "chat-grupos",
+    "route": "/comunicacao",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\chat-grupos.png",
+    "mode": "desktop",
+    "editorial": true
+  },
+  {
+    "name": "mobile-rdo",
+    "route": "/relatorio",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-rdo.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "mobile-operador",
+    "route": "/relatorio",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-operador.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "mobile-supervisor",
+    "route": "/agenda-operacional",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-supervisor.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "mobile-tecnico",
+    "route": "/os",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-tecnico.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "mobile-cco",
+    "route": "/cco-relatorios-diarios",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-cco.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "mobile-prefeitura",
+    "route": "/dashboard",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-prefeitura.png",
+    "mode": "mobile",
+    "editorial": true
+  },
+  {
+    "name": "mobile-fiscal-operacional",
+    "route": "/dashboard",
+    "file": "C:\\Users\\obrac\\OneDrive\\Documentos\\sistema-ebap-obracon\\docs\\assets\\screenshots\\mobile-fiscal-operacional.png",
+    "mode": "mobile",
+    "editorial": true
+  }
+]

@@ -2,16 +2,19 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout.jsx';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
+import { normalizePerfil } from '../config/permissions.js';
 import { useAuthStore } from '../store/authStore.js';
 import PlaceholderPage from '../pages/PlaceholderPage.jsx';
 
 const Almoxarifado = lazy(() => import('../pages/Almoxarifado.jsx'));
 const Administrativo = lazy(() => import('../pages/Administrativo.jsx'));
+const AgendaOperacional = lazy(() => import('../pages/AgendaOperacional.jsx'));
 const ArquivoRelatorios = lazy(() => import('../pages/ArquivoRelatorios.jsx'));
 const Ativos = lazy(() => import('../pages/Ativos.jsx'));
 const CcoAnaliseOS = lazy(() => import('../pages/CcoAnaliseOS.jsx'));
 const CcoRelatoriosDiarios = lazy(() => import('../pages/CcoRelatoriosDiarios.jsx'));
 const Config = lazy(() => import('../pages/Config.jsx'));
+const UiKit = lazy(() => import('../pages/UiKit.jsx'));
 const Comunicacao = lazy(() => import('../pages/Comunicacao.jsx'));
 const Compras = lazy(() => import('../pages/Compras.jsx'));
 const Dashboard = lazy(() => import('../pages/Dashboard.jsx'));
@@ -129,7 +132,17 @@ const placeholders = [
 
 function RootRedirect() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
+  const user = useAuthStore((state) => state.user);
+  return <Navigate to={isAuthenticated ? startRouteByPerfil(user?.perfil) : '/login'} replace />;
+}
+
+function startRouteByPerfil(perfil = '') {
+  const role = normalizePerfil(perfil);
+  if (role === 'operador') return '/relatorio';
+  if (role === 'supervisor') return '/agenda-operacional';
+  if (role === 'cco') return '/cco-relatorios-diarios';
+  if (role === 'tecnico') return '/os';
+  return '/dashboard';
 }
 
 export default function AppRoutes() {
@@ -171,16 +184,16 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      <Route element={<ProtectedRoute permission="dashboardOS" />}>
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard-os" element={<OrdensServico />} />
-        </Route>
-      </Route>
-
       <Route element={<ProtectedRoute permission="os" />}>
         <Route element={<AppLayout />}>
           <Route path="/os" element={<OrdensServico />} />
           <Route path="/os/:id" element={<DetalheOS />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="agendaOperacional" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/agenda-operacional" element={<AgendaOperacional />} />
         </Route>
       </Route>
 
@@ -291,6 +304,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="config" />}>
         <Route element={<AppLayout />}>
           <Route path="/config" element={<Config />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="uiKit" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/config/ui-kit" element={<UiKit />} />
         </Route>
       </Route>
 

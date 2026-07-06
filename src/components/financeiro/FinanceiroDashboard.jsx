@@ -13,7 +13,7 @@ export default function FinanceiroDashboard({ dashboard }) {
     <div className="grid gap-4">
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard icon={WalletCards} label="Contratos ativos" value={data.contratosAtivos || 0} helper={`${data.contratosVencendo || 0} vencendo em 60 dias`} tone="cyan" />
-        <KpiCard icon={ClipboardCheck} label="Medições pendentes" value={data.medicoesPendentes || 0} helper={`${data.medicoesPrefeitura || 0} em fiscalização`} tone="orange" />
+        <KpiCard icon={ClipboardCheck} label="Medições pendentes" value={data.mediçõesPendentes || 0} helper={`${data.mediçõesPrefeitura || 0} em fiscalização`} tone="orange" />
         <KpiCard icon={ReceiptText} label="Lançamentos pendentes" value={data.lancamentosPendentes || 0} helper={`${data.lancamentosAtrasados || 0} atrasado(s)`} tone="red" />
         <KpiCard icon={BadgeDollarSign} label="Saldo contratual" value={money(data.saldoContratual)} helper="Contratado menos executado" tone="green" />
       </section>
@@ -49,7 +49,7 @@ export default function FinanceiroDashboard({ dashboard }) {
             </div>
           </div>
           <div className="grid gap-3">
-            <AlertLine icon={FileText} label="Medições aguardando análise" value={data.medicoesPendentes || 0} />
+            <AlertLine icon={FileText} label="Medições aguardando análise" value={data.mediçõesPendentes || 0} />
             <AlertLine icon={Banknote} label="Lançamentos vencidos ou atrasados" value={data.lancamentosAtrasados || 0} />
             <AlertLine icon={WalletCards} label="Contratos próximos do fim" value={data.contratosVencendo || 0} />
           </div>

@@ -78,7 +78,7 @@ export default function AlmoxMovementForm({ form, itens, saving, onChange, onSub
       {itemSelecionado && (
         <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4 text-sm text-slate-200">
           Saldo atual: <strong className="text-white">{Number(itemSelecionado.estoque_atual || 0)} {itemSelecionado.unidade}</strong>
-          {' '}| Estoque minimo: <strong className="text-white">{Number(itemSelecionado.estoque_minimo || 0)} {itemSelecionado.unidade}</strong>
+          {' '}| Estoque mínimo: <strong className="text-white">{Number(itemSelecionado.estoque_minimo || 0)} {itemSelecionado.unidade}</strong>
         </div>
       )}
 

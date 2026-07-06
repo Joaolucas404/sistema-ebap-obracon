@@ -49,11 +49,11 @@ export default function SupervisaoActionModal({ action, os, contexto, saving, on
       footer={
         <div className="flex justify-end gap-2">
           <button className="secondary-button" type="button" onClick={onClose}>Cancelar</button>
-          <button className="primary-button" type="submit" form="supervisao-action-form" disabled={saving}>{saving ? 'Salvando...' : 'Confirmar'}</button>
+          <button className="primary-button" type="submit" form="supervisão-action-form" disabled={saving}>{saving ? 'Salvando...' : 'Confirmar'}</button>
         </div>
       }
     >
-      <form id="supervisao-action-form" className="grid gap-4" onSubmit={handleSubmit}>
+      <form id="supervisão-action-form" className="grid gap-4" onSubmit={handleSubmit}>
         <div className="rounded-2xl border border-cyan-300/15 bg-navy-950/50 p-4">
           <strong className="text-white">{os.titulo}</strong>
           <p className="mt-1 text-sm text-slate-300">{os.ebap?.nome || '-'} • {areaLabel(os.area)} • {os.payload?.equipamento_falha || 'Equipamento não informado'}</p>

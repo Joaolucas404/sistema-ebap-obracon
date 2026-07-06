@@ -23,7 +23,7 @@ Falta:
 
 Prioridade: MEDIA
 
-### Prefeitura Fiscalizacao/Contrato/Medicoes
+### Prefeitura Fiscalizacao/Contrato/Medições
 
 Rotas atuais:
 
@@ -33,7 +33,7 @@ Rotas atuais:
 Falta:
 
 - Contratos em tela real.
-- Medicoes.
+- Medições.
 - Fiscalizacao.
 - Aceite/rejeicao/glosa.
 - Anexos de contrato e medicao.

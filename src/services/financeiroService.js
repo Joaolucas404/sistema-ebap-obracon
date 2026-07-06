@@ -38,15 +38,15 @@ export const LANCAMENTO_STATUS = [
 export const LANCAMENTO_TIPOS = [
   { value: 'custo', label: 'Custo' },
   { value: 'pagamento', label: 'Pagamento' },
-  { value: 'previsao', label: 'Previsao' },
+  { value: 'previsão', label: 'Previsão' },
   { value: 'glosa', label: 'Glosa' },
   { value: 'reembolso', label: 'Reembolso' }
 ];
 
 export const AREAS_FINANCEIRAS = [
-  { value: 'mecanica', label: 'Mecanica' },
-  { value: 'eletrica', label: 'Eletrica' },
-  { value: 'automacao', label: 'Automacao' },
+  { value: 'mecanica', label: 'Mecânica' },
+  { value: 'eletrica', label: 'Elétrica' },
+  { value: 'automacao', label: 'Automação' },
   { value: 'operacao', label: 'Operacao' },
   { value: 'sst', label: 'SST' },
   { value: 'almoxarifado', label: 'Almoxarifado' },
@@ -159,10 +159,10 @@ export async function listarContratos(filters = {}) {
   return data || [];
 }
 
-export async function listarMedicoes(filters = {}) {
+export async function listarMedições(filters = {}) {
   let query = supabase
     .from('medicoes')
-    .select('*, contrato:contratos(id,numero,objeto,status), ebap:ebaps(id,codigo,nome), responsavel:usuarios!medicoes_responsavel_id_fkey(id,nome,usuario,perfil)')
+    .select('*, contrato:contratos(id,numero,objeto,status), ebap:ebaps(id,codigo,nome), responsavel:usuarios!medições_responsavel_id_fkey(id,nome,usuario,perfil)')
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
@@ -179,7 +179,7 @@ export async function listarMedicoes(filters = {}) {
 export async function listarLancamentos(filters = {}) {
   let query = supabase
     .from('financeiro_lancamentos')
-    .select('*, contrato:contratos(id,numero,objeto), medicao:medicoes(id,codigo,numero,status), fornecedor:fornecedores(id,nome,documento), ebap:ebaps(id,codigo,nome)')
+    .select('*, contrato:contratos(id,numero,objeto), medicao:medições(id,codigo,numero,status), fornecedor:fornecedores(id,nome,documento), ebap:ebaps(id,codigo,nome)')
     .is('deleted_at', null)
     .order('vencimento', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
@@ -218,25 +218,25 @@ export async function listarHistoricoFinanceiro(limit = 120) {
 }
 
 export async function obterDashboardFinanceiro() {
-  const [contratosResult, medicoesResult, lancamentosResult] = await Promise.all([
+  const [contratosResult, mediçõesResult, lancamentosResult] = await Promise.all([
     supabase.from('contratos').select('id,status,valor_total,valor_executado,data_fim,deleted_at').is('deleted_at', null),
     supabase.from('medicoes').select('id,status,prefeitura_status,valor_medido,valor_aprovado,valor_glosa,competencia_mes,competencia_ano,deleted_at').is('deleted_at', null),
     supabase.from('financeiro_lancamentos').select('id,tipo,status,valor,vencimento,pago_em,deleted_at').is('deleted_at', null)
   ]);
 
   if (contratosResult.error) throw contratosResult.error;
-  if (medicoesResult.error) throw medicoesResult.error;
+  if (mediçõesResult.error) throw mediçõesResult.error;
   if (lancamentosResult.error) throw lancamentosResult.error;
 
   const contratos = contratosResult.data || [];
-  const medicoes = medicoesResult.data || [];
+  const medições = mediçõesResult.data || [];
   const lancamentos = lancamentosResult.data || [];
   const today = new Date().toISOString().slice(0, 10);
 
   const valorContratado = contratos.reduce((sum, row) => sum + normalizeNumber(row.valor_total), 0);
   const valorExecutado = contratos.reduce((sum, row) => sum + normalizeNumber(row.valor_executado), 0);
-  const valorMedido = medicoes.reduce((sum, row) => sum + normalizeNumber(row.valor_medido), 0);
-  const valorAprovado = medicoes.reduce((sum, row) => sum + normalizeNumber(row.valor_aprovado), 0);
+  const valorMedido = medições.reduce((sum, row) => sum + normalizeNumber(row.valor_medido), 0);
+  const valorAprovado = medições.reduce((sum, row) => sum + normalizeNumber(row.valor_aprovado), 0);
   const valorPendente = lancamentos
     .filter((row) => ['pendente', 'aprovado', 'atrasado'].includes(row.status))
     .reduce((sum, row) => sum + normalizeNumber(row.valor), 0);
@@ -244,8 +244,8 @@ export async function obterDashboardFinanceiro() {
   return {
     contratosAtivos: contratos.filter((row) => row.status === 'ativo').length,
     contratosVencendo: contratos.filter((row) => row.data_fim && row.data_fim >= today && daysUntil(row.data_fim) <= 60).length,
-    medicoesPendentes: medicoes.filter((row) => ['enviada', 'em_analise'].includes(row.status)).length,
-    medicoesPrefeitura: medicoes.filter((row) => ['enviada', 'em_fiscalizacao', 'ajuste_solicitado'].includes(row.prefeitura_status)).length,
+    mediçõesPendentes: medições.filter((row) => ['enviada', 'em_analise'].includes(row.status)).length,
+    mediçõesPrefeitura: medições.filter((row) => ['enviada', 'em_fiscalizacao', 'ajuste_solicitado'].includes(row.prefeitura_status)).length,
     lancamentosPendentes: lancamentos.filter((row) => ['pendente', 'atrasado'].includes(row.status)).length,
     lancamentosAtrasados: lancamentos.filter((row) => row.status === 'atrasado' || (row.status === 'pendente' && row.vencimento && row.vencimento < today)).length,
     valorContratado,
@@ -346,7 +346,7 @@ export async function salvarMedicao(payload, user) {
     descricao: payload.id ? 'Medicao atualizada.' : 'Medicao cadastrada.',
     metadata: { codigo: data.codigo, competencia: `${data.competencia_mes}/${data.competencia_ano}` }
   }, user);
-  await registrarAuditoria({ tabela: 'medicoes', registro_id: data.id, acao: payload.id ? 'UPDATE' : 'INSERT', dados_novos: data }, user);
+  await registrarAuditoria({ tabela: 'medições', registro_id: data.id, acao: payload.id ? 'UPDATE' : 'INSERT', dados_novos: data }, user);
   return data;
 }
 
@@ -397,7 +397,7 @@ export async function salvarLancamento(payload, user) {
 
 export async function aprovarFinanceiro(payload, user) {
   requireApproval(user);
-  const table = payload.entidade_tipo === 'contrato' ? 'contratos' : payload.entidade_tipo === 'medicao' ? 'medicoes' : 'financeiro_lancamentos';
+  const table = payload.entidade_tipo === 'contrato' ? 'contratos' : payload.entidade_tipo === 'medicao' ? 'medições' : 'financeiro_lancamentos';
   const nextStatus = payload.status_novo;
   if (!payload.id || !nextStatus) throw new Error('Informe o registro e o novo status.');
   if (['cancelado', 'glosada', 'reprovada'].includes(nextStatus) && (!payload.motivo?.trim() || payload.motivo.trim().length < 5)) {
@@ -428,7 +428,7 @@ export async function aprovarFinanceiro(payload, user) {
     acao: 'APPROVAL',
     status_anterior: current.status,
     status_novo: nextStatus,
-    descricao: payload.motivo || 'Aprovacao registrada.',
+    descricao: payload.motivo || 'Aprovação registrada.',
     metadata: { prefeitura_status: payload.prefeitura_status || null }
   }, user);
   await registrarAuditoria({ tabela: table, registro_id: payload.id, acao: 'APPROVAL', dados_anteriores: current, dados_novos: data }, user);
@@ -437,7 +437,7 @@ export async function aprovarFinanceiro(payload, user) {
 
 export async function excluirFinanceiro(payload, user) {
   requireManage(user);
-  const table = payload.entidade_tipo === 'contrato' ? 'contratos' : payload.entidade_tipo === 'medicao' ? 'medicoes' : 'financeiro_lancamentos';
+  const table = payload.entidade_tipo === 'contrato' ? 'contratos' : payload.entidade_tipo === 'medicao' ? 'medições' : 'financeiro_lancamentos';
   const { data, error } = await supabase
     .from(table)
     .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })

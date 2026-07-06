@@ -15,13 +15,13 @@ function normalizeChecklistResposta(value) {
     return {
       status: value.status || '',
       observacao: value.observacao || '',
-      medicoes: value.medicoes || {}
+      medições: value.medições || {}
     };
   }
 
-  if (value === true) return { status: 'conforme', observacao: '', medicoes: {} };
-  if (typeof value === 'string') return { status: value, observacao: '', medicoes: {} };
-  return { status: '', observacao: '', medicoes: {} };
+  if (value === true) return { status: 'conforme', observacao: '', medições: {} };
+  if (typeof value === 'string') return { status: value, observacao: '', medições: {} };
+  return { status: '', observacao: '', medições: {} };
 }
 
 function resumoChecklist(modelo, respostas = {}) {

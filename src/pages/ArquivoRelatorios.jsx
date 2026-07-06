@@ -90,7 +90,7 @@ export default function ArquivoRelatorios() {
       setSearchParams({ doc: found.document_number, tipo: found.entity_type, id: found.entity_id });
     } catch (err) {
       setDocumento(null);
-      setError(err.message || 'Nao foi possivel consultar o documento.');
+      setError(err.message || 'Não foi possível consultar o documento.');
     } finally {
       setLoading(false);
     }

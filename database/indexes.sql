@@ -31,7 +31,7 @@ create index if not exists idx_compras_solicitante on public.compras(solicitante
 create index if not exists idx_compra_aprovacoes_compra on public.compra_aprovacoes(compra_id);
 create index if not exists idx_contratos_status on public.contratos(status) where deleted_at is null;
 create index if not exists idx_financeiro_status_vencimento on public.financeiro_lancamentos(status, vencimento);
-create index if not exists idx_medicoes_competencia on public.medicoes(competencia_ano, competencia_mes) where deleted_at is null;
+create index if not exists idx_medições_competencia on public.medições(competencia_ano, competencia_mes) where deleted_at is null;
 create index if not exists idx_sst_colaboradores_status on public.sst_colaboradores(status) where deleted_at is null;
 create index if not exists idx_sst_apr_status on public.sst_apr(status) where deleted_at is null;
 create index if not exists idx_sst_epi_ca on public.sst_epi(ca);

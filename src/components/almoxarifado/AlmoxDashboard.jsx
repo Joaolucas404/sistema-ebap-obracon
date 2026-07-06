@@ -9,11 +9,11 @@ export default function AlmoxDashboard({ dashboard }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       <KpiCard icon={Boxes} label="Itens cadastrados" value={dashboard?.totalItens ?? 0} helper="Itens ativos e inativos" />
-      <KpiCard icon={PackageCheck} label="Itens ativos" value={dashboard?.ativos ?? 0} helper="Disponiveis para movimentacao" tone="green" />
-      <KpiCard icon={TriangleAlert} label="Estoque minimo" value={dashboard?.estoqueBaixo ?? 0} helper="Itens abaixo ou no minimo" tone="orange" />
-      <KpiCard icon={Warehouse} label="Zerados" value={dashboard?.zerados ?? 0} helper="Sem saldo disponivel" tone="red" />
+      <KpiCard icon={PackageCheck} label="Itens ativos" value={dashboard?.ativos ?? 0} helper="Disponíveis para movimentação" tone="green" />
+      <KpiCard icon={TriangleAlert} label="Estoque mínimo" value={dashboard?.estoqueBaixo ?? 0} helper="Itens abaixo ou no mínimo" tone="orange" />
+      <KpiCard icon={Warehouse} label="Zerados" value={dashboard?.zerados ?? 0} helper="Sem saldo disponível" tone="red" />
       <KpiCard icon={Layers3} label="Categorias" value={dashboard?.categorias ?? 0} helper="Agrupamentos ativos" />
-      <KpiCard icon={PackageCheck} label="Movimentos hoje" value={dashboard?.movimentosHoje ?? 0} helper="Entradas, saidas e ajustes" tone="cyan" />
+      <KpiCard icon={PackageCheck} label="Movimentos hoje" value={dashboard?.movimentosHoje ?? 0} helper="Entradas, saídas e ajustes" tone="cyan" />
       <div className="glass-card rounded-2xl p-4 md:col-span-2">
         <div className="flex items-center gap-3">
           <span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100">

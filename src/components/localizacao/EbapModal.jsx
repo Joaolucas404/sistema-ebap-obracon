@@ -40,11 +40,11 @@ export default function EbapModal({ ebap, onClose }) {
         </a>
         <button className="secondary-button justify-center" type="button" onClick={() => go(`/os?ebap=${ebap.id}`)}>
           <ClipboardList size={18} />
-          Ver Ordens de Servico
+          Ver Ordens de Serviço
         </button>
         <button className="secondary-button justify-center" type="button" onClick={() => go(`/relatorio?ebap=${ebap.id}`)}>
           <FileText size={18} />
-          Ver Relatorios
+          Ver Relatórios
         </button>
         <button className="secondary-button justify-center" type="button" onClick={() => go(`/manutencao?ebap=${ebap.id}`)}>
           <Wrench size={18} />

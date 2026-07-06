@@ -57,8 +57,8 @@ export default function CcoRelatoriosDiarios() {
   const selectedReport = selected?.report;
 
   const title = useMemo(() => {
-    if (user?.perfil === 'operador') return 'Meus Relatorios Diarios';
-    return 'CCO - Relatorios Diarios';
+    if (user?.perfil === 'operador') return 'Meus Relatórios Diários';
+    return 'CCO - Relatórios Diários';
   }, [user?.perfil]);
 
   async function loadData() {
@@ -108,11 +108,11 @@ export default function CcoRelatoriosDiarios() {
     try {
       const updated = await validarRelatorioCco(validation.report, validation.action, payload, user);
       setValidation({ open: false, action: '', report: null });
-      setToast({ message: 'Validacao CCO registrada.', tone: 'green' });
+      setToast({ message: 'Validação CCO registrada.', tone: 'green' });
       await loadData();
       if (selected?.report?.id === updated.id) await openReport(updated);
     } catch (err) {
-      setError(err.message || 'Falha ao registrar validacao.');
+      setError(err.message || 'Falha ao registrar validação.');
     } finally {
       setSaving(false);
     }
@@ -126,7 +126,7 @@ export default function CcoRelatoriosDiarios() {
     <div className="grid gap-4">
       <PageHeader
         title={title}
-        description="Fila de validacao, historico e rastreabilidade dos Relatorios Diarios do Operador."
+        description="Fila de validação, histórico e rastreabilidade dos Relatórios Diários do Operador."
         actions={
           <button className="secondary-button" type="button" onClick={loadData} disabled={loading}>
             <RefreshCcw size={17} />
@@ -140,7 +140,7 @@ export default function CcoRelatoriosDiarios() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard icon={Clock3} label="Pendentes" value={dashboard.pendentes} helper="Aguardando CCO" tone="orange" />
         <KpiCard icon={CheckCircle2} label="Aprovados hoje" value={dashboard.aprovadosHoje} helper="Validados no dia" tone="green" />
-        <KpiCard icon={XCircle} label="Rejeitados hoje" value={dashboard.rejeitadosHoje} helper="Nao conformes" tone="red" />
+        <KpiCard icon={XCircle} label="Rejeitados hoje" value={dashboard.rejeitadosHoje} helper="Não conformes" tone="red" />
         <KpiCard icon={RotateCcw} label="Correcoes" value={dashboard.correcoesSolicitadas} helper="Retornados ao operador" tone="cyan" />
       </section>
 
@@ -174,7 +174,7 @@ export default function CcoRelatoriosDiarios() {
         </div>
       </div>
 
-      <Modal open={Boolean(selected)} title={selectedReport ? `${selectedReport.codigo} - ${selectedReport.ebap?.nome || 'EBAP'}` : 'Relatorio'} onClose={() => setSelected(null)}>
+      <Modal open={Boolean(selected)} title={selectedReport ? `${selectedReport.codigo} - ${selectedReport.ebap?.nome || 'EBAP'}` : 'Relatório'} onClose={() => setSelected(null)}>
         {detailLoading ? (
           <div className="p-6 text-center text-slate-300">Carregando detalhes...</div>
         ) : selectedReport ? (
@@ -304,7 +304,7 @@ function PhotoGrid({ fotos = [] }) {
               {urls[foto.id] ? (
                 <img className="h-44 w-full object-cover" src={urls[foto.id]} alt={foto.legenda || foto.nome_original || 'Foto do relatorio'} />
               ) : (
-                <div className="grid h-44 place-items-center text-sm text-slate-300">Foto indisponivel</div>
+                <div className="grid h-44 place-items-center text-sm text-slate-300">Foto indisponível</div>
               )}
               <figcaption className="p-3 text-sm text-slate-300">{foto.legenda || foto.nome_original || 'Foto do relatorio'}</figcaption>
             </figure>

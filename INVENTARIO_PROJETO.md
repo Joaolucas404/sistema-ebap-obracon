@@ -169,7 +169,7 @@ Base: workspace React + Supabase atual.
 - `fornecedores`
 - `contratos`
 - `financeiro_lancamentos`
-- `medicoes`
+- `medições`
 - `sst_colaboradores`
 - `sst_apr`
 - `sst_epi`
@@ -293,7 +293,7 @@ Contem policies para:
 - `financeiro_lancamentos`
 - `contratos`
 - `fornecedores`
-- `medicoes`
+- `medições`
 - `sst_*`
 - `notificacoes`
 - `auditoria`
@@ -377,7 +377,7 @@ Observacao:
 - OS Diarias dedicadas.
 - Manutencao preventiva/preditiva.
 - Compras e aprovacao.
-- Contratos e medicoes.
+- Contratos e medições.
 - Administrativo/RH/DP/Frota.
 - Central de alertas.
 - Central de cadastros mestres.

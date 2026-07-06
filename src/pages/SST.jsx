@@ -239,7 +239,7 @@ export default function SST() {
       setToast({ message, tone: 'green' });
       closeModal();
     } catch (err) {
-      setLocalError(err.message || 'Nao foi possivel concluir a operacao.');
+      setLocalError(err.message || 'Não foi possível concluir a operação.');
     }
   }
 
@@ -432,17 +432,17 @@ export default function SST() {
 
       <Modal open={modal === 'inspecao'} title={form.id ? 'Editar inspecao' : 'Nova inspecao'} onClose={closeModal}>
         {localError && <ErrorBox message={localError} />}
-        <InspecaoForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} apts={apts} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarInspecao, 'Inspecao salva com sucesso.'); }} onCancel={closeModal} />
+        <InspecaoForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} apts={apts} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarInspecao, 'Inspeção salva com sucesso.'); }} onCancel={closeModal} />
       </Modal>
 
       <Modal open={modal === 'ocorrencia'} title={form.id ? 'Editar ocorrencia' : 'Nova ocorrencia'} onClose={closeModal}>
         {localError && <ErrorBox message={localError} />}
-        <OcorrenciaForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} apts={apts} inspecoes={inspecoes} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarOcorrencia, 'Ocorrencia salva com sucesso.'); }} onCancel={closeModal} />
+        <OcorrenciaForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} aprs={aprs} apts={apts} inspecoes={inspecoes} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarOcorrencia, 'Ocorrência salva com sucesso.'); }} onCancel={closeModal} />
       </Modal>
 
       <Modal open={modal === 'plano'} title={form.id ? 'Editar plano de acao' : 'Novo plano de acao'} onClose={closeModal}>
         {localError && <ErrorBox message={localError} />}
-        <PlanoAcaoForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarPlanoAcao, 'Plano de acao salvo com sucesso.'); }} onCancel={closeModal} />
+        <PlanoAcaoForm form={form} funcionarios={funcionarios} ebaps={ebaps} ordensServico={ordensServico} saving={saving} onChange={updateForm} onSubmit={(event) => { event.preventDefault(); submit(salvarPlanoAcao, 'Plano de ação salvo com sucesso.'); }} onCancel={closeModal} />
       </Modal>
 
       <Toast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'cyan' })} />

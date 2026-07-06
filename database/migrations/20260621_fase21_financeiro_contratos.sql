@@ -18,7 +18,7 @@ alter table public.contratos
   add constraint contratos_fiscalizacao_status_chk
   check (fiscalizacao_status in ('pendente','em_fiscalizacao','aprovada_prefeitura','reprovada_prefeitura','ajuste_solicitado'));
 
-alter table public.medicoes
+alter table public.medições
   add column if not exists numero text,
   add column if not exists ebap_id uuid references public.ebaps(id) on delete set null,
   add column if not exists percentual_execucao numeric(6,2) not null default 0,
@@ -33,18 +33,18 @@ alter table public.medicoes
   add column if not exists fiscalizado_em timestamptz,
   add column if not exists created_by uuid references public.usuarios(id) on delete set null;
 
-alter table public.medicoes
-  drop constraint if exists medicoes_prefeitura_status_chk,
-  drop constraint if exists medicoes_percentual_execucao_chk;
+alter table public.medições
+  drop constraint if exists medições_prefeitura_status_chk,
+  drop constraint if exists medições_percentual_execucao_chk;
 
-alter table public.medicoes
-  add constraint medicoes_prefeitura_status_chk
+alter table public.medições
+  add constraint medições_prefeitura_status_chk
   check (prefeitura_status in ('nao_enviada','enviada','em_fiscalizacao','aprovada','reprovada','ajuste_solicitado')),
-  add constraint medicoes_percentual_execucao_chk
+  add constraint medições_percentual_execucao_chk
   check (percentual_execucao between 0 and 100);
 
 alter table public.financeiro_lancamentos
-  add column if not exists medicao_id uuid references public.medicoes(id) on delete set null,
+  add column if not exists medicao_id uuid references public.medições(id) on delete set null,
   add column if not exists fornecedor_id uuid references public.fornecedores(id) on delete set null,
   add column if not exists ebap_id uuid references public.ebaps(id) on delete set null,
   add column if not exists categoria text,
@@ -89,8 +89,8 @@ create table if not exists public.financeiro_historico (
 
 create index if not exists idx_contratos_ebap on public.contratos(ebap_id) where deleted_at is null;
 create index if not exists idx_contratos_fornecedor_status on public.contratos(fornecedor_id, status) where deleted_at is null;
-create index if not exists idx_medicoes_contrato_status on public.medicoes(contrato_id, status) where deleted_at is null;
-create index if not exists idx_medicoes_prefeitura_status on public.medicoes(prefeitura_status) where deleted_at is null;
+create index if not exists idx_medições_contrato_status on public.medições(contrato_id, status) where deleted_at is null;
+create index if not exists idx_medições_prefeitura_status on public.medições(prefeitura_status) where deleted_at is null;
 create index if not exists idx_financeiro_lancamentos_contrato on public.financeiro_lancamentos(contrato_id) where deleted_at is null;
 create index if not exists idx_financeiro_lancamentos_medicao on public.financeiro_lancamentos(medicao_id) where deleted_at is null;
 create index if not exists idx_financeiro_documentos_entidade on public.financeiro_documentos(entidade_tipo, entidade_id) where deleted_at is null;
@@ -113,7 +113,7 @@ do $$
 declare
   tbl text;
 begin
-  foreach tbl in array array['contratos','medicoes','financeiro_lancamentos']
+  foreach tbl in array array['contratos','medições','financeiro_lancamentos']
   loop
     execute format('drop trigger if exists set_updated_at on public.%I', tbl);
     execute format('create trigger set_updated_at before update on public.%I for each row execute function public.set_updated_at()', tbl);

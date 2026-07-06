@@ -1,13 +1,13 @@
 alter table public.contratos enable row level security;
-alter table public.medicoes enable row level security;
+alter table public.medições enable row level security;
 alter table public.financeiro_lancamentos enable row level security;
 alter table public.financeiro_documentos enable row level security;
 alter table public.financeiro_historico enable row level security;
 
 drop policy if exists "financeiro_contratos_read_fase21" on public.contratos;
 drop policy if exists "financeiro_contratos_write_fase21" on public.contratos;
-drop policy if exists "financeiro_medicoes_read_fase21" on public.medicoes;
-drop policy if exists "financeiro_medicoes_write_fase21" on public.medicoes;
+drop policy if exists "financeiro_medições_read_fase21" on public.medições;
+drop policy if exists "financeiro_medições_write_fase21" on public.medições;
 drop policy if exists "financeiro_lancamentos_read_fase21" on public.financeiro_lancamentos;
 drop policy if exists "financeiro_lancamentos_write_fase21" on public.financeiro_lancamentos;
 drop policy if exists "financeiro_documentos_read_fase21" on public.financeiro_documentos;
@@ -29,16 +29,16 @@ for all
 using (public.current_app_role() in ('financeiro','gerencia','diretoria','service_role'))
 with check (public.current_app_role() in ('financeiro','gerencia','diretoria','service_role'));
 
-create policy "financeiro_medicoes_read_fase21"
-on public.medicoes
+create policy "financeiro_medições_read_fase21"
+on public.medições
 for select
 using (
   deleted_at is null
   and public.current_app_role() in ('financeiro','gerencia','diretoria','prefeitura','service_role')
 );
 
-create policy "financeiro_medicoes_write_fase21"
-on public.medicoes
+create policy "financeiro_medições_write_fase21"
+on public.medições
 for all
 using (public.current_app_role() in ('financeiro','gerencia','diretoria','service_role'))
 with check (public.current_app_role() in ('financeiro','gerencia','diretoria','service_role'));

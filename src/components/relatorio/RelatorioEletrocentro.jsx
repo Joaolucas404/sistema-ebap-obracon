@@ -122,9 +122,9 @@ function normalizeData(data) {
   const climatizadores = itemsByType(items, 'Climatizador');
   return {
     sensores_possui: data?.sensores_possui || (sensores.length ? 'sim' : 'nao'),
-    sensores_quantidade: Number(data?.sensores_quantidade ?? sensores.length) || 0,
+      sensores_quantidade: Number(data?.sensores_quantidade ?? sensores.length) || 0,
     climatizadores_possui: data?.climatizadores_possui || (climatizadores.length ? 'sim' : 'nao'),
-    climatizadores_quantidade: Number(data?.climatizadores_quantidade ?? climatizadores.length) || 0,
+      climatizadores_quantidade: Number(data?.climatizadores_quantidade ?? climatizadores.length) || 0,
     items,
     observacao: data?.observacao || ''
   };

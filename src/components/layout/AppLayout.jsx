@@ -41,7 +41,7 @@ const MOBILE_HOME_ACTIONS = [
     key: 'os',
     title: 'Minhas OS',
     description: 'Executar checklist, evidências e conclusão.',
-    path: '/os?visao=minhas',
+    path: '/os?visão=minhas',
     icon: Wrench,
     tone: 'from-indigo-500/25 to-blue-500/5'
   },
@@ -193,7 +193,7 @@ function MobileHome({ user }) {
       {
         title: 'Minhas Solicitações',
         description: 'Acompanhar somente as solicitações abertas por você.',
-        path: '/os?visao=minhas',
+        path: '/os?visão=minhas',
         icon: FileText,
         tone: 'from-indigo-500/25 to-blue-500/5'
       }
@@ -337,15 +337,13 @@ export default function AppLayout() {
 
   return (
     <div className="app-bg">
-      <div className="content-layer desktop-content-layer">
-        <div className="desktop-shell grid h-screen w-full max-w-none gap-0 overflow-hidden lg:grid-cols-[82px_minmax(0,1fr)] xl:grid-cols-[218px_minmax(0,1fr)] 2xl:grid-cols-[232px_minmax(0,1fr)]">
+      <div className="desktop-shell grid min-h-screen w-full">
+        <Topbar />
+        <div className="desktop-body min-h-0">
           <Sidebar />
-          <div className="h-screen min-w-0 overflow-y-auto px-3 py-3 xl:px-4">
-            <Topbar />
-          <main className="min-w-0 pb-6">
+          <main className="desktop-main min-w-0">
             <Outlet />
           </main>
-          </div>
         </div>
       </div>
     </div>

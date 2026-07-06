@@ -30,8 +30,8 @@ export default function LocalizacaoEbaps() {
   return (
     <div className="grid gap-4">
       <PageHeader
-        title="Localizacao EBAPs"
-        description="Mapa operacional das EBAPs com status, OS abertas, RDO pendentes e manutencoes preventivas."
+        title="Mapa Operacional"
+        description="Visão georreferenciada das EBAPs com status, OS abertas, RDO pendentes e manutencoes preventivas."
         leading={<span className="grid size-12 place-items-center rounded-2xl bg-navy-950/60 text-cyan-100"><MapPinned size={24} /></span>}
         actions={
           <button className="secondary-button" type="button" onClick={carregar} disabled={loading}>

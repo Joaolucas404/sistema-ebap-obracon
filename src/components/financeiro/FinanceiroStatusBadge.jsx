@@ -1,3 +1,5 @@
+import { labelStatus } from '../../utils/labels.js';
+
 const tones = {
   ativo: 'border-emerald-300/30 bg-emerald-500/15 text-emerald-100',
   aprovada: 'border-emerald-300/30 bg-emerald-500/15 text-emerald-100',
@@ -22,7 +24,7 @@ const tones = {
 export default function FinanceiroStatusBadge({ status }) {
   return (
     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-black uppercase ${tones[status] || tones.rascunho}`}>
-      {String(status || '-').replaceAll('_', ' ')}
+      {labelStatus(status)}
     </span>
   );
 }

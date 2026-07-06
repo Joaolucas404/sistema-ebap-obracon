@@ -31,7 +31,7 @@ export default function AlmoxMovementHistory({ movimentacoes }) {
     <section className="glass-card rounded-3xl p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-xl font-black text-white">Historico de movimentacoes</h3>
+          <h3 className="text-xl font-black text-white">Histórico de movimentações</h3>
           <p className="text-sm text-slate-300">Ultimas entradas, saidas, ajustes e transferencias registradas.</p>
         </div>
       </div>

@@ -132,12 +132,12 @@ export function MedicaoForm({ form, contratos, ebaps, usuarios, saving, onChange
   );
 }
 
-export function LancamentoForm({ form, contratos, medicoes, fornecedores, ebaps, saving, onChange, onSubmit, onCancel }) {
+export function LancamentoForm({ form, contratos, medições, fornecedores, ebaps, saving, onChange, onSubmit, onCancel }) {
   return (
     <form className="grid gap-4" onSubmit={onSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
         <Select label="Contrato" value={form.contrato_id} items={contratos} getLabel={(item) => `${item.numero} - ${item.objeto}`} onChange={(value) => onChange('contrato_id', value)} />
-        <Select label="Medição" value={form.medicao_id} items={medicoes} getLabel={(item) => item.numero || item.codigo} onChange={(value) => onChange('medicao_id', value)} />
+        <Select label="Medição" value={form.medicao_id} items={medições} getLabel={(item) => item.numero || item.codigo} onChange={(value) => onChange('medicao_id', value)} />
         <Select label="Fornecedor" value={form.fornecedor_id} items={fornecedores} onChange={(value) => onChange('fornecedor_id', value)} />
         <Select label="EBAP" value={form.ebap_id} items={ebaps} onChange={(value) => onChange('ebap_id', value)} />
         <Select label="Tipo" value={form.tipo} options={LANCAMENTO_TIPOS} onChange={(value) => onChange('tipo', value)} />

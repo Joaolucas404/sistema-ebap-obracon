@@ -27,7 +27,7 @@ alter table public.compra_aprovacoes enable row level security;
 alter table public.fornecedores enable row level security;
 alter table public.contratos enable row level security;
 alter table public.financeiro_lancamentos enable row level security;
-alter table public.medicoes enable row level security;
+alter table public.medições enable row level security;
 alter table public.sst_colaboradores enable row level security;
 alter table public.sst_apr enable row level security;
 alter table public.sst_epi enable row level security;
@@ -143,8 +143,8 @@ create policy "financeiro_write_profiles" on public.financeiro_lancamentos for a
 create policy "contratos_read_profiles" on public.contratos for select using (deleted_at is null and public.current_app_role() in ('financeiro','administrativo','gerencia','diretoria','prefeitura','service_role'));
 create policy "contratos_write_profiles" on public.contratos for all using (public.current_app_role() in ('financeiro','administrativo','gerencia','diretoria','service_role')) with check (true);
 create policy "fornecedores_rw_profiles" on public.fornecedores for all using (public.current_app_role() in ('financeiro','administrativo','gerencia','diretoria','service_role')) with check (true);
-create policy "medicoes_read_profiles" on public.medicoes for select using (deleted_at is null and public.current_app_role() in ('financeiro','administrativo','gerencia','diretoria','prefeitura','service_role'));
-create policy "medicoes_write_profiles" on public.medicoes for all using (public.current_app_role() in ('financeiro','gerencia','diretoria','service_role')) with check (true);
+create policy "medições_read_profiles" on public.medições for select using (deleted_at is null and public.current_app_role() in ('financeiro','administrativo','gerencia','diretoria','prefeitura','service_role'));
+create policy "medições_write_profiles" on public.medições for all using (public.current_app_role() in ('financeiro','gerencia','diretoria','service_role')) with check (true);
 
 create policy "sst_read_profiles" on public.sst_colaboradores for select using (deleted_at is null and public.current_app_role() in ('sst','supervisor','gerencia','diretoria','service_role'));
 create policy "sst_write_profiles" on public.sst_colaboradores for all using (public.current_app_role() in ('sst','gerencia','diretoria','service_role')) with check (true);

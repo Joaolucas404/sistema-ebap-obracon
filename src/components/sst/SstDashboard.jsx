@@ -17,15 +17,15 @@ export default function SstDashboard({ dashboard }) {
         <KpiCard icon={PackageCheck} label="Entregas hoje" value={dashboard?.entregasHoje ?? 0} helper="EPIs entregues no dia" tone="green" />
         <KpiCard icon={GraduationCap} label="Treinamentos" value={dashboard?.treinamentos ?? 0} helper="Cadastros ativos" />
         <KpiCard icon={ClipboardCheck} label="APR abertas" value={dashboard?.aprAbertas ?? 0} helper="Rascunho, analise ou liberada" tone="orange" />
-        <KpiCard icon={AlertTriangle} label="Trein. vencidos" value={dashboard?.treinamentosVencidos ?? 0} helper="Regularizacao necessaria" tone="red" />
-        <KpiCard icon={AlertTriangle} label="Trein. vencendo" value={dashboard?.treinamentosVencendo ?? 0} helper="Proximos 30 dias" tone="orange" />
-        <KpiCard icon={ShieldAlert} label="CA vencidos" value={dashboard?.caVencidos ?? 0} helper="Certificado de aprovacao" tone="red" />
-        <KpiCard icon={ShieldAlert} label="CA vencendo" value={dashboard?.caVencendo ?? 0} helper="Proximos 30 dias" tone="orange" />
-        <KpiCard icon={ClipboardCheck} label="APT abertas" value={dashboard?.aptAbertas ?? 0} helper="Permissoes de trabalho" tone="orange" />
-        <KpiCard icon={ListChecks} label="Inspecoes abertas" value={dashboard?.inspecoesAbertas ?? 0} helper="Campo e conformidade" />
-        <KpiCard icon={Siren} label="Ocorrencias abertas" value={dashboard?.ocorrenciasAbertas ?? 0} helper="Eventos em tratamento" tone="orange" />
-        <KpiCard icon={Siren} label="Criticas" value={dashboard?.ocorrenciasCriticas ?? 0} helper="Ocorrencias criticas abertas" tone="red" />
-        <KpiCard icon={ListChecks} label="Planos abertos" value={dashboard?.planosAbertos ?? 0} helper="Acoes pendentes" />
+        <KpiCard icon={AlertTriangle} label="Trein. vencidos" value={dashboard?.treinamentosVencidos ?? 0} helper="Regularização necessária" tone="red" />
+        <KpiCard icon={AlertTriangle} label="Trein. vencendo" value={dashboard?.treinamentosVencendo ?? 0} helper="Próximos 30 dias" tone="orange" />
+        <KpiCard icon={ShieldAlert} label="CA vencidos" value={dashboard?.caVencidos ?? 0} helper="Certificado de aprovação" tone="red" />
+        <KpiCard icon={ShieldAlert} label="CA vencendo" value={dashboard?.caVencendo ?? 0} helper="Próximos 30 dias" tone="orange" />
+        <KpiCard icon={ClipboardCheck} label="APT abertas" value={dashboard?.aptAbertas ?? 0} helper="Permissões de trabalho" tone="orange" />
+        <KpiCard icon={ListChecks} label="Inspeções abertas" value={dashboard?.inspecoesAbertas ?? 0} helper="Campo e conformidade" />
+        <KpiCard icon={Siren} label="Ocorrências abertas" value={dashboard?.ocorrenciasAbertas ?? 0} helper="Eventos em tratamento" tone="orange" />
+        <KpiCard icon={Siren} label="Críticas" value={dashboard?.ocorrenciasCriticas ?? 0} helper="Ocorrências críticas abertas" tone="red" />
+        <KpiCard icon={ListChecks} label="Planos abertos" value={dashboard?.planosAbertos ?? 0} helper="Ações pendentes" />
         <KpiCard icon={AlertTriangle} label="Planos atrasados" value={dashboard?.planosAtrasados ?? 0} helper="Prazo vencido" tone="red" />
       </div>
 

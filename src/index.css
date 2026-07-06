@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,24 +7,78 @@
 :root {
   color-scheme: dark;
   font-family: Inter, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --brand-blue: #0A1633;
-  --brand-blue-secondary: #10224D;
-  --brand-blue-tertiary: #16356B;
-  --brand-accent: #2563EB;
-  --brand-white: #FFFFFF;
+  --sig-font-sans: Inter, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --sig-font-h1: 2.5rem;
+  --sig-font-h2: 1.875rem;
+  --sig-font-h3: 1.5rem;
+  --sig-font-card-title: 1.25rem;
+  --sig-font-body: 1rem;
+  --sig-font-secondary: .875rem;
+  --sig-font-caption: .8125rem;
+  --sig-font-button: .9375rem;
+  --sig-weight-regular: 400;
+  --sig-weight-menu: 500;
+  --sig-weight-title: 600;
+  --sig-weight-hero: 700;
+  --sig-color-bg: 7 26 69;
+  --sig-color-surface: 13 37 95;
+  --sig-color-surface-raised: 16 34 77;
+  --sig-color-surface-hover: 18 55 127;
+  --sig-color-primary: 45 99 255;
+  --sig-color-primary-dark: 29 78 216;
+  --sig-color-secondary: 89 165 255;
+  --sig-color-text: 255 255 255;
+  --sig-color-text-muted: 214 228 255;
+  --sig-color-border: 255 255 255;
+  --sig-color-critical: 241 91 91;
+  --sig-color-warning: 247 185 85;
+  --sig-color-success: 89 165 255;
+  --sig-color-maintenance: 99 102 241;
+  --sig-space-page: 2rem;
+  --sig-space-section: 1.5rem;
+  --sig-radius-sm: .75rem;
+  --sig-radius-md: 1rem;
+  --sig-radius-lg: 1.25rem;
+  --sig-radius-xl: 1.5rem;
+  --sig-radius-2xl: 1.75rem;
+  --sig-shadow-card: 0 16px 38px rgba(3, 12, 34, .24), inset 0 1px rgba(255, 255, 255, .08);
+  --sig-shadow-glass: 0 22px 58px rgba(3, 12, 34, .34), inset 0 1px rgba(255, 255, 255, .08);
+  --sig-shadow-glow: 0 0 0 1px rgba(89, 165, 255, .18), 0 18px 45px rgba(45, 99, 255, .12);
+  --sig-transition-fast: 160ms ease;
+  --sig-transition-base: 220ms ease;
+  --sig-z-header: 80;
+  --sig-z-popover: 120;
+  --sig-z-modal: 200;
+  --sig-sidebar-width: 256px;
+  --sig-topbar-height: 80px;
+  --brand-blue: rgb(var(--sig-color-bg));
+  --brand-blue-secondary: rgb(var(--sig-color-surface-raised));
+  --brand-blue-tertiary: rgb(var(--sig-color-surface-hover));
+  --brand-accent: rgb(var(--sig-color-primary));
+  --brand-white: rgb(var(--sig-color-text));
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
+  font-family: var(--sig-font-sans);
+  font-size: var(--sig-font-body);
+  font-weight: var(--sig-weight-regular);
   background: var(--brand-blue);
   color: var(--brand-white);
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+  overflow-y: auto;
 }
 
 button,
@@ -30,6 +86,38 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--sig-font-h1);
+  font-weight: var(--sig-weight-hero);
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: var(--sig-font-h2);
+  font-weight: var(--sig-weight-title);
+  line-height: 1.15;
+}
+
+h3 {
+  font-size: var(--sig-font-h3);
+  font-weight: var(--sig-weight-title);
+  line-height: 1.2;
+}
+
+p {
+  font-weight: var(--sig-weight-regular);
 }
 
 button {
@@ -58,7 +146,7 @@ button {
 
 @layer components {
   .app-bg {
-    @apply min-h-screen relative overflow-hidden bg-navy-950;
+    @apply relative min-h-screen overflow-x-hidden bg-navy-950;
     background:
       linear-gradient(135deg, rgba(10, 22, 51, .99) 0%, rgba(16, 34, 77, .98) 42%, rgba(22, 53, 107, .96) 100%),
       linear-gradient(90deg, rgba(37, 99, 235, .12), rgba(59, 130, 246, .08), transparent 72%);
@@ -89,8 +177,34 @@ button {
     background: rgba(16, 34, 77, .55);
   }
 
+  .desktop-shell {
+    display: block;
+    min-height: 100dvh;
+  }
+
+  .desktop-body {
+    min-height: 100dvh;
+    padding-top: var(--sig-topbar-height);
+  }
+
+  .desktop-main {
+    width: calc(100% - 82px);
+    margin-left: 82px;
+    min-height: calc(100dvh - var(--sig-topbar-height));
+    overflow: visible;
+    padding: 24px 32px 32px;
+  }
+
+  @media (min-width: 1280px) {
+    .desktop-main {
+      width: calc(100% - var(--sig-sidebar-width));
+      margin-left: var(--sig-sidebar-width);
+    }
+  }
+
   .glass-card {
-    @apply border border-white/10 bg-[#10224de6] shadow-glass backdrop-blur-xl transition duration-300;
+    @apply border border-white/10 shadow-glass backdrop-blur-xl transition duration-300;
+    background: rgb(var(--sig-color-surface-raised) / .90);
     box-shadow:
       0 22px 58px rgba(0, 0, 0, .28),
       inset 0 1px 0 rgba(255, 255, 255, .08);
@@ -105,7 +219,8 @@ button {
   }
 
   .premium-card {
-    @apply rounded-2xl border border-blue-200/15 bg-[#10224de6] shadow-card backdrop-blur-xl transition duration-300;
+    @apply rounded-2xl border border-blue-200/15 shadow-card backdrop-blur-xl transition duration-300;
+    background: rgb(var(--sig-color-surface-raised) / .90);
   }
 
   .premium-card:hover {
@@ -116,9 +231,9 @@ button {
   }
 
   .metric-card {
-    @apply relative overflow-hidden rounded-2xl border border-blue-200/15 bg-[#10224D] p-4 shadow-card transition duration-300;
+    @apply relative overflow-hidden rounded-2xl border border-blue-200/15 p-4 shadow-card transition duration-300;
     background:
-      linear-gradient(145deg, rgba(16, 34, 77, .98), rgba(22, 53, 107, .94) 72%),
+      linear-gradient(145deg, rgb(var(--sig-color-surface-raised) / .98), rgb(var(--sig-color-surface-hover) / .94) 72%),
       linear-gradient(90deg, rgba(59, 130, 246, .12), transparent);
   }
 
@@ -136,11 +251,27 @@ button {
   }
 
   .nav-shell {
-    @apply flex flex-col border-r border-blue-200/10 p-3 shadow-xl shadow-black/20;
+    @apply min-h-0 overflow-hidden border-r border-blue-200/10 px-4 pb-4 pt-4 shadow-xl shadow-black/20;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 70;
+    width: 82px;
+    height: auto;
     background:
-      linear-gradient(180deg, rgba(16, 34, 77, .94), rgba(10, 22, 51, .98)),
-      #0A1633;
+      linear-gradient(180deg, rgb(var(--sig-color-surface-raised) / .74), rgb(var(--sig-color-bg) / .98)),
+      rgb(var(--sig-color-bg));
     scrollbar-width: none;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 16px;
+  }
+
+  @media (min-width: 1280px) {
+    .nav-shell {
+      width: var(--sig-sidebar-width);
+    }
   }
 
   .nav-shell::-webkit-scrollbar {
@@ -148,7 +279,8 @@ button {
   }
 
   .sidebar-nav {
-    @apply min-h-0 flex-1 overflow-y-auto pr-1;
+    @apply min-h-0 overflow-y-auto pr-1;
+    overscroll-behavior: contain;
     scrollbar-width: none;
   }
 
@@ -157,15 +289,19 @@ button {
   }
 
   .nav-group {
-    @apply border-t border-blue-200/10 py-1.5 first:border-t-0;
+    @apply py-1.5 first:pt-0;
   }
 
   .nav-group-title {
-    @apply px-2 pb-1 pt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#D6E4FF]/65;
+    @apply px-2 pb-1.5 pt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-blue-100/60;
+  }
+
+  .nav-group-items {
+    @apply grid gap-1;
   }
 
   .nav-item {
-    @apply relative grid min-h-[38px] grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2 py-1 text-slate-100 transition duration-200;
+    @apply relative grid min-h-[34px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2 py-1 text-slate-100 transition duration-200;
   }
 
   .nav-item-active {
@@ -180,24 +316,136 @@ button {
     @apply grid h-7 w-7 place-items-center rounded-lg border border-blue-200/10 bg-navy-950/70 text-[#D6E4FF] shadow-inner;
   }
 
+  .nav-label {
+    @apply min-w-0 whitespace-normal text-[13px] font-medium leading-tight;
+  }
+
+  .nav-item-active .nav-label {
+    font-weight: var(--sig-weight-title);
+  }
+
+  .nav-badge {
+    @apply grid min-h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white ring-2 ring-navy-900;
+  }
+
+  .sidebar-brand {
+    @apply flex min-h-12 items-center gap-3 rounded-2xl px-1;
+  }
+
+  .sidebar-brand-logo {
+    @apply grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-blue-200/10 bg-white/5 shadow-inner shadow-white/5;
+  }
+
+  .sidebar-brand-logo img {
+    @apply h-full w-full object-contain p-1;
+  }
+
+  .sidebar-brand-text {
+    @apply min-w-0 leading-tight;
+  }
+
+  .sidebar-brand-text strong {
+    @apply block text-base font-semibold tracking-wide text-white;
+  }
+
+  .sidebar-brand-text small {
+    @apply block text-[11px] font-normal leading-snug text-blue-100/80;
+  }
+
   .sidebar-profile {
-    @apply mt-2 border-t border-blue-200/10 pt-2;
+    @apply border-t border-blue-200/10 pt-3;
   }
 
   .sidebar-profile-main {
     @apply flex min-h-12 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-white/5;
   }
 
+  .sidebar-profile-avatar {
+    @apply grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-blue-500/20 text-xs font-semibold text-white ring-1 ring-blue-200/20;
+  }
+
+  .sidebar-profile-text {
+    @apply min-w-0 leading-tight;
+  }
+
+  .sidebar-profile-text strong {
+    @apply block whitespace-normal text-sm font-semibold text-white;
+  }
+
+  .sidebar-profile-text small {
+    @apply block whitespace-normal text-[10px] font-normal uppercase tracking-wide text-slate-400;
+  }
+
+  .sidebar-profile-actions {
+    @apply mt-2 grid grid-cols-2 gap-2;
+  }
+
   .sidebar-profile-action {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue-200/10 bg-white/5 px-2 text-xs font-black text-slate-200 transition hover:bg-blue-500/15;
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue-200/10 bg-white/5 px-2 text-xs font-medium text-slate-200 transition hover:bg-blue-500/15;
   }
 
   .topbar-shell {
-    @apply glass-card relative z-[80] mb-3 grid w-full max-w-none overflow-visible rounded-2xl px-3 py-2 xl:grid-cols-[220px_minmax(320px,1fr)_auto] xl:items-center 2xl:grid-cols-[230px_minmax(360px,1fr)_auto];
+    @apply fixed top-0 z-[80] grid max-w-none grid-cols-[minmax(170px,260px)_minmax(300px,1fr)_auto] items-center gap-4 overflow-visible border-b border-blue-200/10 px-5 py-2 shadow-lg shadow-black/10;
+    left: 82px;
+    right: 0;
+    width: auto;
+    height: var(--sig-topbar-height);
+    background: rgb(var(--sig-color-bg) / .92);
+    backdrop-filter: blur(18px);
+  }
+
+  @media (min-width: 1280px) {
+    .topbar-shell {
+      left: var(--sig-sidebar-width);
+    }
+  }
+
+  .topbar-title h1 {
+    @apply text-xl font-semibold leading-tight text-white;
+  }
+
+  .topbar-title p {
+    @apply mt-0.5 text-xs font-normal leading-snug text-blue-100/70;
+  }
+
+  .topbar-search {
+    @apply min-w-0;
+  }
+
+  .topbar-actions {
+    @apply flex items-center justify-end gap-2;
+  }
+
+  .topbar-icon-button {
+    @apply inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-blue-200/20 bg-white/10 text-blue-100 transition hover:border-blue-200/30 hover:bg-white/15;
+  }
+
+  .topbar-user-button {
+    @apply inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-200/20 bg-white/10 px-2 py-1 text-left text-xs font-medium text-[#D6E4FF] transition hover:border-blue-200/30 hover:bg-white/15;
+  }
+
+  .topbar-user-avatar {
+    @apply grid h-7 w-7 place-items-center overflow-hidden rounded-lg bg-blue-500/20 text-[10px] text-white ring-1 ring-blue-200/20;
+  }
+
+  .topbar-user-text {
+    @apply grid min-w-0 leading-tight;
+  }
+
+  .topbar-user-text strong {
+    @apply max-w-[132px] whitespace-normal font-semibold text-white;
+  }
+
+  .topbar-user-text small {
+    @apply text-[10px] font-normal uppercase tracking-wide text-slate-400;
+  }
+
+  .topbar-logout-button {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-blue-200/20 bg-white/10 px-3 text-[15px] font-semibold text-slate-100 transition hover:border-blue-200/30 hover:bg-white/15;
   }
 
   .status-chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-blue-200/25 bg-white/10 px-2.5 py-1.5 text-xs font-black text-[#D6E4FF] shadow-sm;
+    @apply inline-flex items-center gap-2 rounded-full border border-blue-200/25 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-[#D6E4FF] shadow-sm;
   }
 
   .login-logo-frame {
@@ -211,7 +459,7 @@ button {
   }
 
   .field-label {
-    @apply grid gap-2 text-sm font-extrabold text-slate-100;
+    @apply grid gap-2 text-sm font-medium text-slate-100;
   }
 
   .form-control {
@@ -219,7 +467,7 @@ button {
   }
 
   .primary-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-blue-300/20 bg-blue-600 px-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-blue-300/20 bg-blue-600 px-3.5 text-[15px] font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
     box-shadow: 0 14px 30px rgba(29, 78, 216, .26);
   }
 
@@ -269,7 +517,7 @@ button {
   }
 
   .secondary-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3.5 font-extrabold text-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300/60 hover:bg-blue-300/10 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3.5 text-[15px] font-semibold text-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300/60 hover:bg-blue-300/10 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
   }
 
   .danger-button {
@@ -447,29 +695,54 @@ button {
 }
 
 @media (min-width: 1024px) and (max-width: 1279px) {
+  .topbar-shell {
+    grid-template-columns: minmax(130px, 190px) minmax(220px, 1fr) auto;
+    gap: .75rem;
+    padding-left: .75rem;
+    padding-right: .75rem;
+  }
+
+  .topbar-title h1 {
+    font-size: 1.125rem;
+  }
+
+  .topbar-title p,
+  .status-chip span,
+  .topbar-user-text,
+  .topbar-logout-button {
+    display: none;
+  }
+
+  .desktop-main {
+    padding: 20px;
+  }
+
   .desktop-shell .nav-shell {
-    padding: .5rem;
+    gap: .5rem;
+    padding: .65rem;
     overflow: hidden;
   }
 
-  .desktop-shell .nav-shell .login-logo-frame {
-    width: 2.75rem;
-    border-radius: 1rem;
+  .desktop-shell .sidebar-brand-text,
+  .desktop-shell .nav-label,
+  .desktop-shell .nav-badge,
+  .desktop-shell .sidebar-profile-text,
+  .desktop-shell .sidebar-profile-action span {
+    display: none;
   }
 
-  .desktop-shell .nav-shell > div:first-child strong,
-  .desktop-shell .nav-shell > div:first-child span {
-    display: none;
+  .desktop-shell .sidebar-brand {
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .desktop-shell .sidebar-brand-logo {
+    height: 2.6rem;
+    width: 2.6rem;
   }
 
   .desktop-shell .nav-group {
     padding: .25rem 0;
-  }
-
-  .desktop-shell .nav-group-title {
-    min-height: 2.35rem;
-    justify-content: center;
-    padding: .35rem;
   }
 
   .desktop-shell .nav-group-title {
@@ -490,11 +763,6 @@ button {
     width: 2.35rem;
   }
 
-  .desktop-shell .nav-item > span:nth-child(2),
-  .desktop-shell .nav-item > span:nth-child(3) {
-    display: none;
-  }
-
   .desktop-shell .sidebar-profile {
     padding-top: .5rem;
   }
@@ -504,13 +772,77 @@ button {
     padding: .35rem;
   }
 
-  .desktop-shell .sidebar-profile-main > span:nth-child(2),
-  .desktop-shell .sidebar-profile-action span {
-    display: none;
-  }
-
   .desktop-shell .sidebar-profile-action {
     min-height: 2.35rem;
     padding: .35rem;
   }
+}
+
+.font-black,
+.font-extrabold {
+  font-weight: var(--sig-weight-title) !important;
+}
+
+.font-bold {
+  font-weight: var(--sig-weight-title) !important;
+}
+
+.font-semibold {
+  font-weight: var(--sig-weight-menu) !important;
+}
+
+h1.font-black,
+h1.font-bold,
+.page-title {
+  font-weight: var(--sig-weight-hero) !important;
+}
+
+.sig-number,
+.sig-number.font-black,
+.sig-number.font-bold,
+.metric-card strong,
+.kpi-number {
+  font-weight: var(--sig-weight-hero) !important;
+}
+
+.ds-button,
+.ds-badge,
+.ds-card-title {
+  font-weight: var(--sig-weight-title) !important;
+}
+
+.text-page-title {
+  font-size: var(--sig-font-h1);
+  font-weight: var(--sig-weight-hero);
+  line-height: 1.1;
+}
+
+.text-section-title {
+  font-size: var(--sig-font-h2);
+  font-weight: var(--sig-weight-title);
+  line-height: 1.15;
+}
+
+.text-card-title {
+  font-size: var(--sig-font-card-title);
+  font-weight: var(--sig-weight-title);
+  line-height: 1.25;
+}
+
+.text-body-primary {
+  font-size: var(--sig-font-body);
+  font-weight: var(--sig-weight-regular);
+  line-height: 1.55;
+}
+
+.text-body-secondary {
+  font-size: var(--sig-font-secondary);
+  font-weight: var(--sig-weight-regular);
+  line-height: 1.5;
+}
+
+.text-caption {
+  font-size: var(--sig-font-caption);
+  font-weight: var(--sig-weight-regular);
+  line-height: 1.45;
 }

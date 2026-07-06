@@ -8,7 +8,7 @@ Base comparada: React 18 + Vite + Supabase no workspace atual.
 
 O ZIP especifica 21 modulos principais do SIGEBAP Vila Velha, alem de variantes por perfil e programas completos para SST e Almoxarifado. A implementacao atual ja possui uma base operacional real em React/Supabase para login, layout, dashboard, Relatorio Diario, validacao CCO de RO, Ordens de Servico, PDF, Almoxarifado, SST, usuarios e configuracoes.
 
-Ainda ha uma diferenca relevante entre a plataforma atual e o APP completo do ZIP. Os maiores gaps estao em Administrativo/RH/DP/Frota, Contrato/Medicoes, Compras com aprovacao, Manutencao preventiva/preditiva/corretiva, Central de Alertas, CCO de OS, OS Diarias dedicadas, Localizacao EBAPs e relatorios consolidados.
+Ainda ha uma diferenca relevante entre a plataforma atual e o APP completo do ZIP. Os maiores gaps estao em Administrativo/RH/DP/Frota, Contrato/Medições, Compras com aprovacao, Manutencao preventiva/preditiva/corretiva, Central de Alertas, CCO de OS, OS Diarias dedicadas, Localizacao EBAPs e relatorios consolidados.
 
 ## Percentual Geral
 
@@ -43,7 +43,7 @@ Este percentual mede cobertura funcional em relacao aos 21 modulos do ZIP, nao m
 | 9 | Almoxarifado/Compras/Estoque | PARCIALMENTE IMPLEMENTADO | ALTA |
 | 10 | SST Seguranca do Trabalho | IMPLEMENTADO | ALTA |
 | 11 | Administrativo/RH/DP/Frota | NAO IMPLEMENTADO | MEDIA |
-| 12 | Prefeitura Fiscalizacao/Contrato/Medicoes | NAO IMPLEMENTADO | ALTA |
+| 12 | Prefeitura Fiscalizacao/Contrato/Medições | NAO IMPLEMENTADO | ALTA |
 | 13 | Painel Executivo Premium | PARCIALMENTE IMPLEMENTADO | ALTA |
 | 14 | Manutencao Preventiva/Preditiva/Corretiva | NAO IMPLEMENTADO | ALTA |
 | 15 | Central Alertas/Notificacoes | PARCIALMENTE IMPLEMENTADO | ALTA |
@@ -207,8 +207,8 @@ Funcionalidades implementadas:
 Funcionalidades faltantes:
 
 - Portais separados por area: automacao, eletrica, limpeza, mecanica, operacao.
-- Visao dedicada gerencia operacional/manutencao/administrativa.
-- Visao dedicada diretoria executiva/operacional/tecnica.
+- Visão dedicada gerencia operacional/manutencao/administrativa.
+- Visão dedicada diretoria executiva/operacional/tecnica.
 - Programacao de equipes completa.
 
 Dependencias:
@@ -284,12 +284,12 @@ Funcionalidades faltantes:
 
 - Portal dedicado da Prefeitura.
 - Fiscalizacao contratual.
-- Medicoes e aceite formal.
+- Medições e aceite formal.
 - Relatorios/filtros de fiscalizacao.
 
 Dependencias:
 
-- Modulo Contrato/Medicoes.
+- Modulo Contrato/Medições.
 - Arquivo PDF final de aceite.
 
 Prioridade operacional: CRITICA
@@ -499,7 +499,7 @@ Dependencias:
 
 Prioridade operacional: MEDIA
 
-### 12. Prefeitura Fiscalizacao/Contrato/Medicoes
+### 12. Prefeitura Fiscalizacao/Contrato/Medições
 
 Status atual: NAO IMPLEMENTADO
 
@@ -511,7 +511,7 @@ Telas existentes:
 Tabelas utilizadas:
 
 - `contratos`
-- `medicoes`
+- `medições`
 - `financeiro_lancamentos`
 - `fornecedores`
 
@@ -522,7 +522,7 @@ Funcionalidades implementadas:
 Funcionalidades faltantes:
 
 - Fiscalizacao contratual.
-- Medicoes.
+- Medições.
 - Aceite da prefeitura.
 - Relatorios financeiros/contratuais.
 - Anexos de contrato e medicao.
@@ -530,7 +530,7 @@ Funcionalidades faltantes:
 Dependencias:
 
 - Contratos.
-- Medicoes.
+- Medições.
 - PDF/arquivo.
 - Prefeitura.
 
@@ -842,4 +842,4 @@ Prioridade operacional: ALTA
 
 ## Conclusao
 
-A plataforma possui aproximadamente metade da cobertura funcional prevista no pacote SIGEBAP completo. O nucleo operacional mais importante ja existe: Login, Dashboard, OS, RO, CCO-RO, PDF, Almoxarifado e SST. Para chegar a producao completa, as proximas fases devem priorizar seguranca/autenticacao, Compras, Manutencao, Contrato/Medicoes, Central de Alertas e Cadastros mestres.
+A plataforma possui aproximadamente metade da cobertura funcional prevista no pacote SIGEBAP completo. O nucleo operacional mais importante ja existe: Login, Dashboard, OS, RO, CCO-RO, PDF, Almoxarifado e SST. Para chegar a producao completa, as proximas fases devem priorizar seguranca/autenticacao, Compras, Manutencao, Contrato/Medições, Central de Alertas e Cadastros mestres.

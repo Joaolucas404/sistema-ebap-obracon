@@ -27,7 +27,7 @@ export default function ManutencaoHistorico({ execucoes }) {
               <article key={execucao.id} className="rounded-2xl border border-cyan-300/15 bg-navy-950/35 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <ManutencaoStatusBadge value={execucao.status} />
-                  <strong className="text-white">{execucao.plano?.codigo || 'Execucao'}</strong>
+                  <strong className="text-white">{execucao.plano?.codigo || 'Execução'}</strong>
                 </div>
                 <p className="mt-2 text-sm text-slate-300">{execucao.plano?.nome || '-'} | {execucao.ebap?.nome || '-'}</p>
                 <p className="mt-1 text-xs font-bold text-slate-400">Programada: {formatDate(execucao.data_programada)} | Executada: {formatDate(execucao.data_execucao)}</p>

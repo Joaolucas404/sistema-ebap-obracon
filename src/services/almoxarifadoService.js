@@ -40,7 +40,7 @@ function validateItemPayload(payload) {
   }
 
   if (normalizeNumber(payload.estoque_minimo) < 0) {
-    throw new Error('Estoque minimo nao pode ser negativo.');
+    throw new Error('Estoque mínimo não pode ser negativo.');
   }
 }
 

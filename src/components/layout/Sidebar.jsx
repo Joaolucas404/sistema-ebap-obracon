@@ -9,12 +9,12 @@ import { useNotificacoesStore } from '../../store/notificacoesStore.js';
 import { resolverUrlFotoPerfil } from '../../services/comunicacaoService.js';
 
 const TECH_ITEMS = [
-  { key: 'tecnico-nova-os', label: 'Nova OS', path: '/os?nova=1', icon: Plus, description: 'Abrir nova ordem' },
-  { key: 'tecnico-minhas-os', label: 'Minhas OS', path: '/os?visao=minhas', icon: ClipboardList, description: 'Criadas ou atribuídas' },
-  { key: 'tecnico-equipe', label: 'OS da Equipe', path: '/os?visao=equipe', icon: UsersRound, description: 'Somente minha equipe' },
-  { key: 'tecnico-historico', label: 'Histórico', path: '/os?visao=historico', icon: History, description: 'Meu histórico e equipe' },
-  { key: 'tecnico-relatorios', label: 'Relatórios', path: '/relatorio', icon: FileText, description: 'RDO e relatórios' },
-  { key: 'tecnico-perfil', label: 'Meu Perfil', path: '/perfil', icon: UserRound, description: 'Dados de acesso' }
+  { key: 'tecnico-nova-os', label: 'Nova OS', path: '/os?nova=1', icon: Plus },
+  { key: 'tecnico-minhas-os', label: 'Minhas OS', path: '/os?visão=minhas', icon: ClipboardList },
+  { key: 'tecnico-equipe', label: 'OS da Equipe', path: '/os?visão=equipe', icon: UsersRound },
+  { key: 'tecnico-historico', label: 'Histórico', path: '/os?visão=historico', icon: History },
+  { key: 'tecnico-relatorios', label: 'Relatórios', path: '/relatorio', icon: FileText },
+  { key: 'tecnico-perfil', label: 'Meu Perfil', path: '/perfil', icon: UserRound }
 ];
 
 function prettyRole(role) {
@@ -54,6 +54,10 @@ export default function Sidebar({ onNavigate }) {
   const [photoUrl, setPhotoUrl] = useState('');
 
   const groups = useMemo(() => {
+    if (perfil === 'tecnico') {
+      return [{ group: 'TÉCNICO', items: TECH_ITEMS }];
+    }
+
     const items = MENU_ITEMS.filter((item) => canAccess(perfil, item.key));
     return MENU_GROUPS.map((group) => ({
       group,
@@ -87,94 +91,51 @@ export default function Sidebar({ onNavigate }) {
     navigate('/login', { replace: true });
   }
 
-  if (perfil === 'tecnico') {
-    return (
-      <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
-        <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
-          <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
-            <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
-          </div>
-          <div>
-            <strong className="block text-xs font-black leading-tight text-white drop-shadow">Área Técnica</strong>
-            <span className="block text-[11px] font-extrabold text-[#D6E4FF]">{user?.equipe || user?.area_operacional || 'Equipe'}</span>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          {TECH_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.key}
-                to={item.path}
-                onClick={onNavigate}
-                className={({ isActive }) => ['nav-item', isActive ? 'nav-item-active' : 'nav-item-inactive'].join(' ')}
-              >
-                <span className="nav-icon">
-                  <Icon size={19} />
-                </span>
-                <span className="min-w-0">
-                  <strong className="block truncate text-sm font-black leading-tight">{item.label}</strong>
-                </span>
-              </NavLink>
-            );
-          })}
-        </nav>
-        <SidebarProfile user={user} photoUrl={photoUrl} onLogout={handleLogout} />
-      </aside>
-    );
-  }
-
   return (
-    <aside className="nav-shell lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
-      <div className="grid justify-items-center gap-1.5 px-2 pb-4 pt-1 text-center">
-        <div className="login-logo-frame w-16 max-w-full transition duration-300 hover:scale-[1.02] 2xl:w-20">
-          <img className="h-auto w-full" src={BRAND.loginLogo} alt={BRAND.consortiumName} />
-        </div>
-        <div>
-          <strong className="block text-xs font-black leading-tight text-white drop-shadow">{BRAND.systemName}</strong>
-          <span className="block text-[11px] font-extrabold text-[#D6E4FF]">{BRAND.consortiumName}</span>
-        </div>
+    <aside className="nav-shell">
+      <div className="sidebar-brand">
+        <span className="sidebar-brand-logo">
+          <img src={BRAND.loginLogo} alt={BRAND.consortiumName} />
+        </span>
+        <span className="sidebar-brand-text">
+          <strong>SIGEBAP</strong>
+          <small>{BRAND.systemName}</small>
+        </span>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" aria-label="Navegação principal">
         {groups.map(({ group, items }) => (
           <section key={group} className="nav-group">
             <div className="nav-group-title">{group}</div>
-            <div className="grid gap-0.5 pt-1">
-                {items.map((item) => {
-                  const Icon = item.icon;
-                  const badge = item.key === 'notificacoes' ? unreadCount : 0;
-                  return (
-                    <NavLink
-                      key={item.key}
-                      to={item.path}
-                      onClick={onNavigate}
-                      className={({ isActive }) =>
-                        [
-                          'nav-item',
-                          isActive ? 'nav-item-active' : 'nav-item-inactive'
-                        ].join(' ')
-                      }
-                    >
-                      <span className="nav-icon">
-                        <Icon size={19} />
+            <div className="nav-group-items">
+              {items.map((item) => {
+                const Icon = item.icon;
+                const badge = item.key === 'notificacoes' ? unreadCount : 0;
+                return (
+                  <NavLink
+                    key={item.key}
+                    to={item.path}
+                    onClick={onNavigate}
+                    className={({ isActive }) => ['nav-item', isActive ? 'nav-item-active' : 'nav-item-inactive'].join(' ')}
+                    title={item.label}
+                  >
+                    <span className="nav-icon">
+                      <Icon size={18} />
+                    </span>
+                    <span className="nav-label">{item.label}</span>
+                    {badge > 0 && (
+                      <span className="nav-badge">
+                        {badge > 99 ? '99+' : badge}
                       </span>
-                      <span className="min-w-0">
-                        <strong className="block truncate text-sm font-black leading-tight">{item.label}</strong>
-                      </span>
-                      {badge > 0 && (
-                        <span className="grid min-h-6 min-w-6 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-navy-900">
-                          {badge > 99 ? '99+' : badge}
-                        </span>
-                      )}
-                    </NavLink>
-                  );
-                })}
-              </div>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
           </section>
         ))}
       </nav>
+
       <SidebarProfile user={user} photoUrl={photoUrl} onLogout={handleLogout} />
     </aside>
   );
@@ -184,18 +145,18 @@ function SidebarProfile({ user, photoUrl, onLogout }) {
   return (
     <footer className="sidebar-profile">
       <NavLink to="/perfil" className="sidebar-profile-main">
-        <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-blue-500/20 text-xs font-black text-white ring-1 ring-blue-200/20">
+        <span className="sidebar-profile-avatar">
           {photoUrl ? <img className="h-full w-full object-cover" src={photoUrl} alt={user?.nome || 'Usuário'} /> : initials(user?.nome || user?.usuario)}
         </span>
-        <span className="min-w-0">
-          <strong className="block truncate text-sm font-black text-white">{user?.nome || user?.usuario || 'Usuário'}</strong>
-          <small className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">{user?.cargo || prettyRole(user?.perfil)}</small>
+        <span className="sidebar-profile-text">
+          <strong>{user?.nome || user?.usuario || 'Usuário'}</strong>
+          <small>{user?.cargo || prettyRole(user?.perfil)}</small>
         </span>
       </NavLink>
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="sidebar-profile-actions">
         <NavLink to="/config" className="sidebar-profile-action" title="Configurações">
           <Settings size={16} />
-          <span>Config.</span>
+          <span>Configurações</span>
         </NavLink>
         <button className="sidebar-profile-action" type="button" onClick={onLogout}>
           <LogOut size={16} />

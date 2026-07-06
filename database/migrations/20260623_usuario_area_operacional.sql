@@ -1,6 +1,6 @@
 alter table public.usuarios
   add column if not exists area_operacional text,
-  add column if not exists area_supervisao text;
+  add column if not exists area_supervisão text;
 
 create table if not exists public.supervisor_areas (
   id uuid primary key default gen_random_uuid(),
@@ -67,9 +67,9 @@ update public.usuarios
      when perfil = 'prefeitura' then coalesce(area_operacional, 'prefeitura')
      else area_operacional
    end,
-       area_supervisao = case
-         when perfil = 'supervisor' then coalesce(area_supervisao, area_operacional)
-         else area_supervisao
+       area_supervisão = case
+         when perfil = 'supervisor' then coalesce(area_supervisão, area_operacional)
+         else area_supervisão
        end,
        updated_at = now()
  where deleted_at is null;
