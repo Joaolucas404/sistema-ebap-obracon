@@ -269,6 +269,43 @@ async function garantirMembrosConversaDireta(conversaId, user, outro) {
   return membros;
 }
 
+export async function garantirMembroConversaComunicacao(conversa, user) {
+  if (!conversa?.id || !user?.id) return conversa;
+  if ((conversa.membros || []).some((membro) => membro.usuario_id === user.id)) return conversa;
+
+  const membro = {
+    conversa_id: conversa.id,
+    usuario_id: user.id,
+    perfil: user.perfil || null,
+    equipe: user.equipe || null,
+    area: user.area_operacional || user.area_supervisao || null,
+    papel: 'membro'
+  };
+
+  const { error } = await supabase.from('comunicacao_membros').upsert(membro, { onConflict: 'conversa_id,usuario_id' });
+  if (error) throw new Error(error.message);
+
+  return {
+    ...conversa,
+    membros: [
+      ...(conversa.membros || []),
+      {
+        ...membro,
+        usuario: {
+          id: user.id,
+          nome: user.nome,
+          usuario: user.usuario,
+          perfil: user.perfil,
+          setor: user.setor,
+          area_operacional: user.area_operacional,
+          area_supervisao: user.area_supervisao,
+          equipe: user.equipe
+        }
+      }
+    ]
+  };
+}
+
 export async function obterOuCriarConversaDireta(outroUsuarioId, user) {
   if (!user?.id) throw new Error('Usuário não identificado.');
   if (!outroUsuarioId) throw new Error('Selecione uma pessoa.');

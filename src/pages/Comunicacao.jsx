@@ -40,6 +40,7 @@ import {
   enviarFotoPerfilComunicacao,
   enviarMensagemComunicacao,
   excluirMensagemComunicacao,
+  garantirMembroConversaComunicacao,
   GRUPOS_OPERACIONAIS,
   listarConversasComunicacao,
   listarMensagensComunicacao,
@@ -210,6 +211,21 @@ export default function Comunicacao() {
       await marcarMensagensComoLidas(conversaId, rows, user);
     } catch (err) {
       setToast({ message: err.message || 'Falha ao carregar mensagens.', tone: 'red' });
+    }
+  }
+
+  async function openConversation(conversa) {
+    if (!conversa?.id) return;
+    try {
+      const conversaComMembro = await garantirMembroConversaComunicacao(conversa, user);
+      setConversas((current) => current.map((item) => (item.id === conversaComMembro.id ? conversaComMembro : item)));
+      setSelectedId(conversaComMembro.id);
+      setActiveTab('conversas');
+      setMobileListOpen(false);
+      setMensagens([]);
+      await loadMensagens(conversaComMembro.id);
+    } catch (err) {
+      setToast({ message: err.message || 'Falha ao abrir conversa.', tone: 'red' });
     }
   }
 
@@ -751,11 +767,7 @@ export default function Comunicacao() {
                         key={conversa.id}
                         type="button"
                         className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
-                        onClick={() => {
-                          setSelectedId(conversa.id);
-                          setActiveTab('conversas');
-                          setMobileListOpen(false);
-                        }}
+                        onClick={() => openConversation(conversa)}
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <Avatar user={{ nome: conversa.nome }} fotoUrl={avatarUrl} />
