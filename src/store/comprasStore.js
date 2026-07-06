@@ -22,6 +22,38 @@ const defaultFilters = {
   ebapId: ''
 };
 
+function compraOtimista(saved, payload, user) {
+  const itens = (payload.itens || []).map((item, index) => ({
+    id: `${saved?.id || 'nova'}-item-${index}`,
+    compra_id: saved?.id || payload.id || null,
+    ...item
+  }));
+
+  return {
+    ...payload,
+    ...saved,
+    id: saved?.id || payload.id,
+    numero: saved?.numero || payload.numero || 'Nova solicitação',
+    status: saved?.status || payload.status || 'solicitada',
+    area: saved?.area || payload.area,
+    ebap_id: saved?.ebap_id || payload.ebap_id || null,
+    solicitante_id: saved?.solicitante_id || user?.id || null,
+    created_at: saved?.created_at || new Date().toISOString(),
+    deleted_at: null,
+    itens,
+    aprovacoes: [],
+    historico: [],
+    solicitante: {
+      id: user?.id,
+      nome: user?.nome,
+      usuario: user?.usuario,
+      perfil: user?.perfil
+    },
+    ebap: null,
+    fornecedor: null
+  };
+}
+
 export const useComprasStore = create((set, get) => ({
   compras: [],
   fornecedores: [],
@@ -73,6 +105,17 @@ export const useComprasStore = create((set, get) => ({
       const saved = await salvarSolicitacaoCompra(payload, user);
       const filters = { ...defaultFilters };
       await get().carregarTudo(filters);
+      if (saved?.id) {
+        const current = get().compras;
+        const exists = current.some((compra) => compra.id === saved.id);
+        if (!exists) {
+          set({
+            compras: [compraOtimista(saved, payload, user), ...current],
+            count: Math.max(get().count + 1, current.length + 1),
+            filters
+          });
+        }
+      }
       set({ saving: false });
       return saved;
     } catch (err) {

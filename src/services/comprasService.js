@@ -229,9 +229,9 @@ export async function salvarSolicitacaoCompra(payload, user) {
       error: selectError
     });
 
-    if (selectError) throw selectError;
+    if (selectError) console.warn('[Compras] falha na leitura imediata apos salvar', selectError);
     if (!compraConfirmada) {
-      throw new Error('Solicitação salva, mas não liberada para leitura pela listagem. Verifique a política RLS de SELECT em compras.');
+      console.warn('[Compras] registro salvo, mas nao retornou no SELECT imediato', { id: data.id });
     }
   }
 
