@@ -162,7 +162,7 @@ export default function Comunicacao() {
   const animationRef = useRef(null);
   const recordingStartedAtRef = useRef(0);
 
-  const selected = useMemo(() => conversas.find((conversa) => conversa.id === selectedId) || conversas[0] || null, [conversas, selectedId]);
+  const selected = useMemo(() => conversas.find((conversa) => conversa.id === selectedId) || null, [conversas, selectedId]);
   const perfil = perfilComunicacao(user);
   const onlineUsers = useMemo(() => presenceList(presenceState), [presenceState]);
   const filteredConversas = useMemo(() => {
@@ -183,7 +183,7 @@ export default function Comunicacao() {
     try {
       const rows = await listarConversasComunicacao(user);
       setConversas(rows);
-      setSelectedId((current) => current || rows[0]?.id || '');
+      setSelectedId((current) => (current && rows.some((conversa) => conversa.id === current) ? current : rows[0]?.id || ''));
       const perfilRow = await salvarPerfilComunicacao(user, { status_manual: status });
       setPerfilFoto(perfilRow?.foto_url ? await resolverUrlFotoPerfil(perfilRow.foto_url) : '');
       if (perfilRow?.foto_url && perfilRow.foto_url !== user?.foto_url) {
@@ -214,19 +214,26 @@ export default function Comunicacao() {
     }
   }
 
-  async function openConversation(conversa) {
+  function selectConversation(conversa) {
     if (!conversa?.id) return;
-    try {
-      const conversaComMembro = await garantirMembroConversaComunicacao(conversa, user);
-      setConversas((current) => current.map((item) => (item.id === conversaComMembro.id ? conversaComMembro : item)));
-      setSelectedId(conversaComMembro.id);
-      setActiveTab('conversas');
-      setMobileListOpen(false);
-      setMensagens([]);
-      await loadMensagens(conversaComMembro.id);
-    } catch (err) {
-      setToast({ message: err.message || 'Falha ao abrir conversa.', tone: 'red' });
-    }
+    setSelectedId(conversa.id);
+    setActiveTab('conversas');
+    setMobileListOpen(false);
+    setMensagens([]);
+    void loadMensagens(conversa.id);
+    void garantirMembroConversaComunicacao(conversa, user)
+      .then((conversaComMembro) => {
+        setConversas((current) => current.map((item) => (item.id === conversaComMembro.id ? conversaComMembro : item)));
+      })
+      .catch((err) => {
+        setToast({ message: err.message || 'Falha ao abrir conversa.', tone: 'red' });
+      });
+  }
+
+  function handleConversationMouseDown(event, conversa) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    selectConversation(conversa);
   }
 
   useEffect(() => {
@@ -526,7 +533,6 @@ export default function Comunicacao() {
     try {
       setSending(true);
       setToast({ message: 'Abrindo conversa...', tone: 'cyan' });
-      setSelectedId('');
       setMensagens([]);
       const conversa = await obterOuCriarConversaDireta(person.id, user);
       setConversas((current) => {
@@ -682,7 +688,7 @@ export default function Comunicacao() {
   }
 
   return (
-    <div className="grid gap-0 md:gap-4">
+    <div className="grid h-[100dvh] min-h-0 grid-rows-[minmax(0,1fr)] gap-0 overflow-hidden md:h-[calc(100dvh-var(--sig-topbar-height)-40px)] md:grid-rows-[auto_auto_minmax(0,1fr)] md:gap-4">
       <div className="hidden md:block">
         <PageHeader
           title="Comunicação"
@@ -717,8 +723,8 @@ export default function Comunicacao() {
         </div>
       </section>
 
-      <section className="grid min-h-screen gap-0 md:min-h-[680px] md:gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
-        <aside className={`${mobileListOpen || !selected ? 'grid' : 'hidden'} min-h-screen min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3 overflow-hidden border border-cyan-300/15 bg-navy-950/55 p-4 md:min-h-[680px] md:rounded-3xl xl:grid`}>
+      <section className="relative grid min-h-0 gap-0 overflow-hidden md:gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+        <aside className={`${mobileListOpen || !selected ? 'grid' : 'hidden'} relative z-20 h-full min-h-0 min-w-0 grid-rows-[auto_auto_minmax(220px,1fr)_auto] gap-3 overflow-hidden border border-cyan-300/15 bg-navy-950/55 p-4 md:rounded-3xl xl:grid`}>
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -762,7 +768,7 @@ export default function Comunicacao() {
             )}
 
             {activeTab !== 'arquivos' ? (
-              <div className="grid min-h-0 min-w-0 content-start gap-2 overflow-y-auto overflow-x-hidden pr-2">
+              <div className="relative z-30 grid min-h-0 min-w-0 auto-rows-max content-start gap-3 overflow-y-auto overflow-x-hidden pr-2">
                 {loading ? (
                   <div className="rounded-2xl bg-navy-900/70 p-4 text-sm font-bold text-slate-300">Carregando conversas...</div>
                 ) : filteredConversas.length ? (
@@ -774,8 +780,9 @@ export default function Comunicacao() {
                       <button
                         key={conversa.id}
                         type="button"
-                        className={selected?.id === conversa.id ? 'overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
-                        onClick={() => openConversation(conversa)}
+                        className={selected?.id === conversa.id ? 'min-h-[86px] select-none overflow-hidden rounded-2xl border border-cyan-300/35 bg-cyan-400/10 p-3 text-left' : 'min-h-[86px] select-none overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/60 p-3 text-left hover:border-cyan-300/25'}
+                        onMouseDown={(event) => handleConversationMouseDown(event, conversa)}
+                        onClick={() => selectConversation(conversa)}
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <Avatar user={{ nome: conversa.nome }} fotoUrl={avatarUrl} />
@@ -802,10 +809,10 @@ export default function Comunicacao() {
             )}
           </div>
 
-          <div className="hidden rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3 md:block">
+          <div className="hidden max-h-36 overflow-hidden rounded-2xl border border-cyan-300/10 bg-navy-900/55 p-3 md:block">
             <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-cyan-100">Presença</h3>
-            <div className="grid gap-2">
-              {onlineUsers.slice(0, 8).map((presence) => (
+            <div className="grid gap-2 overflow-hidden">
+              {onlineUsers.slice(0, 3).map((presence) => (
                 <div key={`${presence.user_id}-${presence.online_at}`} className="flex items-center gap-2 text-sm font-bold text-slate-200">
                   <span className={`size-2 rounded-full ${presence.status === 'ausente' ? 'bg-amber-300' : 'bg-emerald-400'}`} />
                   <span className="truncate">{presence.nome || 'Usuário'}</span>
@@ -816,7 +823,7 @@ export default function Comunicacao() {
           </div>
         </aside>
 
-        <main className={`${mobileListOpen && selected ? 'hidden xl:grid' : 'grid'} h-[100dvh] min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border border-cyan-300/15 bg-navy-950/55 md:h-auto md:min-h-[680px] md:rounded-3xl xl:grid`}>
+        <main className={`${mobileListOpen && selected ? 'hidden xl:grid' : 'grid'} relative z-10 h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border border-cyan-300/15 bg-navy-950/55 md:rounded-3xl xl:grid`}>
           {selected ? (
             <>
               <header className="flex items-center gap-3 border-b border-cyan-300/10 p-3 md:p-4">
