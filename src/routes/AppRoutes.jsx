@@ -19,6 +19,7 @@ const Comunicacao = lazy(() => import('../pages/Comunicacao.jsx'));
 const Compras = lazy(() => import('../pages/Compras.jsx'));
 const Dashboard = lazy(() => import('../pages/Dashboard.jsx'));
 const DetalheOS = lazy(() => import('../pages/DetalheOS.jsx'));
+const DocumentationKit = lazy(() => import('../pages/DocumentationKit.jsx'));
 const FinanceiroContratos = lazy(() => import('../pages/FinanceiroContratos.jsx'));
 const LocalizacaoEbaps = lazy(() => import('../pages/LocalizacaoEbaps.jsx'));
 const Login = lazy(() => import('../pages/Login.jsx'));
@@ -310,6 +311,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute permission="uiKit" />}>
         <Route element={<AppLayout />}>
           <Route path="/config/ui-kit" element={<UiKit />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute permission="documentationKit" />}>
+        <Route element={<AppLayout />}>
+          <Route path="/config/documentation-kit" element={<DocumentationKit />} />
         </Route>
       </Route>
 

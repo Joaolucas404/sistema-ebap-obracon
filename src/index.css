@@ -847,3 +847,44 @@ h1.font-bold,
   font-weight: var(--sig-weight-regular);
   line-height: 1.45;
 }
+
+.doc-official-page {
+  position: relative;
+  width: 210mm;
+  min-width: 210mm;
+  height: 297mm;
+  min-height: 297mm;
+  overflow: hidden;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .32);
+}
+
+.doc-official-page h1,
+.doc-official-page h2,
+.doc-official-page h3 {
+  font-weight: inherit;
+}
+
+.doc-official-page .font-extrabold {
+  font-weight: 800 !important;
+}
+
+.doc-official-page .font-bold {
+  font-weight: 700 !important;
+}
+
+.doc-official-page .font-semibold {
+  font-weight: 600 !important;
+}
+
+.doc-cover-page {
+  background-size: cover;
+  background-position: center;
+}
+
+@media print {
+  .doc-official-page {
+    box-shadow: none;
+    page-break-after: always;
+  }
+}

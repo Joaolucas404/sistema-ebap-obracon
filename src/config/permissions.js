@@ -41,6 +41,7 @@ export const ROUTE_KEYS = {
   orientacoes: '/orientacoes',
   config: '/config',
   uiKit: '/config/ui-kit',
+  documentationKit: '/config/documentation-kit',
   usuarios: '/usuarios',
   modelosRelatorio: '/administrativo/modelos-relatorio'
 };
