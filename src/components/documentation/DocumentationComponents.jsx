@@ -7,9 +7,9 @@ export function DocumentationToolbar({ onExport, exporting, reference, theme }) 
     <Card className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between" padding="md">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-200">Template oficial SIGEBAP</p>
-        <h2 className="mt-1 text-2xl font-semibold text-white">Capítulo 02 - Agenda Operacional</h2>
+        <h2 className="mt-1 text-2xl font-semibold text-white">Volume 01 - Operador</h2>
         <p className="mt-1 text-sm font-normal text-slate-300">
-          Baseado fielmente no PDF de referência: {reference.source}
+          Baseado no PDF de referência: {reference.source}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -22,7 +22,7 @@ export function DocumentationToolbar({ onExport, exporting, reference, theme }) 
   );
 }
 
-export function ReferenceAnalysis({ reference, themes }) {
+export function ReferenceAnalysis({ reference, themes, volumes = [] }) {
   return (
     <Card padding="lg">
       <CardHeader
@@ -59,6 +59,23 @@ export function ReferenceAnalysis({ reference, themes }) {
           </span>
         ))}
       </div>
+      {volumes.length > 0 && (
+        <div className="mt-5 rounded-2xl border border-blue-200/10 bg-white/[0.04] p-4">
+          <h3 className="text-lg font-semibold text-white">Coleção planejada</h3>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {volumes.map((volume) => {
+              const theme = themes[volume.theme] || themes.operador;
+              return (
+                <div key={volume.number} className="rounded-xl border px-3 py-2" style={{ borderColor: theme.border, backgroundColor: `${theme.primary}18` }}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: theme.primary }}>Volume {volume.number}</p>
+                  <p className="mt-1 text-sm font-semibold text-white">{volume.title}</p>
+                  <p className="mt-1 text-xs font-normal text-slate-300">{volume.chapters.length} capítulo(s)</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
@@ -83,17 +100,109 @@ export function ChapterCover({ chapter, theme, assets }) {
         backgroundImage: `linear-gradient(180deg, rgba(8, 24, 56, .58) 0%, rgba(8, 24, 56, .82) 52%, rgba(0, 112, 72, .82) 100%), url(${assets.cover})`
       }}
     >
-      <div className="absolute left-[12mm] top-[64mm]">
-        <p className="text-[18px] font-normal uppercase tracking-[0.02em] text-white">CAPÍTULO</p>
-        <div className="mt-2 text-[58px] font-extrabold leading-none tracking-tight">{chapter.chapterNumber}</div>
-        <div className="mt-4 h-[3px] w-[31mm]" style={{ backgroundColor: theme.primary }} />
-        <h1 className="mt-9 text-[38px] font-extrabold leading-tight tracking-[-0.02em]">{chapter.title}</h1>
-        <p className="mt-2 max-w-[150mm] text-[16px] font-normal leading-7 text-white/88">{chapter.coverSubtitle}</p>
+      <div className="absolute left-[13mm] top-[68mm]">
+        <p className="text-[15px] font-normal uppercase tracking-[0.02em] text-white">CAPÍTULO</p>
+        <div className="mt-[3mm] text-[52px] font-extrabold leading-none tracking-tight">{chapter.chapterNumber}</div>
+        <div className="mt-[4mm] h-[3px] w-[31mm]" style={{ backgroundColor: theme.primary }} />
+        <h1 className="mt-[10mm] text-[31px] font-extrabold leading-tight tracking-[-0.02em]">{chapter.title}</h1>
+        <p className="mt-[2mm] max-w-[150mm] text-[13px] font-normal leading-6 text-white/88">{chapter.coverSubtitle}</p>
       </div>
-      <footer className="absolute bottom-[12mm] left-[12mm] text-[11px] font-normal text-white/88">
-        Guia Operacional SIGEBAP - {theme.name}
-      </footer>
     </section>
+  );
+}
+
+export function VolumeCover({ volume, theme, assets }) {
+  return (
+    <section
+      className="doc-official-page doc-cover-page text-white"
+      style={{
+        '--doc-primary': theme.primary,
+        '--doc-soft': theme.soft,
+        '--doc-border': theme.border,
+        backgroundImage: `linear-gradient(180deg, rgba(8, 24, 56, .54) 0%, rgba(8, 24, 56, .84) 56%, rgba(0, 112, 72, .84) 100%), url(${assets.cover})`
+      }}
+    >
+      <div className="absolute left-[14mm] top-[7mm]">
+        <img className="h-[15mm] w-[15mm] object-contain" src={assets.logo} alt="União Obracon" />
+      </div>
+      <div className="absolute left-[14mm] top-[27mm]">
+        <p className="text-[10px] font-normal uppercase tracking-[0.04em] text-white/86">COLEÇÃO OFICIAL DE GUIAS OPERACIONAIS</p>
+        <div className="mt-[4mm] h-[1mm] w-[31mm]" style={{ backgroundColor: theme.primary }} />
+      </div>
+      <div className="absolute left-[14mm] right-[14mm] top-[174mm]">
+        <h1 className="text-[41px] font-extrabold leading-none tracking-[0.06em]">SIGEBAP</h1>
+        <p className="mt-[3mm] text-[22px] font-normal leading-none text-white">Manual Operacional</p>
+        <h2 className="mt-[5mm] text-[32px] font-extrabold leading-none" style={{ color: theme.primary }}>{volume.title}</h2>
+        <p className="mt-[4mm] max-w-[142mm] text-[13px] font-normal leading-[1.25] text-white/90">
+          Sistema Integrado de Gestão das Estações Elevatórias de Águas Pluviais
+        </p>
+      </div>
+      <div className="absolute left-[14mm] right-[14mm] top-[244mm] rounded-[3mm] border border-white/80 bg-[#06132d]/88 px-[5mm] py-[5mm]">
+        <div className="grid grid-cols-[1fr_1px_1fr] gap-[6mm]">
+          <div>
+            <p className="text-[8px] font-extrabold uppercase tracking-[0.08em]" style={{ color: theme.primary }}>IDEALIZAÇÃO</p>
+            <p className="mt-[1mm] text-[10px] font-extrabold text-white">Alex Gomes de Matos Martins</p>
+            <p className="mt-[1mm] text-[8px] font-normal text-white/72">Idealizador Operacional</p>
+          </div>
+          <div className="h-[18mm] bg-white/60" />
+          <div>
+            <p className="text-[8px] font-extrabold uppercase tracking-[0.08em]" style={{ color: theme.primary }}>DESENVOLVIMENTO</p>
+            <p className="mt-[1mm] text-[10px] font-extrabold text-white">João Lucas Soares Almeida</p>
+            <p className="mt-[1mm] text-[8px] font-normal text-white/72">Desenvolvedor do SIGEBAP</p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute bottom-[0mm] left-[14mm] right-[14mm] h-[10mm] rounded-t-[2mm] bg-white" />
+    </section>
+  );
+}
+
+export function VolumeTocPage({ volume, theme, pageNumber }) {
+  return (
+    <OfficialPage header={`VOLUME ${volume.number} - ${volume.title}`} footerLeft={`SIGEBAP - Livro Operacional ${volume.title}`} footerCenter="Índice do volume" pageNumber={pageNumber} theme={theme}>
+      <PageTitle
+        title={`Volume ${volume.number} - ${volume.title}`}
+        subtitle="Estrutura sequencial do livro operacional. Cada capítulo mantém a mesma identidade visual, margens e hierarquia editorial."
+      />
+      <div className="mt-[16mm] grid grid-cols-2 gap-x-[12mm] gap-y-[5mm]">
+        {volume.chapters.map((chapter) => (
+          <div key={`${chapter.number}-${chapter.title}`} className="rounded-[4mm] border border-slate-200 bg-white p-[4mm] shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div className="flex items-start gap-[4mm]">
+              <span className="grid h-[9mm] w-[9mm] shrink-0 place-items-center rounded-[2mm] text-[11px] font-extrabold text-white" style={{ backgroundColor: theme.primary }}>
+                {chapter.number}
+              </span>
+              <div>
+                <h3 className="text-[13px] font-extrabold leading-tight text-[#0B1224]">{chapter.title}</h3>
+                {chapter.subtitle && <p className="mt-[1mm] text-[9px] font-semibold uppercase tracking-[0.04em]" style={{ color: theme.primary }}>{chapter.subtitle}</p>}
+                {chapter.status === 'pronto' && <p className="mt-[1mm] text-[9px] font-semibold text-slate-500">Capítulo já produzido</p>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Callout className="absolute bottom-[24mm] left-0 right-0" title="PADRÃO EDITORIAL" theme={theme}>
+        O livro deve ser lido em sequência: capa, índice, capítulos e procedimentos. Capítulos já finalizados são preservados como referência oficial.
+      </Callout>
+    </OfficialPage>
+  );
+}
+
+export function ExistingChapterNotice({ chapter, volume, theme, pageNumber }) {
+  return (
+    <OfficialPage header={`VOLUME ${volume.number} - ${volume.title}`} footerLeft={`SIGEBAP - Livro Operacional ${volume.title}`} footerCenter={`Capítulo ${chapter.number}`} pageNumber={pageNumber} theme={theme}>
+      <div className="flex h-full flex-col justify-center">
+        <p className="text-[12px] font-extrabold uppercase tracking-[0.16em]" style={{ color: theme.primary }}>CAPÍTULO {chapter.number}</p>
+        <h2 className="mt-[4mm] text-[36px] font-extrabold leading-tight tracking-[-0.02em] text-[#0B1224]">{chapter.title}</h2>
+        <div className="mt-[5mm] h-[3px] w-[32mm]" style={{ backgroundColor: theme.primary }} />
+        <p className="mt-[10mm] max-w-[138mm] text-[14px] font-normal leading-7 text-slate-600">
+          Este capítulo já está finalizado no arquivo oficial informado pelo usuário e será preservado como a primeira parte do Volume {volume.number}.
+        </p>
+        <div className="mt-[10mm] rounded-[4mm] border p-[6mm]" style={{ borderColor: theme.border, backgroundColor: theme.soft }}>
+          <h3 className="text-[12px] font-extrabold uppercase tracking-[0.04em]" style={{ color: theme.primary }}>Arquivo oficial existente</h3>
+          <p className="mt-[2mm] text-[12px] font-normal text-[#0B1224]">{chapter.source}</p>
+        </div>
+      </div>
+    </OfficialPage>
   );
 }
 
@@ -204,6 +313,47 @@ export function PracticesPage({ page, theme, pageNumber }) {
           ))}
         </div>
       </div>
+    </OfficialPage>
+  );
+}
+
+export function ChapterTopicsPage({ chapter, volume, theme, pageNumber }) {
+  return (
+    <OfficialPage
+      header={`VOLUME ${volume.number} - ${volume.title}`}
+      footerLeft={`SIGEBAP - Livro Operacional ${volume.title}`}
+      footerCenter={`Capítulo ${chapter.number}`}
+      pageNumber={pageNumber}
+      theme={theme}
+    >
+      <PageTitle
+        title={`${chapter.number}. ${chapter.title}`}
+        subtitle={chapter.subtitle || 'Orientações operacionais para uso correto do SIGEBAP durante a rotina de campo.'}
+      />
+      <div className="mt-[14mm] grid grid-cols-2 gap-x-[10mm] gap-y-[6mm]">
+        {chapter.topics.map((topic, index) => (
+          <div
+            key={topic}
+            className="rounded-[4mm] border bg-white p-[5mm] shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+            style={{ borderColor: theme.border }}
+          >
+            <div className="flex items-start gap-[4mm]">
+              <span className="grid h-[8mm] w-[8mm] shrink-0 place-items-center rounded-full text-[10px] font-extrabold text-white" style={{ backgroundColor: theme.primary }}>
+                {index + 1}
+              </span>
+              <div>
+                <h3 className="text-[13px] font-extrabold leading-tight text-[#0B1224]">{topic}</h3>
+                <p className="mt-[2mm] text-[10px] font-normal leading-[1.35] text-slate-500">
+                  Procedimento documentado para consulta, preenchimento ou acompanhamento dentro do módulo.
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Callout className="absolute bottom-[23mm] left-0 right-0" title="OBJETIVO DO CAPÍTULO" theme={theme}>
+        Padronizar a execução do operador e reduzir dúvidas durante o uso diário do SIGEBAP.
+      </Callout>
     </OfficialPage>
   );
 }

@@ -14,8 +14,10 @@ export async function loginWithUsuarioSenha(usuario, senha) {
   const { data, error } = await supabase
     .from('usuarios')
     .select('*')
-    .eq('usuario', cleanUsuario)
-    .single();
+    .ilike('usuario', cleanUsuario)
+    .is('deleted_at', null)
+    .limit(1)
+    .maybeSingle();
 
   if (error || !data) {
     throw new Error('Usuário ou senha inválidos.');

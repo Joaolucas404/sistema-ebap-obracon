@@ -45,6 +45,30 @@ const AUTO_AREA_BY_PROFILE = {
 
 const SELECT_FIELDS = 'id, usuario, nome, perfil, setor, area_operacional, area_supervisao, equipe, ebap_id, ebap:ebaps!usuarios_ebap_id_fkey(id,nome,nome_curto), status_aprovacao, aprovado_por, aprovado_em, rejeitado_por, rejeitado_em, motivo_rejeicao, ativo, ultimo_login, criado_por, criado_em, atualizado_em, deleted_at';
 
+function normalizeUsuarioLogin(usuario) {
+  return String(usuario || '').trim().toLowerCase();
+}
+
+async function garantirLoginDisponivel(usuario, ignoreId = null) {
+  const cleanUsuario = normalizeUsuarioLogin(usuario);
+  if (!cleanUsuario) return;
+
+  let query = supabase
+    .from('usuarios')
+    .select('id,usuario')
+    .ilike('usuario', cleanUsuario)
+    .is('deleted_at', null)
+    .limit(1);
+
+  if (ignoreId) query = query.neq('id', ignoreId);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  if (data?.length) {
+    throw new Error('Este login já existe em um usuário ativo ou pendente. Exclua ou rejeite o cadastro existente antes de reutilizar o login.');
+  }
+}
+
 export function areaOperacionalLabel(area) {
   return AREAS_OPERACIONAIS.find((item) => item.value === area)?.label || area || '-';
 }
@@ -100,7 +124,7 @@ function normalizePayload(payload) {
   }
   const row = {
     nome: String(payload.nome || '').trim(),
-    usuario: String(payload.usuario || '').trim(),
+    usuario: normalizeUsuarioLogin(payload.usuario),
     perfil,
     setor: payload.setor ? String(payload.setor).trim() : null,
     area_operacional: area,
@@ -131,7 +155,7 @@ export async function listarEbapsUsuarios() {
 
 export async function solicitarAcessoTecnico(payload) {
   const nome = String(payload.nome || '').trim();
-  const usuario = String(payload.usuario || '').trim();
+  const usuario = normalizeUsuarioLogin(payload.usuario);
   const senha = String(payload.senha || '');
   const confirmarSenha = String(payload.confirmarSenha || '');
   const equipe = payload.equipe;
@@ -143,6 +167,7 @@ export async function solicitarAcessoTecnico(payload) {
   if (!area) throw new Error('Selecione uma equipe oficial.');
   if (senha.length < 6) throw new Error('A senha deve ter pelo menos 6 caracteres.');
   if (senha !== confirmarSenha) throw new Error('As senhas não conferem.');
+  await garantirLoginDisponivel(usuario);
 
   const senha_hash = await bcrypt.hash(senha, 10);
   const { data, error } = await supabase
@@ -264,6 +289,7 @@ export async function criarUsuario(payload, currentUser) {
   if (!normalized.nome || !normalized.usuario || !payload.senha) {
     throw new Error('Nome, usuário e senha inicial são obrigatórios.');
   }
+  await garantirLoginDisponivel(normalized.usuario);
 
   const senha_hash = await bcrypt.hash(payload.senha, 10);
   const { data, error } = await supabase
@@ -295,6 +321,7 @@ export async function atualizarUsuario(id, payload, currentUser) {
   }
 
   const normalized = normalizePayload(payload);
+  await garantirLoginDisponivel(normalized.usuario, id);
   const { data, error } = await supabase
     .from('usuarios')
     .update({

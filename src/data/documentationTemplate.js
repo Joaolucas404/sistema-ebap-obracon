@@ -76,6 +76,14 @@ export const documentationThemes = {
     text: '#0B1224',
     footer: 'SIGEBAP - Guia Operacional da Gerência'
   },
+  sst: {
+    name: 'SST',
+    primary: '#D97706',
+    soft: '#FEF3C7',
+    border: '#FDE68A',
+    text: '#0B1224',
+    footer: 'SIGEBAP - Guia Operacional SST'
+  },
   prefeitura: {
     name: 'Prefeitura',
     primary: '#1D4ED8',
@@ -85,6 +93,186 @@ export const documentationThemes = {
     footer: 'SIGEBAP - Guia Operacional Prefeitura'
   }
 };
+
+export const documentationVolumes = [
+  {
+    number: '01',
+    title: 'Operador',
+    theme: 'operador',
+    chapters: [
+      {
+        number: '01',
+        title: 'Primeiros Passos',
+        status: 'pronto',
+        source: 'Guia_Operacional_SIGEBAP_Operador_Parte1_V3_PREMIUM.pdf',
+        topics: ['Bem-vindo ao SIGEBAP', 'Objetivos do sistema', 'Primeiro acesso', 'Login', 'Recuperação de senha', 'Tela inicial', 'Perfil do usuário', 'Encerrando a sessão']
+      },
+      {
+        number: '02',
+        title: 'Agenda Operacional',
+        topics: ['Visão geral', 'Calendário', 'Lista de atividades', 'Filtros', 'Status', 'Prioridades', 'Indicadores', 'Alteração de data', 'Pesquisa']
+      },
+      {
+        number: '03',
+        title: 'Executando Atividades',
+        topics: ['Abrir atividade', 'Registrar execução', 'Atualizar status', 'Registrar observações', 'Concluir atividade']
+      },
+      {
+        number: '04',
+        title: 'Ordens de Serviço',
+        topics: ['Quando abrir uma OS', 'Como abrir', 'Prioridade', 'Criticidade', 'Fotos', 'Evidências', 'Comentários', 'Histórico']
+      },
+      {
+        number: '05',
+        title: 'Agenda Particular',
+        subtitle: 'Nova Agenda do Operador',
+        topics: ['Criando lembretes', 'Eventos pessoais', 'Avisos', 'Compromissos', 'Alterar data', 'Repetições', 'Cores']
+      },
+      {
+        number: '06',
+        title: 'RDO',
+        topics: ['Criando RDO', 'Responder pendências', 'Evidências', 'Fotos', 'Assinatura', 'Envio']
+      },
+      {
+        number: '07',
+        title: 'Chat Corporativo',
+        topics: ['Conversas', 'Grupos', 'Arquivos', 'Fotos', 'Áudios', 'Histórico']
+      },
+      {
+        number: '08',
+        title: 'Alertas',
+        topics: ['Alertas do sistema', 'Notificações', 'Prioridades', 'Pendências']
+      },
+      {
+        number: '09',
+        title: 'Minha Conta',
+        topics: ['Perfil', 'Senha', 'Foto', 'Preferências', 'Tema']
+      },
+      {
+        number: '10',
+        title: 'Perguntas Frequentes',
+        topics: ['Problemas comuns', 'Soluções', 'Contatos']
+      }
+    ]
+  },
+  {
+    number: '02',
+    title: 'Supervisor',
+    theme: 'supervisor',
+    chapters: ['Visão Geral do Supervisor', 'Dashboard', 'Agenda Geral', 'Planejamento Preventivo', 'Importação de XLS', 'Calendário Inteligente', 'Gestão das Equipes', 'Ordens de Serviço', 'Aprovações', 'RDO das Equipes', 'Relatórios', 'Indicadores', 'Dashboard Executivo'].map((title, index) => ({
+      number: String(index + 1).padStart(2, '0'),
+      title,
+      topics: []
+    }))
+  },
+  {
+    number: '03',
+    title: 'Técnico',
+    theme: 'tecnico',
+    chapters: ['Recebendo uma OS', 'Executando Serviço', 'Checklist', 'Fotos', 'Materiais', 'Finalizando Serviço', 'Histórico'].map((title, index) => ({
+      number: String(index + 1).padStart(2, '0'),
+      title,
+      topics: []
+    }))
+  },
+  {
+    number: '04',
+    title: 'CCO',
+    theme: 'cco',
+    chapters: ['Painel Geral', 'Monitoramento', 'Validação dos Checklists', 'Comunicação', 'Ocorrências', 'Relatórios'].map((title, index) => ({
+      number: String(index + 1).padStart(2, '0'),
+      title,
+      topics: []
+    }))
+  },
+  {
+    number: '05',
+    title: 'Gerência / Diretoria',
+    theme: 'gerencia',
+    chapters: ['Visão Geral', 'Indicadores', 'Produtividade', 'Custos', 'Disponibilidade', 'Relatórios Executivos', 'Analytics'].map((title, index) => ({
+      number: String(index + 1).padStart(2, '0'),
+      title,
+      topics: []
+    }))
+  },
+  {
+    number: '06',
+    title: 'Prefeitura',
+    theme: 'prefeitura',
+    chapters: ['Portal', 'Acompanhamento das EBAPs', 'Consulta de Serviços', 'Relatórios', 'Indicadores'].map((title, index) => ({
+      number: String(index + 1).padStart(2, '0'),
+      title,
+      topics: []
+    }))
+  },
+  {
+    number: '07',
+    title: 'SST',
+    theme: 'sst',
+    chapters: [
+      {
+        number: '01',
+        title: 'Introdução ao SST',
+        topics: ['Objetivo do módulo', 'Responsabilidades', 'Conceitos básicos']
+      },
+      {
+        number: '02',
+        title: 'Dashboard SST',
+        topics: ['Indicadores', 'Pendências', 'Alertas', 'Dias sem acidentes']
+      },
+      {
+        number: '03',
+        title: 'Funcionários',
+        topics: ['Cadastro', 'Documentação', 'Situação']
+      },
+      {
+        number: '04',
+        title: 'EPIs',
+        topics: ['Cadastro', 'Entrega', 'Controle', 'Histórico', 'Vencimentos']
+      },
+      {
+        number: '05',
+        title: 'Treinamentos',
+        topics: ['NR-10', 'NR-12', 'NR-33', 'NR-35', 'Integrações', 'Certificados']
+      },
+      {
+        number: '06',
+        title: 'ASO',
+        topics: ['Admissional', 'Periódico', 'Retorno', 'Demissional']
+      },
+      {
+        number: '07',
+        title: 'APR e DDS',
+        topics: ['Cadastro', 'Participantes', 'Lista de presença', 'Fotos', 'Assinaturas']
+      },
+      {
+        number: '08',
+        title: 'Permissão de Trabalho (PT)',
+        topics: ['Emissão', 'Aprovação', 'Execução', 'Encerramento']
+      },
+      {
+        number: '09',
+        title: 'Incidentes e Acidentes',
+        topics: ['Registro', 'Investigação', 'Evidências', 'Plano de ação']
+      },
+      {
+        number: '10',
+        title: 'Relatórios SST',
+        topics: ['Funcionários', 'EPIs', 'Treinamentos', 'ASOs', 'Incidentes', 'Exportação PDF']
+      }
+    ]
+  },
+  {
+    number: '08',
+    title: 'Administrador do Sistema',
+    theme: 'gerencia',
+    chapters: ['Configurações Gerais', 'Usuários', 'Perfis e Permissões', 'EBAPs', 'Equipes', 'Importação de Dados', 'Logs', 'Integrações', 'Backup e Auditoria'].map((title, index) => ({
+      number: String(index + 1).padStart(2, '0'),
+      title,
+      topics: []
+    }))
+  }
+];
 
 export const agendaChapter = {
   profile: 'operador',
